@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
 
 <head>
 
@@ -11,6 +11,8 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon_zoomed.png">
 	<link rel="apple-touch-icon" sizes="180x180" href="/favicon_zoomed.png">
+	<meta name="description" content="BoomerItems - Koleksiyon tutkunu büyütecek eşsiz parçalar. LEGO setleri ve koleksiyon ürünleri.">
+	<meta name="theme-color" content="#ffcc00">
 	<meta name='robots' content='noindex, nofollow' />
 	<style>
 		/* UTILITY: Hide legacy sections */
@@ -245,6 +247,250 @@
 		.site-legal-footer {
 			position: relative;
 			z-index: 20;
+		}
+
+		/* ═══ MÜŞTERİ DENEYİMİ İYİLEŞTİRMELERİ ═══ */
+
+		/* 1. Mobil touch hedefleri - minimum 44x44px (Apple HIG) */
+		@media (max-width: 768px) {
+			.detail-close-btn {
+				width: 44px !important;
+				height: 44px !important;
+				min-width: 44px !important;
+				min-height: 44px !important;
+			}
+
+			button, a.btn, [role="button"],
+			.nav-item, .icon-btn,
+			.cart-item-actions button,
+			.quantity-btn {
+				min-width: 44px;
+				min-height: 44px;
+			}
+		}
+
+		/* 2. Noscript fallback - JS yüklenemezse kullanıcıyı bilgilendir */
+		noscript .noscript-warning {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 60vh;
+			padding: 40px 20px;
+			text-align: center;
+			font-family: system-ui, -apple-system, sans-serif;
+			color: #1e293b;
+		}
+		noscript .noscript-warning h2 { font-size: 1.5rem; margin-bottom: 12px; }
+		noscript .noscript-warning p { color: #64748b; font-size: 1rem; }
+
+		/* 3. Form validasyon stilleri - hata ve başarı durumları */
+		.form-group input:invalid:not(:placeholder-shown),
+		.form-group select:invalid:not(:placeholder-shown),
+		.checkout-form input:invalid:not(:placeholder-shown),
+		.checkout-form select:invalid:not(:placeholder-shown) {
+			border-color: #ef4444 !important;
+			box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+		}
+
+		.form-group input:valid:not(:placeholder-shown),
+		.checkout-form input:valid:not(:placeholder-shown) {
+			border-color: #22c55e !important;
+		}
+
+		.form-error-message {
+			color: #ef4444;
+			font-size: 0.8rem;
+			margin-top: 4px;
+			display: none;
+		}
+
+		input:invalid:not(:placeholder-shown) ~ .form-error-message {
+			display: block;
+		}
+
+		/* 4. Loading/skeleton durumu */
+		.skeleton-loading {
+			background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+			background-size: 200% 100%;
+			animation: shimmer 1.5s infinite;
+			border-radius: 8px;
+		}
+
+		@keyframes shimmer {
+			0% { background-position: 200% 0; }
+			100% { background-position: -200% 0; }
+		}
+
+		/* 5. Buton disabled durumu */
+		button:disabled,
+		.btn:disabled,
+		.confirm-order-btn:disabled,
+		.btn-primary:disabled {
+			opacity: 0.5 !important;
+			cursor: not-allowed !important;
+			pointer-events: none !important;
+		}
+
+		/* 6. Sepet boş durumu stili */
+		.empty-cart-state {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 48px 24px;
+			text-align: center;
+			color: #94a3b8;
+		}
+
+		.empty-cart-state svg {
+			width: 64px;
+			height: 64px;
+			margin-bottom: 16px;
+			opacity: 0.4;
+		}
+
+		/* 7. Stok durumu renk göstergeleri */
+		.stock-badge-instock {
+			color: #16a34a;
+			font-weight: 600;
+			font-size: 0.85rem;
+		}
+		.stock-badge-lowstock {
+			color: #f59e0b;
+			font-weight: 600;
+			font-size: 0.85rem;
+		}
+		.stock-badge-outofstock {
+			color: #ef4444;
+			font-weight: 600;
+			font-size: 0.85rem;
+		}
+
+		/* 8. Checkout adım göstergesi iyileştirmesi */
+		.checkout-step-indicator {
+			display: flex;
+			justify-content: center;
+			gap: 8px;
+			padding: 16px 0;
+		}
+		.checkout-step-indicator .step {
+			width: 32px;
+			height: 4px;
+			border-radius: 2px;
+			background: #e2e8f0;
+			transition: background 0.3s ease;
+		}
+		.checkout-step-indicator .step.active {
+			background: #ffcc00;
+		}
+		.checkout-step-indicator .step.completed {
+			background: #22c55e;
+		}
+
+		/* 9. Toast/bildirim sistemi */
+		.toast-container {
+			position: fixed;
+			bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 99999;
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			pointer-events: none;
+		}
+		@media (min-width: 1024px) {
+			.toast-container {
+				bottom: 24px;
+				right: 24px;
+				left: auto;
+				transform: none;
+			}
+		}
+		.toast-message {
+			padding: 12px 20px;
+			border-radius: 12px;
+			font-size: 0.9rem;
+			font-weight: 500;
+			box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+			animation: toastSlideUp 0.3s ease-out;
+			pointer-events: auto;
+			max-width: min(90vw, 400px);
+		}
+		.toast-success {
+			background: #065f46;
+			color: #ecfdf5;
+		}
+		.toast-error {
+			background: #991b1b;
+			color: #fef2f2;
+		}
+		.toast-info {
+			background: #1e3a5f;
+			color: #eff6ff;
+		}
+		@keyframes toastSlideUp {
+			from { transform: translateY(20px); opacity: 0; }
+			to { transform: translateY(0); opacity: 1; }
+		}
+
+		/* 10. Sipariş onay sayfası iyileştirmeleri */
+		.order-success-page {
+			text-align: center;
+			padding: 40px 20px;
+		}
+		.order-success-page .success-icon {
+			width: 80px;
+			height: 80px;
+			margin: 0 auto 20px;
+			background: #dcfce7;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		/* 11. Ürün kartı hover efekti - masaüstü */
+		@media (min-width: 1024px) {
+			.product-card {
+				transition: transform 0.2s ease, box-shadow 0.2s ease;
+			}
+			.product-card:hover {
+				transform: translateY(-4px);
+				box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+			}
+		}
+
+		/* 12. Ücretsiz kargo progress bar iyileştirmesi */
+		.free-shipping-progress {
+			background: #f1f5f9;
+			border-radius: 8px;
+			overflow: hidden;
+			margin: 8px 0;
+		}
+		.free-shipping-bar-fill {
+			height: 6px;
+			background: linear-gradient(90deg, #ffcc00, #22c55e);
+			border-radius: 8px;
+			transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+
+		/* 13. Smooth scroll davranışı */
+		html {
+			scroll-behavior: smooth;
+		}
+
+		/* 14. Focus-visible (klavye navigasyonu) */
+		*:focus-visible {
+			outline: 2px solid #ffcc00;
+			outline-offset: 2px;
+		}
+
+		/* 15. Yazı tipi optimizasyonu */
+		body {
+			-webkit-font-smoothing: antialiased;
+			-moz-osx-font-smoothing: grayscale;
+			text-rendering: optimizeLegibility;
 		}
 
 		.modern-footer:not(.site-legal-footer) {
@@ -587,6 +833,45 @@
 			}
 		}
 	</style>
+	<script>
+		/* ═══ Global Toast Notification Sistemi ═══ */
+		window.showToast = function(message, type, duration) {
+			type = type || 'info';
+			duration = duration || 3500;
+			var container = document.getElementById('toast-container');
+			if (!container) return;
+			var toast = document.createElement('div');
+			toast.className = 'toast-message toast-' + type;
+			toast.textContent = message;
+			toast.setAttribute('role', 'alert');
+			container.appendChild(toast);
+			setTimeout(function() {
+				toast.style.opacity = '0';
+				toast.style.transform = 'translateY(10px)';
+				toast.style.transition = 'all 0.3s ease';
+				setTimeout(function() { toast.remove(); }, 300);
+			}, duration);
+		};
+
+		/* ═══ API Response Interceptor - Miktar kırpma bildirimi ═══ */
+		(function() {
+			var origFetch = window.fetch;
+			window.fetch = function() {
+				return origFetch.apply(this, arguments).then(function(response) {
+					var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url || '');
+					if (url.indexOf('/api/cart') !== -1 && response.ok) {
+						response.clone().json().then(function(data) {
+							var added = data && data.added;
+							if (added && added.quantity_adjusted) {
+								window.showToast(added.message || 'Stok sinirli, miktar ayarlandi.', 'info');
+							}
+						}).catch(function() {});
+					}
+					return response;
+				});
+			};
+		})();
+	</script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			try {
@@ -3693,7 +3978,16 @@
 
 <body
 	class="home wp-singular page-template-default page page-id-5002 wp-custom-logo wp-embed-responsive wp-theme-otaku wp-child-theme-otaku-child theme-otaku hide_fixed_rows_enabled frontpage woocommerce-no-js tribe-no-js tinvwl-theme-style skin_default  woo_extensions_present scheme_light blog_mode_front body_style_fullscreen  is_stream blog_style_excerpt sidebar_hide expand_content remove_margins trx_addons_present header_type_custom header_style_header-custom-17499 header_position_default menu_side_none no_layout fixed_blocks_sticky elementor-default elementor-kit-15 elementor-page elementor-page-5002">
+	<noscript>
+		<div class="noscript-warning">
+			<div>
+				<h2>JavaScript Gerekli</h2>
+				<p>Bu siteyi kullanabilmek icin tarayicinizda JavaScript'i etkinlestirmeniz gerekmektedir.</p>
+			</div>
+		</div>
+	</noscript>
 	<div id="root"></div>
+	<div id="toast-container" class="toast-container" aria-live="polite"></div>
 	<footer class="modern-footer site-legal-footer">
 		<div class="footer-content">
 			<div class="footer-brand">
