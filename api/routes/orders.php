@@ -152,6 +152,11 @@ if ($id === 'retry-payment' && $method === 'POST') {
     $orderId = trim((string) ($data['order_id'] ?? ''));
     if ($orderId === '') error('Siparis ID gerekli.');
 
+    // Sipariş ID format kontrolü (BM + 10 hex karakter)
+    if (!preg_match('/^BM[0-9A-Fa-f]{10}$/', $orderId)) {
+        error('Gecersiz siparis ID formati.');
+    }
+
     $authPayload = Auth::optional();
 
     $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
@@ -159,10 +164,14 @@ if ($id === 'retry-payment' && $method === 'POST') {
     $order = $stmt->fetch();
     if (!$order) error('Siparis bulunamadi.', 404);
 
-    // Sahiplik kontrolü
-    if ($authPayload !== null && $order['user_id'] !== null) {
+    // Sahiplik kontrolü — her durumda yetki denetlenir
+    if ($order['user_id'] !== null) {
+        // Siparişin bir sahibi var: giriş yapmış ve yetkili olmalı
+        if ($authPayload === null) {
+            error('Bu siparis icin giris yapmaniz gerekli.', 401);
+        }
         $isAdmin = ($authPayload['role'] ?? '') === 'admin';
-        $isOwner = (string) ($order['user_id'] ?? '') === (string) ($authPayload['sub'] ?? '');
+        $isOwner = (string) $order['user_id'] === (string) ($authPayload['sub'] ?? '');
         if (!$isAdmin && !$isOwner) {
             error('Bu siparise erisim yetkiniz yok.', 403);
         }
@@ -243,8 +252,17 @@ if ($id === null && $method === 'POST') {
     $rawItems = is_array($data['items'] ?? null) ? $data['items'] : [];
 
     // --- Input Validasyonları ---
-    if ($customerName === '' || $customerEmail === '' || $city === '' || $district === '') {
-        error('Teslimat bilgileri eksik.');
+    if ($customerName === '') {
+        error('Ad soyad alani zorunludur.');
+    }
+    if ($customerEmail === '') {
+        error('E-posta adresi zorunludur.');
+    }
+    if ($city === '') {
+        error('Il alani zorunludur.');
+    }
+    if ($district === '') {
+        error('Ilce alani zorunludur.');
     }
     if (mb_strlen($customerName) > 100) {
         error('Ad soyad en fazla 100 karakter olabilir.');
@@ -252,17 +270,23 @@ if ($id === null && $method === 'POST') {
     if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
         error('Gecerli bir e-posta adresi girin.');
     }
-    if ($customerPhone !== '' && !preg_match('/^[0-9\s\-\+\(\)]{7,20}$/', $customerPhone)) {
-        error('Gecerli bir telefon numarasi girin.');
-    }
     if ($customerPhone === '') {
         error('Telefon numarasi zorunludur.');
+    }
+    if (!preg_match('/^[0-9\s\-\+\(\)]{7,20}$/', $customerPhone)) {
+        error('Gecerli bir telefon numarasi girin. Ornek: 05XX XXX XX XX');
+    }
+    if ($addressDetail === '') {
+        error('Adres detayi zorunludur. Cadde, sokak, bina ve daire bilgilerinizi yazin.');
     }
     if (mb_strlen($addressDetail) > 500) {
         error('Adres detayi en fazla 500 karakter olabilir.');
     }
-    if ($addressDetail === '') {
-        error('Adres detayi zorunludur.');
+    if (mb_strlen($neighborhood) > 100) {
+        error('Mahalle alani en fazla 100 karakter olabilir.');
+    }
+    if (mb_strlen($street) > 200) {
+        error('Sokak/cadde alani en fazla 200 karakter olabilir.');
     }
     if (mb_strlen($orderNote) > 1000) {
         error('Siparis notu en fazla 1000 karakter olabilir.');

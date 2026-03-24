@@ -254,11 +254,27 @@
           })
           .then(function (data) {
             resendMessage.textContent = data.message || 'Yeni dogrulama e-postasi gonderildi.';
+            resendMessage.style.color = 'var(--success)';
+            if (data.already_verified) {
+              resendMessage.textContent = 'Bu e-posta adresi zaten dogrulanmis. Giris yapabilirsiniz.';
+              resendBtn.textContent = 'Zaten Dogrulandi';
+              resendBtn.disabled = true;
+            } else {
+              resendBtn.textContent = 'Gonderildi! E-posta kutunuzu kontrol edin';
+              resendBtn.disabled = true;
+              emailInput.disabled = true;
+              // 60 saniye sonra tekrar gondermeye izin ver
+              setTimeout(function () {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Dogrulama Mailini Yeniden Gonder';
+                emailInput.disabled = false;
+                resendMessage.textContent = '';
+              }, 60000);
+            }
           })
           .catch(function (error) {
-            resendMessage.textContent = error.message || 'Islem sirasinda bir hata olustu.';
-          })
-          .finally(function () {
+            resendMessage.textContent = error.message || 'Islem sirasinda bir hata olustu. Lutfen tekrar deneyin.';
+            resendMessage.style.color = 'var(--error)';
             resendBtn.disabled = false;
           });
       });
