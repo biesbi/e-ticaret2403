@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İletişim - BoomerItems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #dd101f;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --bg: #ffffff;
+            --bg-alt: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .logo {
+            height: 80px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .contact-card {
+            background: var(--bg-alt);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .details h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+        }
+
+        .details p {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .details a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .company-info {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .company-info h4 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .company-info p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .contact-card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/logo_v2_full.png" alt="BoomerItems" class="logo">
+            <h1>İLETİŞİM</h1>
+            <p>Bize aşağıdaki kanallar üzerinden ulaşabilirsiniz.</p>
+        </div>
+
+        <div class="contact-grid">
+            <!-- Adres -->
+            <div class="contact-card">
+                <div class="icon">📍</div>
+                <div class="details">
+                    <h3>ADRES</h3>
+                    <p>Fevzi Çakmak Mah. İstasyon Cad. No: 424A Darıca / KOCAELİ</p>
+                </div>
+            </div>
+
+            <!-- Telefon -->
+            <div class="contact-card">
+                <div class="icon">📞</div>
+                <div class="details">
+                    <h3>TELEFON</h3>
+                    <p><a href="tel:02626450000">0262 645 00 00</a></p>
+                </div>
+            </div>
+
+            <!-- E-posta -->
+            <div class="contact-card">
+                <div class="icon">✉️</div>
+                <div class="details">
+                    <h3>E-POSTA</h3>
+                    <p><a href="mailto:boomeritems@gmail.com">boomeritems@gmail.com</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="company-info">
+            <h4>SATICI BİLGİLERİ</h4>
+            <p><strong>Ünvan:</strong> Birvit Danışmanlık Dijital Pazarlama Sanayi ve Ticaret Ltd. Şti.</p>
+        </div>
+
+        <div class="footer">
+            <a href="/" class="btn-back">Ana Sayfaya Dön</a>
+            <p style="margin-top: 20px; color: var(--text-light); font-size: 0.8rem;">© 2026 BoomerItems. Tüm Hakları
+                Saklıdır.</p>
+        </div>
+    </div>
+</body>
+
+</html>

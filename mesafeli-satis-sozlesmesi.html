@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesafeli Satış Sözleşmesi - BoomerItems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #dd101f;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --bg: #ffffff;
+            --bg-alt: #f8fafc;
+            --border: #e2e8f0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .logo {
+            height: 80px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 30px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--bg-alt);
+            color: #0f172a;
+        }
+        p {
+            margin-bottom: 15px;
+            color: var(--text-light);
+            font-size: 1.05rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+            background: var(--bg-alt);
+            padding: 30px;
+            border-radius: 16px;
+        }
+        .info-box h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+        .info-box p {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+        .btn-back {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-back:hover {
+            transform: translateY(-2px);
+        }
+        @media (max-width: 600px) {
+            .container { padding: 30px 20px; }
+            .info-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/logo_v2_full.png" alt="BoomerItems" class="logo">
+            <h1>MESAFELİ SATIŞ SÖZLEŞMESİ</h1>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>SATICI BİLGİLERİ</h3>
+                <p><strong>Ünvan:</strong> Birvit Danışmanlık Dijital Pazarlama Sanayi ve Ticaret Ltd. Şti.</p>
+                <p><strong>Adres:</strong> Fevzi Çakmak Mah. İstasyon Cad. No: 424A Darıca / KOCAELİ</p>
+                <p><strong>Telefon:</strong> 0262 645 00 00</p>
+                <p><strong>E-posta:</strong> boomeritems@gmail.com</p>
+            </div>
+            <div class="info-box">
+                <h3>ALICI BİLGİLERİ</h3>
+                <p><strong>Ad-Soyad:</strong> [Sipariş Formunda Belirtilen]</p>
+                <p><strong>Adres:</strong> [Sipariş Formunda Belirtilen]</p>
+                <p><strong>E-posta:</strong> [Sipariş Formunda Belirtilen]</p>
+            </div>
+        </div>
+
+        <p>ALICI, işbu sözleşmeyi elektronik ortamda onaylamakla sipariş bedelini ve varsa kargo ücreti, vergi ve diğer ek ücretleri ödeme yükümlülüğü altına girdiğini kabul eder.</p>
+
+        <h2>1. TANIMLAR</h2>
+        <p><strong>BAKAN:</strong> Ticaret Bakanı’nı</p>
+        <p><strong>BAKANLIK:</strong> Ticaret Bakanlığı’nı</p>
+        <p><strong>KANUN:</strong> 6502 sayılı Tüketicinin Korunması Hakkında Kanun’u</p>
+        <p><strong>YÖNETMELİK:</strong> Mesafeli Sözleşmeler Yönetmeliği’ni</p>
+        <p><strong>MAL:</strong> Alışverişe konu taşınır eşyayı</p>
+        <p><strong>SİTE:</strong> boomeritems.com internet sitesini</p>
+
+        <h2>2. SÖZLEŞMENİN KONUSU</h2>
+        <p>İşbu sözleşme, ALICI’nın SİTE üzerinden sipariş verdiği ürünün satışı ve teslimine ilişkin tarafların hak ve yükümlülüklerini düzenler. Ürün bilgileri, satış bedeli ve ödeme şekli sipariş özetinde yer aldığı gibidir.</p>
+
+        <h2>3. TESLİMAT VE İFA</h2>
+        <p>Ürün, aksi belirtilmedikçe 3–7 iş günü içerisinde kargoya verilir. Yasal azami teslim süresi 30 gündür. Teslimat, ALICI’nın belirttiği adrese yapılır. ALICI, teslim sırasında ürünü kontrol etmekle yükümlüdür. Hasarlı paketlerde kargo görevlisine tutanak tutturulmalıdır. Teslim sırasında tutanak tutulmaması halinde kargo kaynaklı hasar iddialarında ispat yükü ALICI’ya aittir.</p>
+
+        <h2>4. KARGO ÇIKIŞ KONTROLÜ VE VİDEO KAYDI</h2>
+        <p>SATICI tarafından gönderilen tüm siparişler paketleme ve kargoya teslim aşamasında video kaydı ile kayıt altına alınmaktadır. Bu kayıtlar, olası uyuşmazlıklarda delil niteliği taşır.</p>
+
+        <h2>5. CAYMA HAKKI</h2>
+        <p>ALICI, ürünü teslim aldığı tarihten itibaren 14 gün içinde herhangi bir gerekçe göstermeksizin cayma hakkını kullanabilir. Cayma hakkının kullanılabilmesi için ürün kullanılmamış, orijinal ambalajı zarar görmemiş ve jelatin/mühür açılmamış olmalıdır. ALICI, cayma bildiriminden itibaren 10 gün içinde ürünü iade etmekle yükümlüdür.</p>
+
+        <h2>6. KOLEKSİYON ÜRÜNLERİNE İLİŞKİN ÖZEL HÜKÜM</h2>
+        <p>BoomerItems tarafından satılan LEGO setleri, figürler, diecast araçlar ve benzeri koleksiyon ürünlerinde ambalaj ve jelatin ürünün ekonomik değerinin ayrılmaz parçasıdır. Ambalajın açılması, jelatinin sökülmesi, kurulum yapılması veya ürünün koleksiyon değerini azaltacak müdahale durumunda ürün değer kaybına uğramış sayılır. Bu durumda cayma hakkı kullanılsa dahi oluşan değer kaybı iade bedelinden mahsup edilir.</p>
+
+        <h2>7. CAYMA HAKKI KULLANILAMAYACAK ÜRÜNLER</h2>
+        <p>Yönetmelik gereği; kişiye özel üretilen ürünler, ambalajı açılmış hijyen ürünleri, dijital içerikler ve cayma süresi dolmadan ifasına başlanan hizmetler iade kapsamı dışındadır.</p>
+
+        <h2>8. UYUŞMAZLIKLARIN ÇÖZÜMÜ</h2>
+        <p>Uyuşmazlıklarda, Ticaret Bakanlığı tarafından ilan edilen parasal sınırlara göre ALICI’nın yerleşim yerindeki Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.</p>
+
+        <div class="footer">
+            <p>© 2026 BoomerItems. Tüm Hakları Saklıdır.</p>
+            <a href="/" class="btn-back">Ana Sayfaya Dön</a>
+        </div>
+    </div>
+</body>
+</html>

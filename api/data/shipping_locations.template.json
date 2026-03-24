@@ -1,0 +1,27 @@
+{
+  "source": "Fill with your 2026 Turkey city/district/neighborhood dataset",
+  "version": "2026-01",
+  "cities": [
+    {
+      "id": 34,
+      "name": "Istanbul",
+      "code": "34",
+      "districts": [
+        {
+          "id": 34001,
+          "name": "Kadikoy",
+          "neighborhoods": [
+            {
+              "id": 34001001,
+              "name": "Moda"
+            },
+            {
+              "id": 34001002,
+              "name": "Caferaga"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

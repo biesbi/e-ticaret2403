@@ -1,0 +1,29 @@
+# Hassas/özel dosyalar
+api/.env
+api/logs/*.log
+
+# Yedek/eski sürüm klasörleri
+17032026/
+güncel17032026/
+OLD1/
+OLD2/
+OLD3/
+*.bak
+*.tmp
+*.temp
+
+# Upload edilen görseller
+public/uploads/products/*
+!public/uploads/products/.htaccess
+!public/uploads/products/index.html
+
+# Geçici test dosyaları
+*_tmp.php
+
+# OS
+.DS_Store
+Thumbs.db
+tmp_shipping_import/
+.vscode/
+.idea/
+node_modules/

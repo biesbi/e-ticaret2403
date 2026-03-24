@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-posta Dogrulama | BoomerItems</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --brand: #f4b400;
+      --success: #027a48;
+      --error: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(244, 180, 0, 0.18), transparent 34%),
+        linear-gradient(180deg, #fffef8 0%, var(--bg) 100%);
+    }
+    .shell { width: min(100%, 720px); }
+    .logo-wrap { text-align: center; margin-bottom: 18px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(17, 24, 39, 0.06);
+      border-radius: 28px;
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+    .hero {
+      padding: 34px 32px 24px;
+      background: linear-gradient(135deg, #111827 0%, #202938 60%, #2b3545 100%);
+      color: #fff;
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8d34d;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 18px 0 10px; font-size: 34px; line-height: 1.1; }
+    .lead { margin: 0; color: rgba(255,255,255,0.76); line-height: 1.7; }
+    .body { padding: 28px 32px 32px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); }
+    .message {
+      margin: 20px 0 0;
+      color: #334155;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .btn-primary { background: var(--brand); color: #111827; }
+    .btn-secondary { background: #fff; color: #111827; border: 1px solid var(--line); }
+    .resend {
+      margin-top: 28px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fafafa;
+    }
+    .resend h2 { margin: 0 0 8px; font-size: 18px; }
+    .resend p { margin: 0 0 16px; color: var(--muted); line-height: 1.7; font-size: 14px; }
+    .field {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px;
+      border: 1px solid #d0d5dd;
+      border-radius: 14px;
+      font-size: 15px;
+      outline: none;
+    }
+    .field:focus { border-color: #111827; }
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .footer a { color: #111827; }
+    .success .dot { background: var(--success); }
+    .success .status { color: var(--success); background: #ecfdf3; border-color: #abefc6; }
+    .error .dot { background: var(--error); }
+    .error .status { color: var(--error); background: #fef3f2; border-color: #fecdca; }
+    .hidden { display: none; }
+    @media (max-width: 640px) {
+      .hero, .body { padding: 24px 20px; }
+      h1 { font-size: 28px; }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="logo-wrap" aria-hidden="true">
+      <svg width="260" height="74" viewBox="0 0 260 74" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BoomerItems logo">
+        <rect x="1.5" y="1.5" width="257" height="71" rx="22" fill="#111827" stroke="#FACC15" stroke-width="3"/>
+        <g transform="translate(18 16)">
+          <rect x="0" y="8" width="28" height="28" rx="8" fill="#FACC15"/>
+          <rect x="10" y="0" width="28" height="28" rx="8" fill="#F59E0B"/>
+          <circle cx="14" cy="22" r="3" fill="#111827"/>
+          <circle cx="24" cy="14" r="3" fill="#111827"/>
+          <circle cx="24" cy="32" r="3" fill="#111827"/>
+          <circle cx="34" cy="22" r="3" fill="#111827"/>
+        </g>
+        <text x="72" y="31" fill="#F9FAFB" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700">BOOMER</text>
+        <text x="72" y="53" fill="#FACC15" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">ITEMS</text>
+      </svg>
+    </div>
+    <div class="card" id="card">
+      <div class="hero">
+        <div class="eyebrow">Guvenli Hesap Aktivasyonu</div>
+        <h1 id="title">E-posta adresiniz dogrulaniyor</h1>
+        <p class="lead" id="lead">Lutfen kisa bir an bekleyin. Hesabinizin aktivasyon durumunu kontrol ediyoruz.</p>
+      </div>
+      <div class="body">
+        <div class="status" id="status"><span class="dot"></span><span id="statusText">Islem suruyor</span></div>
+        <p class="message" id="message">Dogrulama baglantiniz denetleniyor.</p>
+
+        <div class="actions" id="actions">
+          <a class="btn btn-primary hidden" id="loginBtn" href="/?auth=login">Giris Ekranina Git</a>
+          <a class="btn btn-secondary hidden" id="homeBtn" href="/">Ana Sayfaya Don</a>
+        </div>
+
+        <div class="resend hidden" id="resendBox">
+          <h2>Yeni dogrulama maili gonder</h2>
+          <p>Baglantiniz gecersizse veya suresi dolduysa, e-posta adresinizi girerek yeni bir dogrulama e-postasi isteyebilirsiniz.</p>
+          <form id="resendForm">
+            <input class="field" id="emailInput" type="email" name="email" placeholder="ornek@eposta.com" required>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit" id="resendBtn">Dogrulama Mailini Yeniden Gonder</button>
+            </div>
+          </form>
+          <p class="message" id="resendMessage"></p>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <div>BoomerItems</div>
+      <div><a href="https://www.boomeritems.com">www.boomeritems.com</a></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = (params.get('token') || '').trim();
+      var emailParam = (params.get('email') || '').trim();
+      var card = document.getElementById('card');
+      var title = document.getElementById('title');
+      var lead = document.getElementById('lead');
+      var statusText = document.getElementById('statusText');
+      var message = document.getElementById('message');
+      var loginBtn = document.getElementById('loginBtn');
+      var homeBtn = document.getElementById('homeBtn');
+      var resendBox = document.getElementById('resendBox');
+      var resendForm = document.getElementById('resendForm');
+      var emailInput = document.getElementById('emailInput');
+      var resendMessage = document.getElementById('resendMessage');
+      var resendBtn = document.getElementById('resendBtn');
+
+      function setState(kind, titleText, leadText, messageText) {
+        card.classList.remove('success', 'error');
+        if (kind) {
+          card.classList.add(kind);
+        }
+        title.textContent = titleText;
+        lead.textContent = leadText;
+        statusText.textContent = kind === 'success'
+          ? 'Dogrulama tamamlandi'
+          : kind === 'error'
+            ? 'Islem tamamlanamadi'
+            : 'Islem suruyor';
+        message.textContent = messageText;
+      }
+
+      function showActions(showLogin, showHome) {
+        loginBtn.classList.toggle('hidden', !showLogin);
+        homeBtn.classList.toggle('hidden', !showHome);
+      }
+
+      function showResend(email) {
+        resendBox.classList.remove('hidden');
+        if (email) {
+          emailInput.value = email;
+        }
+      }
+
+      resendForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        resendBtn.disabled = true;
+        resendMessage.textContent = 'Yeni dogrulama e-postasi gonderiliyor...';
+
+        fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput.value.trim() })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) {
+                throw new Error(data.message || 'Yeniden gonderme islemi basarisiz oldu.');
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            resendMessage.textContent = data.message || 'Yeni dogrulama e-postasi gonderildi.';
+          })
+          .catch(function (error) {
+            resendMessage.textContent = error.message || 'Islem sirasinda bir hata olustu.';
+          })
+          .finally(function () {
+            resendBtn.disabled = false;
+          });
+      });
+
+      if (!token) {
+        setState(
+          'error',
+          'Dogrulama baglantisi eksik',
+          'Bu sayfaya dogrulama baglantisi olmadan geldiniz.',
+          'Lutfen e-posta kutunuzdaki dogrulama baglantisini kullanin veya yeni bir mail isteyin.'
+        );
+        showActions(false, true);
+        showResend(emailParam);
+        return;
+      }
+
+      fetch('/api/auth/verify-email/' + encodeURIComponent(token))
+        .then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok) {
+              var error = new Error(data.message || 'Dogrulama basarisiz oldu.');
+              error.status = response.status;
+              throw error;
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          setState(
+            'success',
+            'E-posta adresiniz dogrulandi',
+            'Hesabiniz artik aktif. Guvenle giris yapabilirsiniz.',
+            data.message || 'Dogrulama tamamlandi. Birkac saniye icinde giris ekranina yonlendirileceksiniz.'
+          );
+          showActions(true, true);
+          setTimeout(function () {
+            window.location.href = '/?auth=login&verified=1';
+          }, 2500);
+        })
+        .catch(function (error) {
+          var isExpired = error.status === 410;
+          setState(
+            'error',
+            isExpired ? 'Baglantinin suresi dolmus' : 'Dogrulama tamamlanamadi',
+            isExpired
+              ? 'Dogrulama baglantinizin gecerlilik suresi sona ermis.'
+              : 'Baglanti gecersiz, kullanilmis veya bozulmus olabilir.',
+            error.message || 'Lutfen yeni bir dogrulama maili isteyin.'
+          );
+          showActions(true, true);
+          showResend(emailParam);
+        });
+    })();
+  </script>
+</body>
+</html>

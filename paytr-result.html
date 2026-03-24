@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odeme Sonucu</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
+    .box { padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); text-align: center; width: min(90vw, 420px); }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1 id="title">Odeme Sonucu</h1>
+    <p id="message">Bu pencereyi kapatabilirsiniz.</p>
+  </div>
+  <script>
+    (function () {
+      var status = new URLSearchParams(window.location.search).get('status');
+      document.getElementById('title').textContent = status === 'success' ? 'Odeme Basarili' : 'Odeme Basarisiz';
+      document.getElementById('message').textContent = 'Bu pencereyi kapatip siteye donebilirsiniz.';
+    })();
+  </script>
+</body>
+</html>

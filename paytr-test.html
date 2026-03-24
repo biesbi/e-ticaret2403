@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAYTR Test Odeme</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Outfit, Segoe UI, Arial, sans-serif;
+      background: linear-gradient(180deg, #0f172a, #111827);
+      color: #fff;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(92vw, 460px);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+    }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p { margin: 0 0 14px; color: rgba(255,255,255,0.75); }
+    .meta {
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 14px;
+      margin: 18px 0 22px;
+      line-height: 1.7;
+    }
+    .row { display: flex; justify-content: space-between; gap: 16px; }
+    button {
+      flex: 1;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .success { background: #22c55e; color: #082f17; }
+    .fail { background: #ef4444; color: #fff; }
+    .hint { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.6); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>PAYTR Test Odeme</h1>
+    <p>Gercek API onayi gelene kadar bu ekran kart odemesini test etmek icin kullanilir.</p>
+    <div class="meta">
+      <div><strong>Siparis:</strong> <span id="order-id">-</span></div>
+      <div><strong>Tutar:</strong> <span id="amount">-</span></div>
+      <div><strong>Mod:</strong> Test / Mock</div>
+    </div>
+    <div class="row">
+      <button class="success" id="success-btn">Odeme Basarili</button>
+      <button class="fail" id="fail-btn">Odeme Basarisiz</button>
+    </div>
+    <div class="hint">Bu sayfa parent pencereye sonuc gonderir ve siparisin payment status alanini gunceller.</div>
+  </div>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var orderId = params.get('order_id') || '';
+      var amount = params.get('amount') || '';
+      document.getElementById('order-id').textContent = orderId || '-';
+      document.getElementById('amount').textContent = amount ? amount + ' TL' : '-';
+
+      function complete(status) {
+        fetch('/api/payments/paytr/mock-complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order_id: orderId, status: status })
+        })
+          .then(function (response) { return response.json(); })
+          .then(function () {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ source: 'boomeritems-paytr', status: status, orderId: orderId }, '*');
+            }
+          })
+          .catch(function () {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ source: 'boomeritems-paytr', status: 'failed', orderId: orderId }, '*');
+            }
+          });
+      }
+
+      document.getElementById('success-btn').addEventListener('click', function () { complete('success'); });
+      document.getElementById('fail-btn').addEventListener('click', function () { complete('failed'); });
+    })();
+  </script>
+</body>
+</html>

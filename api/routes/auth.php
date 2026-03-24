@@ -1,0 +1,354 @@
+<?php
+
+MailService::ensureSchema();
+
+$passwordColumn = tableHasColumn('users', 'password_hash') ? 'password_hash' : 'password';
+$hasUsername = tableHasColumn('users', 'username');
+$hasDisplayName = tableHasColumn('users', 'display_name');
+$nameColumn = $hasDisplayName ? 'display_name' : (tableHasColumn('users', 'name') ? 'name' : 'email');
+$isActiveColumn = tableHasColumn('users', 'is_active');
+
+switch ($id) {
+    case 'login':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+
+        RateLimit::check('auth_login', (int) env('RATE_LIMIT_LOGIN', 5), (int) env('RATE_LIMIT_WINDOW', 300));
+        if (!tableHasColumn('users', 'last_login')) {
+            db()->exec('ALTER TABLE users ADD COLUMN last_login DATETIME NULL');
+        }
+
+        $identifier = strtolower(trim(input('email', input('username', ''))));
+        $password = (string) input('password', '');
+
+        if ($identifier === '' || $password === '') {
+            error('E-posta ve sifre gerekli.');
+        }
+
+        $userSql = $hasUsername
+            ? 'SELECT * FROM users WHERE username = ? OR email = ? LIMIT 1'
+            : 'SELECT * FROM users WHERE email = ? LIMIT 1';
+        $stmt = db()->prepare($userSql);
+        $stmt->execute($hasUsername ? [$identifier, $identifier] : [$identifier]);
+        $user = $stmt->fetch();
+
+        $storedPassword = $user[$passwordColumn] ?? null;
+        $isValidPassword = is_string($storedPassword) && (
+            password_verify($password, $storedPassword) || hash_equals($storedPassword, $password)
+        );
+
+        if (!$user || !$isValidPassword) {
+            AuditLog::write(AuditLog::LOGIN_FAIL, null, 'user', null, ['identifier' => $identifier]);
+            error('Kullanici adi veya sifre hatali.', 401);
+        }
+
+        $isAdmin = (($user['role'] ?? 'user') === 'admin');
+        $emailVerified = !empty($user['email_verified']) || !empty($user['email_verified_at']);
+
+        if (!$isAdmin && !$emailVerified) {
+            AuditLog::write(AuditLog::LOGIN_FAIL, (string) $user['id'], 'user', $user['id'], [
+                'reason' => 'email_not_verified',
+                'email' => $user['email'],
+            ]);
+            json([
+                'success' => false,
+                'message' => 'Lutfen e-posta adresinizi dogrulayin. Gerekirse yeni dogrulama maili isteyebilirsiniz.',
+                'code' => 'EMAIL_NOT_VERIFIED',
+                'verification_required' => true,
+                'email' => $user['email'],
+                'resend_endpoint' => '/api/auth/resend-verification',
+            ], 403);
+        }
+
+        if ($isActiveColumn && !$isAdmin && isset($user['is_active']) && (int) $user['is_active'] !== 1) {
+            error('Hesabiniz henuz aktif degil. Lutfen e-posta adresinizi dogrulayin.', 403);
+        }
+
+        db()->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?')->execute([$user['id']]);
+        $user['last_login'] = date('Y-m-d H:i:s');
+
+        AuditLog::write(AuditLog::LOGIN_SUCCESS, (string) $user['id'], 'user', $user['id']);
+
+        $token = jwtEncode([
+            'sub' => $user['id'],
+            'user' => $user['username'] ?? $user['email'],
+            'role' => ($isAdmin ? 'admin' : 'customer'),
+        ]);
+
+        $orders = db()->prepare(
+            'SELECT id, status, total, subtotal, discount, shipping_address, cargo_number, cargo_company, created_at
+             FROM orders
+             WHERE user_id = ?
+             ORDER BY created_at DESC'
+        );
+        $orders->execute([$user['id']]);
+
+        ok([
+            'token' => $token,
+            'user' => legacyUser([
+                'id' => $user['id'],
+                'username' => $user['username'] ?? $user['email'],
+                'display_name' => $user['display_name'] ?? $user['name'] ?? '',
+                'email' => $user['email'],
+                'role' => ($isAdmin ? 'admin' : 'customer'),
+                'email_verified' => $emailVerified,
+                'orders' => array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll()),
+            ]),
+        ]);
+
+    case 'register':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        RateLimit::check('auth_register', 5, 600);
+
+        $displayName = trim((string) input('name', input('display_name', '')));
+        $email = strtolower(trim((string) input('email', '')));
+        $password = (string) input('password', '');
+
+        if ($displayName === '' || $email === '' || $password === '') {
+            error('Tum alanlar zorunlu.');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            error('Gecerli bir e-posta girin.');
+        }
+        if (strlen($password) < 6) {
+            error('Sifre en az 6 karakter olmali.');
+        }
+
+        $baseUsername = strtolower(preg_replace('/[^a-z0-9]+/', '', strstr($email, '@', true) ?: $displayName));
+        $username = $baseUsername !== '' ? $baseUsername : 'user' . time();
+
+        if ($hasUsername) {
+            $suffix = 1;
+            $exists = db()->prepare('SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1');
+            while (true) {
+                $exists->execute([$username, $email]);
+                $taken = $exists->fetch();
+                if (!$taken) {
+                    break;
+                }
+
+                $emailExists = db()->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+                $emailExists->execute([$email]);
+                if ($emailExists->fetch()) {
+                    error('Bu e-posta zaten kayitli.', 409);
+                }
+
+                $username = $baseUsername . $suffix;
+                $suffix++;
+            }
+        } else {
+            $emailExists = db()->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
+            $emailExists->execute([$email]);
+            if ($emailExists->fetch()) {
+                error('Bu e-posta zaten kayitli.', 409);
+            }
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $userIdType = tableColumnType('users', 'id') ?? '';
+        $userId = str_contains($userIdType, 'char') || str_contains($userIdType, 'varchar')
+            ? substr(generatePublicId(18), 0, 36)
+            : null;
+
+        if ($hasUsername && $hasDisplayName) {
+            $columns = $userId !== null
+                ? ['id', 'username', 'display_name', 'email', $passwordColumn, 'role', 'email_verified', 'email_verified_at']
+                : ['username', 'display_name', 'email', $passwordColumn, 'role', 'email_verified', 'email_verified_at'];
+            if ($isActiveColumn) {
+                $columns[] = 'is_active';
+            }
+
+            $values = $userId !== null
+                ? [$userId, $username, $displayName, $email, $hash, 'customer', 0, null]
+                : [$username, $displayName, $email, $hash, 'customer', 0, null];
+            if ($isActiveColumn) {
+                $values[] = 0;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($columns), '?'));
+            $stmt = db()->prepare('INSERT INTO users (' . implode(',', $columns) . ') VALUES (' . $placeholders . ')');
+            $stmt->execute($values);
+        } else {
+            $columns = $userId !== null
+                ? ['id', 'email', 'name', $passwordColumn, 'role', 'email_verified', 'email_verified_at']
+                : ['email', 'name', $passwordColumn, 'role', 'email_verified', 'email_verified_at'];
+            if ($isActiveColumn) {
+                $columns[] = 'is_active';
+            }
+
+            $values = $userId !== null
+                ? [$userId, $email, $displayName, $hash, 'user', 0, null]
+                : [$email, $displayName, $hash, 'user', 0, null];
+            if ($isActiveColumn) {
+                $values[] = 0;
+            }
+
+            $placeholders = implode(',', array_fill(0, count($columns), '?'));
+            $stmt = db()->prepare('INSERT INTO users (' . implode(',', $columns) . ') VALUES (' . $placeholders . ')');
+            $stmt->execute($values);
+        }
+
+        $createdId = $userId ?? db()->lastInsertId();
+        MailService::issueVerificationToken($createdId, $email, $displayName);
+        MailService::sendRegistrationAdminEmail($email, $displayName);
+        AuditLog::write(AuditLog::REGISTER, (string) $createdId, 'user', $createdId, ['email' => $email]);
+
+        ok([
+            'success' => true,
+            'verification_required' => true,
+            'email' => $email,
+            'message' => 'Kayit tamamlandi. Hesabinizi aktifleştirmek icin e-posta adresinize gonderilen dogrulama baglantisina tiklayin.',
+        ]);
+
+    case 'resend-verification':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        RateLimit::check('auth_resend_verification', 5, 900);
+
+        $email = strtolower(trim((string) input('email', '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            error('Gecerli bir e-posta adresi gerekli.', 422);
+        }
+
+        $stmt = db()->prepare(
+            'SELECT id, email, role, '
+            . ($hasUsername ? 'username, ' : '')
+            . $nameColumn . ' AS display_name, email_verified, email_verified_at
+             FROM users
+             WHERE email = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            ok([
+                'success' => true,
+                'message' => 'Bu e-posta adresi sistemde varsa yeni dogrulama maili gonderilecektir.',
+            ]);
+        }
+
+        if (($user['role'] ?? 'user') !== 'admin' && (!empty($user['email_verified']) || !empty($user['email_verified_at']))) {
+            ok([
+                'success' => true,
+                'already_verified' => true,
+                'message' => 'Bu e-posta adresi zaten dogrulanmis.',
+            ]);
+        }
+
+        MailService::issueVerificationToken($user['id'], $user['email'], (string) ($user['display_name'] ?? $user['email']));
+
+        ok([
+            'success' => true,
+            'message' => 'Yeni dogrulama e-postasi gonderildi.',
+        ]);
+
+    case 'verify-email':
+        if ($method !== 'GET') error('Method not allowed.', 405);
+
+        $token = trim((string) ($sub ?? ($_GET['token'] ?? '')));
+        if ($token === '') {
+            error('Dogrulama tokeni gerekli.');
+        }
+
+        $stmt = db()->prepare(
+            "SELECT id, email, role, email_verified, email_verified_at, email_verification_expires_at, $nameColumn AS display_name
+             FROM users
+             WHERE email_verification_token = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$token]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            error('Dogrulama baglantisi gecersiz veya daha once kullanilmis.', 404);
+        }
+
+        if (!empty($user['email_verified']) || !empty($user['email_verified_at'])) {
+            ok([
+                'success' => true,
+                'already_verified' => true,
+                'message' => 'E-posta adresiniz zaten dogrulanmis. Giris yapabilirsiniz.',
+            ]);
+        }
+
+        if (
+            !empty($user['email_verification_expires_at'])
+            && strtotime((string) $user['email_verification_expires_at']) < time()
+        ) {
+            error('Dogrulama baglantisinin suresi dolmus. Yeni bir dogrulama e-postasi isteyebilirsiniz.', 410);
+        }
+
+        $sql = 'UPDATE users
+                SET email_verified = 1,
+                    email_verified_at = CURRENT_TIMESTAMP,
+                    email_verification_token = NULL,
+                    email_verification_sent_at = NULL,
+                    email_verification_expires_at = NULL';
+        if ($isActiveColumn) {
+            $sql .= ', is_active = 1';
+        }
+        $sql .= ' WHERE id = ?';
+
+        db()->prepare($sql)->execute([$user['id']]);
+
+        ok([
+            'success' => true,
+            'message' => 'E-posta adresiniz basariyla dogrulandi. Artik giris yapabilirsiniz.',
+        ]);
+
+    case 'logout':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        $token = Auth::extractToken();
+        if ($token) Auth::blacklist($token);
+        ok(['success' => true]);
+
+    case 'me':
+        if ($method !== 'GET') error('Method not allowed.', 405);
+        $payload = Auth::require();
+
+        $select = [
+            'id',
+            $hasUsername ? 'username' : 'NULL AS username',
+            $hasDisplayName
+                ? 'display_name'
+                : (tableHasColumn('users', 'name') ? 'name AS display_name' : 'NULL AS display_name'),
+            'email',
+            'role',
+            tableHasColumn('users', 'email_verified') ? 'email_verified' : 'CASE WHEN email_verified_at IS NULL THEN 0 ELSE 1 END AS email_verified',
+            'email_verified_at',
+        ];
+        $stmt = db()->prepare('SELECT ' . implode(', ', $select) . ' FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$payload['sub']]);
+        $user = $stmt->fetch();
+        if (!$user) error('Kullanici bulunamadi.', 404);
+
+        $orders = db()->prepare(
+            'SELECT id, status, total, city, district, tracking_no, cargo_carrier, created_at
+             FROM orders
+             WHERE user_id = ?
+             ORDER BY created_at DESC'
+        );
+        $orders->execute([$user['id']]);
+        $user['orders'] = array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll());
+
+        ok(legacyUser($user));
+
+    case 'users':
+        if ($method !== 'GET') error('Method not allowed.', 405);
+        Auth::requireAdmin();
+
+        $rows = db()->query(
+            'SELECT id, '
+            . ($hasUsername ? 'username' : 'NULL AS username') . ', '
+            . ($hasDisplayName
+                ? 'display_name'
+                : (tableHasColumn('users', 'name') ? 'name AS display_name' : 'NULL AS display_name'))
+            . ', email, role, created_at, '
+            . (tableHasColumn('users', 'email_verified') ? 'email_verified' : 'CASE WHEN email_verified_at IS NULL THEN 0 ELSE 1 END AS email_verified')
+            . ', email_verified_at FROM users ORDER BY created_at DESC'
+        )->fetchAll();
+
+        ok(array_map(fn(array $user) => legacyUser($user), $rows));
+
+    default:
+        error('Auth endpoint bulunamadi.', 404);
+}

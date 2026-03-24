@@ -1,0 +1,6 @@
+2026-03-12 15:05:46 [ERROR] PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'boomeritems.rate_limits' doesn't exist in C:\Users\biesbi\Desktop\dist - Copy\api\middleware\RateLimit.php:30 | IP=::1 METHOD=POST URI=/api/auth/login
+2026-03-12 15:05:48 [ERROR] PDOException: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'boomeritems.rate_limits' doesn't exist in C:\Users\biesbi\Desktop\dist - Copy\api\middleware\RateLimit.php:30 | IP=::1 METHOD=GET URI=/api/products
+[12-Mar-2026 23:07:33 Europe/Berlin] PHP Fatal error:  Maximum execution time of 60 seconds exceeded in C:\Users\biesbi\Desktop\dist - Copy\api\middleware\RateLimit.php on line 153
+2026-03-12 23:07:33 [FATAL] Maximum execution time of 60 seconds exceeded in C:\Users\biesbi\Desktop\dist - Copy\api\middleware\RateLimit.php:153
+[13-Mar-2026 01:29:38 Europe/Berlin] PHP Warning:  require(C:\Users\biesbi\Desktop\dist - Copy\api/routes/coupons.php): Failed to open stream: No such file or directory in C:\Users\biesbi\Desktop\dist - Copy\api\index.php on line 56
+2026-03-13 01:29:38 [ERROR] Error: Failed opening required 'C:\Users\biesbi\Desktop\dist - Copy\api/routes/coupons.php' (include_path='C:\xampp\php\PEAR') in C:\Users\biesbi\Desktop\dist - Copy\api\index.php:56 | IP=127.0.0.1 METHOD=GET URI=/api/coupons

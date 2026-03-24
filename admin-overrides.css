@@ -1,0 +1,25 @@
+/* Admin sayfalarında uzun formlarda scroll kaybını ve görsel galeri taşmasını önleyen küçük düzeltmeler. */
+
+/* Flex container içinde overflow-y:auto'nun çalışması için min-height:0 gerekir. */
+.admin-container {
+  height: 100vh;
+}
+
+.admin-main {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Ürün (ekle/düzenle) sayfalarında çoklu görsel listesi çok uzayınca,
+   formun devamı (örn. Renk Varyantları / Kaydet) görünmez hale gelmesin. */
+.admin-view .form-group.full-width > label + div[style*="flex-wrap: wrap"] {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Upload kutusu fazla yer kaplamasın. */
+.admin-file-upload-label {
+  padding: 24px;
+}
+

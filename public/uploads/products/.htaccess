@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════
+#  KRITIK GÜVENLİK: uploads/ klasöründe
+#  PHP ve diğer script dosyaları ASLA çalıştırılmaz.
+#  Sadece statik dosya serve edilir.
+# ═══════════════════════════════════════════════
+
+# Tüm script handler'larını devre dışı bırak
+RemoveHandler .php .php3 .php4 .php5 .php7 .phtml .pl .py .cgi .sh
+RemoveType    .php .php3 .php4 .php5 .php7 .phtml
+
+# PHP engine'i kapat
+php_flag engine off
+
+# Script dosyaları için 403 döndür
+<FilesMatch "\.(php\d?|phtml|pl|py|cgi|sh|bash|rb|exe|jsp|asp|aspx|htaccess|htpasswd)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Sadece izin verilen uzantılara erişim
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|ico|svg)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Diğer her şeyi engelle
+<FilesMatch "^(?!.*\.(jpg|jpeg|png|gif|webp|ico|svg)$)">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Directory listing'i kapat
+Options -Indexes

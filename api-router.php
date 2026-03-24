@@ -1,0 +1,20 @@
+<?php
+
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+$file = __DIR__ . $path;
+
+if ($path !== '/' && is_file($file)) {
+    return false;
+}
+
+if (str_starts_with($path, '/api/')) {
+    require __DIR__ . '/api/index.php';
+    return true;
+}
+
+http_response_code(404);
+header('Content-Type: application/json; charset=utf-8');
+echo json_encode([
+    'success' => false,
+    'message' => 'Endpoint bulunamadi.',
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
