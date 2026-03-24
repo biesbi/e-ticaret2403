@@ -161,31 +161,23 @@ final class StockService
                 $line['sku'] = (string) ($variant['sku'] ?? $line['sku']);
                 $line['unit_price'] = max(0.0, ((float) ($product['price'] ?? 0)) + $modifier);
 
-                // Stok negatife düşme koruması: reserved_stock hiçbir zaman stock'u aşamaz
                 $reserveVariant = $pdo->prepare(
                     'UPDATE product_variants
-                     SET reserved_stock = LEAST(reserved_stock + ?, stock)
-                     WHERE id = ? AND (stock - reserved_stock) >= ?'
+                     SET reserved_stock = reserved_stock + ?
+                     WHERE id = ?'
                 );
-                $reserveVariant->execute([$quantity, (int) $variant['id'], $quantity]);
-                if ($reserveVariant->rowCount() === 0) {
-                    throw new RuntimeException("'{$product['name']}' varyanti icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
-                }
+                $reserveVariant->execute([$quantity, (int) $variant['id']]);
             } else {
                 if ($productAvailable < $quantity) {
                     throw new RuntimeException("'{$product['name']}' icin yeterli stok yok. Mevcut: {$productAvailable}, istenen: {$quantity}");
                 }
 
-                // Stok negatife düşme koruması: atomik kontrol
                 $reserveProduct = $pdo->prepare(
                     'UPDATE products
-                     SET reserved_stock = LEAST(reserved_stock + ?, stock)
-                     WHERE id = ? AND (stock - reserved_stock) >= ?'
+                     SET reserved_stock = reserved_stock + ?
+                     WHERE id = ?'
                 );
-                $reserveProduct->execute([$quantity, $productId, $quantity]);
-                if ($reserveProduct->rowCount() === 0) {
-                    throw new RuntimeException("'{$product['name']}' icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
-                }
+                $reserveProduct->execute([$quantity, $productId]);
             }
 
             $line['line_total'] = round($line['unit_price'] * $quantity, 2);
@@ -203,39 +195,6 @@ final class StockService
         }
 
         db()->prepare('UPDATE orders SET stock_state = ? WHERE id = ?')->execute([$state, $orderId]);
-    }
-
-    /**
-     * Terk edilen siparişlerin stok rezervasyonlarını serbest bırakır.
-     * 24 saatten eski pending siparişler otomatik release edilir.
-     */
-    public static function releaseAbandonedReservations(int $hoursThreshold = 24): int
-    {
-        self::ensureSchema();
-        $pdo = db();
-        $stmt = $pdo->prepare(
-            "SELECT id FROM orders
-             WHERE stock_state = 'reserved'
-               AND payment_status = 'pending'
-               AND status = 'pending'
-               AND created_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
-             LIMIT 50"
-        );
-        $stmt->execute([$hoursThreshold]);
-        $orders = $stmt->fetchAll();
-
-        $released = 0;
-        foreach ($orders as $order) {
-            try {
-                self::releaseReservedStock((string) $order['id']);
-                $pdo->prepare("UPDATE orders SET status = 'cancelled', payment_status = 'failed' WHERE id = ?")
-                    ->execute([$order['id']]);
-                $released++;
-            } catch (Throwable) {
-                // Tek sipariş hatası diğerlerini engellemez
-            }
-        }
-        return $released;
     }
 
     public static function finalizeReservedStock(string $orderId): void

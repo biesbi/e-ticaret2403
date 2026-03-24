@@ -115,8 +115,6 @@ switch ($id) {
         $totalDesi = (float) input('totalDesi', 0);
         $groupId = (int) input('shipping_group_id', 0);
         $subtotal = (float) input('subtotal', input('order_total', 0));
-        if ($totalDesi < 0) error('Desi degeri negatif olamaz.');
-        if ($totalDesi > 9999) error('Desi degeri cok buyuk.');
         $shipping = calculateShippingFeeByDesi($totalDesi, $subtotal, $groupId > 0 ? $groupId : null);
         ok($shipping);
 

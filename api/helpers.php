@@ -457,9 +457,6 @@ function normalizeShippingGroup(array $row): array {
 
 function calculateShippingFeeByDesi(float $totalDesi, float $orderTotal = 0, ?int $groupId = null): array {
     ensureShippingGroupsSchema();
-    // Desi ve tutar validasyonu
-    $totalDesi = max(0.0, min($totalDesi, 9999.0));
-    $orderTotal = max(0.0, $orderTotal);
     $subtotal = round(max(0.0, $orderTotal), 2);
     $freeShippingThreshold = freeShippingThreshold();
 
