@@ -421,7 +421,17 @@ if ($id !== null && $sub === 'status') {
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);
-    ok(legacyOrder($fetch->fetch() ?: ['id' => $id, 'status' => $status]));
+    $updatedOrder = $fetch->fetch() ?: ['id' => $id, 'status' => $status];
+
+    // Müşteriye durum değişikliği maili gönder
+    $shAddr = json_decode($updatedOrder['shipping_address'] ?? '{}', true) ?: [];
+    $custEmail = trim((string) ($shAddr['email'] ?? ''));
+    $custName = trim((string) ($shAddr['fullname'] ?? ''));
+    if ($custEmail !== '' && filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+        MailService::sendOrderStatusEmail($custEmail, $custName, (string) $id, $status);
+    }
+
+    ok(legacyOrder($updatedOrder));
 }
 
 if ($id !== null && $sub === 'cargo') {
@@ -443,7 +453,17 @@ if ($id !== null && $sub === 'cargo') {
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);
-    ok(legacyOrder($fetch->fetch() ?: ['id' => $id, 'cargo_number' => $tracking, 'cargo_company' => $carrier, 'status' => $targetStatus]));
+    $updatedOrder = $fetch->fetch() ?: ['id' => $id, 'cargo_number' => $tracking, 'cargo_company' => $carrier, 'status' => $targetStatus];
+
+    // Müşteriye kargo bilgisi maili gönder
+    $shAddr = json_decode($updatedOrder['shipping_address'] ?? '{}', true) ?: [];
+    $custEmail = trim((string) ($shAddr['email'] ?? ''));
+    $custName = trim((string) ($shAddr['fullname'] ?? ''));
+    if ($custEmail !== '' && filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+        MailService::sendCargoEmail($custEmail, $custName, (string) $id, $tracking, $carrier !== '' ? $carrier : null);
+    }
+
+    ok(legacyOrder($updatedOrder));
 }
 
 if ($id !== null && $sub === null && $method === 'GET') {
