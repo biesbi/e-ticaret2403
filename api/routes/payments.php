@@ -9,27 +9,36 @@ if ($id === 'paytr' && $sub === 'mock-complete') {
     if ($method !== 'POST') error('Method not allowed.', 405);
     if (!PaytrService::isTestMode()) error('Mock odeme sadece test modunda kullanilir.', 403);
 
-    // Mock ödeme güvenliği: admin veya sipariş sahibi olmalı
-    $authPayload = Auth::optional();
     $orderId = trim((string) input('order_id', ''));
     $status = trim((string) input('status', ''));
     if ($orderId === '' || !in_array($status, ['success', 'failed'], true)) {
         error('Gecersiz mock odeme verisi.');
     }
 
-    // Sipariş sahiplik kontrolü
-    if ($authPayload !== null) {
-        $orderCheck = db()->prepare('SELECT user_id FROM orders WHERE id = ? LIMIT 1');
-        $orderCheck->execute([$orderId]);
-        $orderRow = $orderCheck->fetch();
-        if ($orderRow && $orderRow['user_id'] !== null) {
-            $isAdmin = ($authPayload['role'] ?? '') === 'admin';
-            $isOwner = (string) ($orderRow['user_id'] ?? '') === (string) ($authPayload['sub'] ?? '');
-            if (!$isAdmin && !$isOwner) {
-                error('Bu siparis icin odeme tamamlama yetkiniz yok.', 403);
-            }
+    // Sipariş sahiplik kontrolü — her sipariş için zorunlu
+    $orderCheck = db()->prepare('SELECT user_id, payment_status FROM orders WHERE id = ? LIMIT 1');
+    $orderCheck->execute([$orderId]);
+    $orderRow = $orderCheck->fetch();
+    if (!$orderRow) error('Siparis bulunamadi.', 404);
+
+    // Sadece pending/failed ödemeler tamamlanabilir
+    if (!in_array($orderRow['payment_status'] ?? '', ['pending', 'failed'], true)) {
+        error('Bu siparisin odeme durumu degistirilemez.');
+    }
+
+    $authPayload = Auth::optional();
+    if ($orderRow['user_id'] !== null) {
+        // Kayıtlı kullanıcı siparişi: giriş + sahiplik zorunlu
+        if ($authPayload === null) {
+            error('Bu siparis icin giris yapmaniz gerekli.', 401);
+        }
+        $isAdmin = ($authPayload['role'] ?? '') === 'admin';
+        $isOwner = (string) $orderRow['user_id'] === (string) ($authPayload['sub'] ?? '');
+        if (!$isAdmin && !$isOwner) {
+            error('Bu siparis icin odeme tamamlama yetkiniz yok.', 403);
         }
     }
+    // Guest siparişler: orderId bilgisi yeterli (iframe içinden gelir)
 
     PaytrService::completeMock($orderId, $status);
 }
@@ -51,10 +60,14 @@ if ($id === 'paytr' && $sub === 'status') {
     $order = $stmt->fetch();
     if (!$order) error('Siparis bulunamadi.', 404);
 
-    if ($authPayload !== null) {
+    if ($order['user_id'] !== null) {
+        // Kayıtlı kullanıcı siparişi: giriş + sahiplik zorunlu
+        if ($authPayload === null) {
+            error('Bu siparis icin giris yapmaniz gerekli.', 401);
+        }
         $isAdmin = ($authPayload['role'] ?? '') === 'admin';
-        $isOwner = (string) ($order['user_id'] ?? '') === (string) ($authPayload['sub'] ?? '');
-        if (!$isAdmin && !$isOwner && $order['user_id'] !== null) {
+        $isOwner = (string) $order['user_id'] === (string) ($authPayload['sub'] ?? '');
+        if (!$isAdmin && !$isOwner) {
             error('Bu siparise erisim yetkiniz yok.', 403);
         }
     }

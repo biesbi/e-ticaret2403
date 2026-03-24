@@ -32,7 +32,7 @@ function couponResponse(array $row): array {
 
 switch (true) {
     case $method === 'GET' && $id === null:
-        adminRequired();
+        Auth::requireAdmin();
         $select = [
             'id',
             'code',
@@ -52,7 +52,7 @@ switch (true) {
         break;
 
     case $method === 'POST' && $id === null:
-        adminRequired();
+        Auth::requireAdmin();
 
         $code = couponValue('code');
         if ($code === '') error('Kupon kodu gerekli.');
@@ -108,7 +108,7 @@ switch (true) {
         break;
 
     case $method === 'PATCH' && is_numeric($id):
-        adminRequired();
+        Auth::requireAdmin();
 
         $allowed = ['code', 'discount_type', 'value', 'min_order_amount', 'usage_limit', 'expires_at', 'is_active'];
         $fields = [];
@@ -160,7 +160,7 @@ switch (true) {
         break;
 
     case $method === 'DELETE' && is_numeric($id):
-        adminRequired();
+        Auth::requireAdmin();
         $stmt = db()->prepare('DELETE FROM coupons WHERE id = ?');
         $stmt->execute([(int) $id]);
         if ($stmt->rowCount() === 0) {

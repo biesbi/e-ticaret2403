@@ -67,30 +67,54 @@
       var params = new URLSearchParams(window.location.search);
       var orderId = params.get('order_id') || '';
       var amount = params.get('amount') || '';
+      var parentOrigin = window.location.origin;
       document.getElementById('order-id').textContent = orderId || '-';
       document.getElementById('amount').textContent = amount ? amount + ' TL' : '-';
 
+      var successBtn = document.getElementById('success-btn');
+      var failBtn = document.getElementById('fail-btn');
+
+      function setButtonsDisabled(disabled) {
+        successBtn.disabled = disabled;
+        failBtn.disabled = disabled;
+        successBtn.style.opacity = disabled ? '0.5' : '1';
+        failBtn.style.opacity = disabled ? '0.5' : '1';
+      }
+
+      function notifyParent(status) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ source: 'boomeritems-paytr', status: status, orderId: orderId }, parentOrigin);
+        }
+      }
+
       function complete(status) {
+        setButtonsDisabled(true);
+        document.querySelector('.hint').textContent = 'Islem gerceklestiriliyor, lutfen bekleyin...';
+
         fetch('/api/payments/paytr/mock-complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order_id: orderId, status: status })
         })
-          .then(function (response) { return response.json(); })
-          .then(function () {
-            if (window.parent && window.parent !== window) {
-              window.parent.postMessage({ source: 'boomeritems-paytr', status: status, orderId: orderId }, '*');
-            }
+          .then(function (response) {
+            if (!response.ok) throw new Error('API hatasi: ' + response.status);
+            return response.json();
           })
-          .catch(function () {
-            if (window.parent && window.parent !== window) {
-              window.parent.postMessage({ source: 'boomeritems-paytr', status: 'failed', orderId: orderId }, '*');
-            }
+          .then(function () {
+            document.querySelector('.hint').textContent = status === 'success'
+              ? 'Odeme basariyla tamamlandi. Yonlendiriliyorsunuz...'
+              : 'Odeme basarisiz olarak kaydedildi.';
+            notifyParent(status);
+          })
+          .catch(function (err) {
+            document.querySelector('.hint').textContent = 'Islem sirasinda bir hata olustu: ' + (err.message || 'Bilinmeyen hata') + '. Lutfen tekrar deneyin.';
+            notifyParent('failed');
+            setButtonsDisabled(false);
           });
       }
 
-      document.getElementById('success-btn').addEventListener('click', function () { complete('success'); });
-      document.getElementById('fail-btn').addEventListener('click', function () { complete('failed'); });
+      successBtn.addEventListener('click', function () { complete('success'); });
+      failBtn.addEventListener('click', function () { complete('failed'); });
     })();
   </script>
 </body>

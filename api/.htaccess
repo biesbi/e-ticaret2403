@@ -4,5 +4,20 @@ RewriteEngine On
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+# Block direct access to sensitive files (setup, migration, config, scripts)
+<FilesMatch "^(setup|gethash|config|composer-setup|run_migration|migrate_base64_images|migrate_base64_simple|repair-encoding|fix_index)\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Block access to sensitive directories
+RewriteRule ^(scripts|sql|data|middleware|services|vendor)/ - [F,L]
+
+# Block .env and other config files
+<FilesMatch "\.(env|example|md|lock|json)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]

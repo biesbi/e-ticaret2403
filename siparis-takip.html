@@ -467,11 +467,23 @@
         renderState('loading-state', 'Siparisiniz sorgulaniyor...');
         try {
           const response = await fetch(`${apiBase}/orders/track/${encodeURIComponent(query)}`, { headers: { 'Accept': 'application/json' } });
-          if (!response.ok) { renderState('error-state', 'Siparis bulunamadi. Lutfen numarayi kontrol edip tekrar deneyin.'); return; }
+          if (!response.ok) {
+            if (response.status === 404) {
+              renderState('error-state', 'Siparis bulunamadi. Lutfen siparis numaranizi veya kargo takip numaranizi kontrol edip tekrar deneyin.');
+            } else if (response.status === 429) {
+              renderState('error-state', 'Cok fazla sorgu yaptiniz. Lutfen birkas dakika bekleyip tekrar deneyin.');
+            } else if (response.status >= 500) {
+              renderState('error-state', 'Sunucuda bir sorun olustu. Lutfen birkas dakika sonra tekrar deneyin.');
+            } else {
+              const errData = await response.json().catch(function () { return {}; });
+              renderState('error-state', errData.message || 'Beklenmeyen bir hata olustu. Lutfen tekrar deneyin.');
+            }
+            return;
+          }
           const data = await response.json();
           renderResult(data);
         } catch (error) {
-          renderState('error-state', 'Sunucuya baglanirken bir hata olustu. Lutfen biraz sonra tekrar deneyin.');
+          renderState('error-state', 'Sunucuya baglanirken bir hata olustu. Internet baglantinizi kontrol edip tekrar deneyin.');
         }
       }
       form.addEventListener('submit', function (event) {

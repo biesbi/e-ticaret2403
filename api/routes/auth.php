@@ -92,6 +92,7 @@ switch ($id) {
                 'orders' => array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll()),
             ]),
         ]);
+        break;
 
     case 'register':
         if ($method !== 'POST') error('Method not allowed.', 405);
@@ -199,6 +200,7 @@ switch ($id) {
             'email' => $email,
             'message' => 'Kayit tamamlandi. Hesabinizi aktifleştirmek icin e-posta adresinize gonderilen dogrulama baglantisina tiklayin.',
         ]);
+        break;
 
     case 'resend-verification':
         if ($method !== 'POST') error('Method not allowed.', 405);
@@ -241,6 +243,7 @@ switch ($id) {
             'success' => true,
             'message' => 'Yeni dogrulama e-postasi gonderildi.',
         ]);
+        break;
 
     case 'verify-email':
         if ($method !== 'GET') error('Method not allowed.', 405);
@@ -295,12 +298,14 @@ switch ($id) {
             'success' => true,
             'message' => 'E-posta adresiniz basariyla dogrulandi. Artik giris yapabilirsiniz.',
         ]);
+        break;
 
     case 'logout':
         if ($method !== 'POST') error('Method not allowed.', 405);
         $token = Auth::extractToken();
         if ($token) Auth::blacklist($token);
         ok(['success' => true]);
+        break;
 
     case 'me':
         if ($method !== 'GET') error('Method not allowed.', 405);
@@ -332,6 +337,7 @@ switch ($id) {
         $user['orders'] = array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll());
 
         ok(legacyUser($user));
+        break;
 
     case 'users':
         if ($method !== 'GET') error('Method not allowed.', 405);
@@ -349,6 +355,7 @@ switch ($id) {
         )->fetchAll();
 
         ok(array_map(fn(array $user) => legacyUser($user), $rows));
+        break;
 
     default:
         error('Auth endpoint bulunamadi.', 404);
