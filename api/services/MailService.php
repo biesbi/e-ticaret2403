@@ -137,6 +137,75 @@ final class MailService {
         self::queueAndAttempt($email, $subject, $html);
     }
 
+    public static function sendOrderStatusEmail(string $email, string $name, string $orderId, string $newStatus): void {
+        $statusLabels = [
+            'pending' => 'Beklemede',
+            'confirmed' => 'Onaylandi',
+            'processing' => 'Hazirlaniyor',
+            'shipped' => 'Kargoya Verildi',
+            'delivered' => 'Teslim Edildi',
+            'cancelled' => 'Iptal Edildi',
+            'failed' => 'Basarisiz',
+        ];
+        $label = $statusLabels[$newStatus] ?? $newStatus;
+        $subject = 'BoomerItems siparis durumu guncellendi - #' . $orderId;
+
+        $bodyParts = '<p style="margin:0 0 14px;">Siparisinizin durumu guncellendi.</p>'
+            . self::renderInfoTable([
+                'Siparis No' => $orderId,
+                'Yeni Durum' => $label,
+                'Guncelleme Tarihi' => date('d.m.Y H:i'),
+            ]);
+
+        if ($newStatus === 'cancelled' || $newStatus === 'failed') {
+            $bodyParts .= self::renderNoticeBox(
+                'Siparisiniz iptal edildi',
+                'Sorulariniz icin destek ekibimizle iletisime gecebilirsiniz.'
+            );
+        } elseif ($newStatus === 'processing') {
+            $bodyParts .= self::renderNoticeBox(
+                'Siparisiniz hazirlaniyor',
+                'Urunleriniz paketleniyor. Kargoya verildikten sonra takip numarasi gonderilecektir.'
+            );
+        } elseif ($newStatus === 'delivered') {
+            $bodyParts .= self::renderNoticeBox(
+                'Siparisiniz teslim edildi',
+                'Alisveris deneyiminizden memnun kaldiysaniz bizi tercih ettiginiz icin tesekkur ederiz!'
+            );
+        }
+
+        $bodyParts .= '<p style="margin:18px 0 0;color:#475569;">Siparis durumunu hesabinizdan takip edebilirsiniz.</p>';
+
+        $html = self::wrapTemplate('Siparis durumu: ' . $label, $name, $bodyParts);
+        self::queueAndAttempt($email, $subject, $html);
+    }
+
+    public static function sendCargoEmail(string $email, string $name, string $orderId, string $trackingNo, ?string $carrier): void {
+        $subject = 'BoomerItems siparisiniz kargoya verildi - #' . $orderId;
+        $infoRows = [
+            'Siparis No' => $orderId,
+            'Kargo Takip No' => $trackingNo,
+        ];
+        if ($carrier !== null && $carrier !== '') {
+            $infoRows['Kargo Firmasi'] = $carrier;
+        }
+        $infoRows['Kargo Tarihi'] = date('d.m.Y H:i');
+
+        $html = self::wrapTemplate(
+            'Siparisiniz kargoda',
+            $name,
+            '<p style="margin:0 0 14px;">Siparisiniz kargoya verildi! Asagidaki takip numarasi ile kargonuzu takip edebilirsiniz.</p>'
+            . self::renderNoticeBox(
+                'Kargo takip numaraniz',
+                $trackingNo . ($carrier !== null && $carrier !== '' ? ' (' . $carrier . ')' : '')
+            )
+            . self::renderInfoTable($infoRows)
+            . '<p style="margin:18px 0 0;color:#475569;">Teslimat surecinde herhangi bir sorun yasarsaniz destek ekibimizle iletisime gecebilirsiniz.</p>'
+        );
+
+        self::queueAndAttempt($email, $subject, $html);
+    }
+
     public static function sendRegistrationAdminEmail(string $registeredEmail, string $registeredName): void {
         $adminEmail = trim((string) env('MAIL_ADMIN_EMAIL', 'boomeritems@gmail.com'));
         if ($adminEmail === '' || !filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {

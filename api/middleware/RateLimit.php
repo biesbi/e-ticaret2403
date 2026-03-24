@@ -64,10 +64,15 @@ class RateLimit
             self::logAbuse($ip, $endpoint);
 
             http_response_code(429);
+            $minutes = (int) ceil($retryAfter / 60);
+            $friendlyTime = $retryAfter < 60
+                ? "{$retryAfter} saniye"
+                : "{$minutes} dakika";
             echo json_encode([
                 'success' => false,
-                'message' => 'Çok fazla istek gönderdiniz. Lütfen bekleyin.',
+                'message' => "Cok fazla istek gonderdiniz. Lutfen {$friendlyTime} sonra tekrar deneyin.",
                 'retry_after_seconds' => $retryAfter,
+                'retry_after_friendly' => $friendlyTime,
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }

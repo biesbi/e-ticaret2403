@@ -146,13 +146,84 @@ if ($id === null && $method === 'GET') {
     ok(array_map(fn(array $order) => legacyOrder($order), $stmt->fetchAll()));
 }
 
+// POST /orders/retry-payment — başarısız ödeme yeniden deneme
+if ($id === 'retry-payment' && $method === 'POST') {
+    $data = body();
+    $orderId = trim((string) ($data['order_id'] ?? ''));
+    if ($orderId === '') error('Siparis ID gerekli.');
+
+    $authPayload = Auth::optional();
+
+    $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+    $stmt->execute([$orderId]);
+    $order = $stmt->fetch();
+    if (!$order) error('Siparis bulunamadi.', 404);
+
+    // Sahiplik kontrolü
+    if ($authPayload !== null && $order['user_id'] !== null) {
+        $isAdmin = ($authPayload['role'] ?? '') === 'admin';
+        $isOwner = (string) ($order['user_id'] ?? '') === (string) ($authPayload['sub'] ?? '');
+        if (!$isAdmin && !$isOwner) {
+            error('Bu siparise erisim yetkiniz yok.', 403);
+        }
+    }
+
+    // Sadece başarısız ödemeler yeniden denenebilir
+    if (!in_array($order['payment_status'] ?? '', ['pending', 'failed'], true)) {
+        error('Bu siparisin odeme durumu yeniden denemeye uygun degil.');
+    }
+
+    // Stok durumu kontrol
+    $stockState = $order['stock_state'] ?? 'none';
+    if ($stockState === 'released') {
+        error('Bu siparisin stok rezervasyonu serbest birakilmis. Lutfen yeni siparis olusturun.');
+    }
+
+    // Sipariş pending'e geri döndür
+    db()->prepare('UPDATE orders SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        ->execute(['pending', 'pending', $orderId]);
+
+    // Sipariş adresini al
+    $shippingAddress = json_decode($order['shipping_address'] ?? '{}', true) ?: [];
+
+    // Sipariş kalemlerini al
+    $itemsStmt = db()->prepare('SELECT * FROM order_items WHERE order_id = ?');
+    $itemsStmt->execute([$orderId]);
+    $items = $itemsStmt->fetchAll();
+
+    // Yeni ödeme token'ı oluştur
+    $payment = PaytrService::createPayment(
+        ['id' => $orderId, 'total' => (float) ($order['total'] ?? 0)],
+        $items,
+        $shippingAddress
+    );
+
+    ok([
+        'success' => true,
+        'order_id' => $orderId,
+        'payment' => $payment,
+        'message' => 'Odeme yeniden baslatildi.',
+    ]);
+}
+
 if ($id === null && $method === 'POST') {
     $data = body();
 
+    // Çift sipariş koruması: aynı kullanıcıdan 30 saniye içinde aynı sipariş engellenir
     $payload = null;
     $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
     if (str_starts_with($authHeader, 'Bearer ')) {
         $payload = jwtDecode(substr($authHeader, 7));
+    }
+
+    if ($payload !== null) {
+        $recentOrder = db()->prepare(
+            "SELECT id FROM orders WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1"
+        );
+        $recentOrder->execute([$payload['sub']]);
+        if ($recentOrder->fetch()) {
+            error('Cok hizli siparis veriyorsunuz. Lutfen 30 saniye bekleyiniz.');
+        }
     }
 
     $shipping = is_array($data['shippingAddress'] ?? null) ? $data['shippingAddress'] : $data;
@@ -350,7 +421,17 @@ if ($id !== null && $sub === 'status') {
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);
-    ok(legacyOrder($fetch->fetch() ?: ['id' => $id, 'status' => $status]));
+    $updatedOrder = $fetch->fetch() ?: ['id' => $id, 'status' => $status];
+
+    // Müşteriye durum değişikliği maili gönder
+    $shAddr = json_decode($updatedOrder['shipping_address'] ?? '{}', true) ?: [];
+    $custEmail = trim((string) ($shAddr['email'] ?? ''));
+    $custName = trim((string) ($shAddr['fullname'] ?? ''));
+    if ($custEmail !== '' && filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+        MailService::sendOrderStatusEmail($custEmail, $custName, (string) $id, $status);
+    }
+
+    ok(legacyOrder($updatedOrder));
 }
 
 if ($id !== null && $sub === 'cargo') {
@@ -372,7 +453,17 @@ if ($id !== null && $sub === 'cargo') {
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);
-    ok(legacyOrder($fetch->fetch() ?: ['id' => $id, 'cargo_number' => $tracking, 'cargo_company' => $carrier, 'status' => $targetStatus]));
+    $updatedOrder = $fetch->fetch() ?: ['id' => $id, 'cargo_number' => $tracking, 'cargo_company' => $carrier, 'status' => $targetStatus];
+
+    // Müşteriye kargo bilgisi maili gönder
+    $shAddr = json_decode($updatedOrder['shipping_address'] ?? '{}', true) ?: [];
+    $custEmail = trim((string) ($shAddr['email'] ?? ''));
+    $custName = trim((string) ($shAddr['fullname'] ?? ''));
+    if ($custEmail !== '' && filter_var($custEmail, FILTER_VALIDATE_EMAIL)) {
+        MailService::sendCargoEmail($custEmail, $custName, (string) $id, $tracking, $carrier !== '' ? $carrier : null);
+    }
+
+    ok(legacyOrder($updatedOrder));
 }
 
 if ($id !== null && $sub === null && $method === 'GET') {
