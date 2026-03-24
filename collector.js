@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════
    BoomerItems — Collector Platform JS
    ═══════════════════════════════════════════════════════════ */
 
@@ -50,6 +50,7 @@ const PART_COND_LABEL = { new:'Sıfır', used_good:'Kullanılmış-İyi', used_f
 
 // ─── STATE ───────────────────────────────────────────────────
 let currentUser = null;
+let authBusy = false;
 
 // ─── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -109,6 +110,7 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 
 // ─── AUTH ─────────────────────────────────────────────────────
 function switchTab(tab) {
+  if (authBusy) return;
   document.getElementById('loginForm').style.display    = tab==='login'    ? '' : 'none';
   document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none';
   document.getElementById('tabLogin').classList.toggle('active', tab==='login');
@@ -116,6 +118,7 @@ function switchTab(tab) {
 }
 
 function handleLogin() {
+  if (authBusy) return;
   const uname = document.getElementById('loginUsername').value.trim();
   const pass  = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
@@ -132,12 +135,34 @@ function handleLogin() {
 }
 
 function loginDemo() {
+  if (authBusy) return;
   document.getElementById('loginUsername').value = 'demo';
   document.getElementById('loginPassword').value = 'demo123';
   handleLogin();
 }
 
-function handleRegister() {
+function nextFrame() {
+  return new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+function setAuthBusy(isBusy) {
+  authBusy = isBusy;
+
+  const authModal = document.querySelector('.auth-modal');
+  const registerBtn = document.querySelector('#registerForm .btn-primary');
+
+  authModal?.classList.toggle('is-busy', isBusy);
+  authModal?.querySelectorAll('button, input, select, textarea').forEach(el => {
+    el.disabled = isBusy;
+  });
+
+  if (registerBtn) {
+    registerBtn.textContent = isBusy ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur';
+  }
+}
+
+async function handleRegister() {
+  if (authBusy) return;
   const uname = document.getElementById('regUsername').value.trim().toLowerCase();
   const dname = document.getElementById('regDisplayName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -152,12 +177,20 @@ function handleRegister() {
   const users = getDB(DB_USERS);
   if (users[uname]) { showErr(errEl, 'Bu kullanıcı adı zaten alınmış.'); return; }
 
+  setAuthBusy(true);
+  await nextFrame();
+
   users[uname] = { username: uname, displayName: dname, email, password: pass, bio: '', favCat: '', xp: 0, joinDate: new Date().toISOString(), unlockedAchievements: [] };
-  setDB(DB_USERS, users);
-  currentUser = users[uname];
-  localStorage.setItem(DB_SESSION, uname);
-  showApp();
-  toast('Hesabın oluşturuldu! Hoş geldin 🎉', 'success');
+
+  try {
+    setDB(DB_USERS, users);
+    currentUser = users[uname];
+    localStorage.setItem(DB_SESSION, uname);
+    showApp();
+    toast('Kayıt başarılı. Doğrulama mesajı e-posta adresine gönderildi.', 'success');
+  } finally {
+    setAuthBusy(false);
+  }
 }
 
 function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
@@ -774,3 +807,4 @@ function renderParticles() {
   style.textContent = `@keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-20px) rotate(5deg)} }`;
   document.head.appendChild(style);
 }
+
