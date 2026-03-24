@@ -874,6 +874,25 @@
 				var opts = args[1] || {};
 				var method = (opts.method || 'GET').toUpperCase();
 
+				/* ── Auth header enjeksiyonu: PATCH/PUT/DELETE admin isteklerine token ekle ── */
+				if ((method === 'PATCH' || method === 'PUT' || method === 'DELETE') && url.indexOf('/api/') !== -1) {
+					var token = null;
+					try { token = localStorage.getItem('token'); } catch(e) {}
+					if (token) {
+						var hdrs = opts.headers || {};
+						if (typeof Headers !== 'undefined' && hdrs instanceof Headers) {
+							var plain = {};
+							hdrs.forEach(function(v, k) { plain[k] = v; });
+							hdrs = plain;
+						}
+						if (!hdrs['Authorization'] && !hdrs['authorization']) {
+							hdrs['Authorization'] = 'Bearer ' + token;
+							opts.headers = hdrs;
+							args = [args[0], opts];
+						}
+					}
+				}
+
 				return origFetch.apply(this, args).then(function(response) {
 					var cloned = response.clone();
 
