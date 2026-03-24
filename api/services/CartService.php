@@ -148,8 +148,17 @@ class CartService
             : max(0, (int) ($product['stock'] ?? 0) - (int) ($product['reserved_stock'] ?? 0));
         if ($available < 1) throw new RuntimeException('Stokta urun yok.');
 
-        $newQty = $existing ? ((int) $existing['quantity'] + $qty) : $qty;
-        $newQty = min($newQty, $available);
+        // Sepet boyut limiti: maksimum 50 farklı ürün
+        if (!$existing) {
+            $countStmt = db()->prepare("SELECT COUNT(*) FROM cart_items WHERE $col = ?");
+            $countStmt->execute([$val]);
+            if ((int) $countStmt->fetchColumn() >= 50) {
+                throw new RuntimeException('Sepete en fazla 50 farkli urun ekleyebilirsiniz.');
+            }
+        }
+
+        $requestedQty = $existing ? ((int) $existing['quantity'] + $qty) : $qty;
+        $newQty = min($requestedQty, $available);
         if ($newQty < 1) throw new RuntimeException('Stok yetersiz.');
 
         if ($existing) {
@@ -164,7 +173,15 @@ class CartService
             }
         }
 
-        return ['product_id' => $productId, 'variant_id' => $variantId, 'quantity' => $newQty];
+        $result = ['product_id' => $productId, 'variant_id' => $variantId, 'quantity' => $newQty];
+        // Kullanıcıya miktar kırpıldıysa bildir
+        if ($newQty < $requestedQty) {
+            $result['quantity_adjusted'] = true;
+            $result['requested_quantity'] = $requestedQty;
+            $result['available_stock'] = $available;
+            $result['message'] = "Stok sinirli oldugundan miktar {$newQty} olarak ayarlandi (mevcut stok: {$available}).";
+        }
+        return $result;
     }
 
     public static function update(?string $userId, ?string $sessionId, int $itemId, int $qty): bool

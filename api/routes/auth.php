@@ -32,9 +32,7 @@ switch ($id) {
         $user = $stmt->fetch();
 
         $storedPassword = $user[$passwordColumn] ?? null;
-        $isValidPassword = is_string($storedPassword) && (
-            password_verify($password, $storedPassword) || hash_equals($storedPassword, $password)
-        );
+        $isValidPassword = is_string($storedPassword) && password_verify($password, $storedPassword);
 
         if (!$user || !$isValidPassword) {
             AuditLog::write(AuditLog::LOGIN_FAIL, null, 'user', null, ['identifier' => $identifier]);
@@ -109,8 +107,11 @@ switch ($id) {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             error('Gecerli bir e-posta girin.');
         }
-        if (strlen($password) < 6) {
-            error('Sifre en az 6 karakter olmali.');
+        if (strlen($password) < 8) {
+            error('Sifre en az 8 karakter olmali.');
+        }
+        if (strlen($password) > 128) {
+            error('Sifre en fazla 128 karakter olabilir.');
         }
 
         $baseUsername = strtolower(preg_replace('/[^a-z0-9]+/', '', strstr($email, '@', true) ?: $displayName));
