@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,47 +8,419 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
-    :root{--primary:#ffcc00;--primary-deep:#f2b400;--secondary:#dd101f;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;--surface:#ffffff;--surface-soft:#f8fafc;--shadow:0 20px 60px rgba(15,23,42,.12);--radius-lg:28px;--radius-md:18px}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,sans-serif;color:var(--text);background:radial-gradient(circle at top left,rgba(255,204,0,.12),transparent 28%),radial-gradient(circle at top right,rgba(221,16,31,.08),transparent 22%),linear-gradient(180deg,#f8fafc 0%,#eef3f8 100%)}
-    .shell{width:min(1120px,calc(100vw - 32px));margin:34px auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}.brand{display:inline-flex;align-items:center;gap:14px;text-decoration:none;color:var(--text);font-weight:900}.brand img{width:108px;height:auto;display:block}.back-link{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;border:1px solid rgba(15,23,42,.08);background:rgba(255,255,255,.82);color:#334155;text-decoration:none;font-weight:700;backdrop-filter:blur(16px)}
-    .card{background:rgba(255,255,255,.95);border:1px solid rgba(226,232,240,.92);border-radius:var(--radius-lg);box-shadow:var(--shadow);overflow:hidden}.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);min-height:620px}.panel-main{padding:42px;border-right:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,rgba(250,252,255,.98) 100%)}.eyebrow{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:#fff7d6;color:#7a5800;font-size:.8rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-bottom:22px}.title{margin:0 0 14px;font-family:"Bebas Neue",sans-serif;font-size:clamp(2.5rem,1.9rem + 2vw,4rem);line-height:.95;letter-spacing:.02em}.lead{margin:0 0 30px;max-width:620px;color:var(--muted);font-size:1.03rem;line-height:1.75}
-    .tracker-form{display:grid;gap:16px}.label{display:block;margin-bottom:8px;color:#334155;font-size:.92rem;font-weight:800}.input{width:100%;min-height:58px;padding:16px 18px;border-radius:var(--radius-md);border:1.5px solid var(--line);background:#fff;color:var(--text);font-size:1rem;font-family:inherit;transition:border-color .2s ease,box-shadow .2s ease}.input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(255,204,0,.16)}.submit{min-height:58px;border:0;border-radius:18px;background:linear-gradient(135deg,var(--primary) 0%,var(--primary-deep) 100%);color:#111827;font-size:1rem;font-weight:900;letter-spacing:.03em;cursor:pointer;box-shadow:0 14px 28px rgba(255,204,0,.22)}
-    .hint-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:26px}.hint{padding:16px;border-radius:var(--radius-md);background:var(--surface-soft);border:1px solid var(--line)}.hint strong{display:block;margin-bottom:6px;font-size:.94rem}.hint span{color:var(--muted);font-size:.88rem;line-height:1.55}
-    .panel-side{padding:42px 34px;background:radial-gradient(circle at top right,rgba(255,204,0,.12),transparent 32%),linear-gradient(180deg,#fbfcfe 0%,#f4f7fb 100%)}.side-title{margin:0 0 18px;font-size:1.65rem;font-weight:900;letter-spacing:-.03em}
-    .result,.empty-state,.error-state,.loading-state{border-radius:22px;border:1px solid var(--line);background:#fff;box-shadow:0 10px 24px rgba(15,23,42,.05)}.empty-state,.error-state,.loading-state{padding:26px;color:var(--muted);line-height:1.7}.error-state{border-color:rgba(221,16,31,.16);background:#fff7f7;color:#b42318}
-    .result-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:24px 24px 18px;border-bottom:1px solid var(--line)}.order-no{margin:0 0 6px;font-size:1.1rem;font-weight:900}.order-date{color:var(--muted);font-size:.92rem}.status{padding:10px 14px;border-radius:999px;font-size:.82rem;font-weight:900;white-space:nowrap}.status.pending{background:#fff7d6;color:#7a5800}.status.processing{background:#e8f1ff;color:#1d4ed8}.status.shipped{background:#eafaf1;color:#027a48}.status.delivered{background:#e7f8ef;color:#0f8a55}.status.cancelled{background:#fff0f0;color:#b42318}
-    .result-body{padding:24px;display:grid;gap:16px}.metric{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-radius:18px;background:var(--surface-soft);border:1px solid var(--line)}.metric strong{font-size:.92rem;color:#475569}.metric span{text-align:right;font-size:1rem;font-weight:900;color:var(--text)}.carrier-logo{display:inline-flex;align-items:center;gap:12px;flex-wrap:wrap}.carrier-logo img{max-height:28px;width:auto;object-fit:contain}.footer-note{margin-top:16px;color:var(--muted);font-size:.88rem;line-height:1.7}
-    @media (max-width:960px){.shell{width:min(calc(100vw - 20px),1120px);margin:18px auto}.hero{grid-template-columns:1fr}.panel-main{border-right:0;border-bottom:1px solid var(--line)}.hint-grid{grid-template-columns:1fr}}
-    @media (max-width:640px){.topbar{flex-direction:column;align-items:flex-start}.panel-main,.panel-side{padding:22px 16px}.title{font-size:2.3rem}.result-head{flex-direction:column}.metric{flex-direction:column;align-items:flex-start}.metric span{text-align:left}}
+
+    :root {
+      --primary: #ffcc00;
+      --primary-deep: #f2b400;
+      --secondary: #dd101f;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --shadow: 0 20px 60px rgba(15, 23, 42, .12);
+      --radius-lg: 28px;
+      --radius-md: 18px
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top left, rgba(255, 204, 0, .12), transparent 28%), radial-gradient(circle at top right, rgba(221, 16, 31, .08), transparent 22%), linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%)
+    }
+
+    .shell {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 34px auto
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 900
+    }
+
+    .brand img {
+      width: 108px;
+      height: auto;
+      display: block
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, .08);
+      background: rgba(255, 255, 255, .82);
+      color: #334155;
+      text-decoration: none;
+      font-weight: 700;
+      backdrop-filter: blur(16px)
+    }
+
+    .card {
+      background: rgba(255, 255, 255, .95);
+      border: 1px solid rgba(226, 232, 240, .92);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      min-height: 620px
+    }
+
+    .panel-main {
+      padding: 42px;
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255, 255, 255, .98) 0%, rgba(250, 252, 255, .98) 100%)
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: #fff7d6;
+      color: #7a5800;
+      font-size: .8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 22px
+    }
+
+    .title {
+      margin: 0 0 14px;
+      font-family: "Bebas Neue", sans-serif;
+      font-size: clamp(2.5rem, 1.9rem + 2vw, 4rem);
+      line-height: .95;
+      letter-spacing: .02em
+    }
+
+    .lead {
+      margin: 0 0 30px;
+      max-width: 620px;
+      color: var(--muted);
+      font-size: 1.03rem;
+      line-height: 1.75
+    }
+
+    .tracker-form {
+      display: grid;
+      gap: 16px
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      color: #334155;
+      font-size: .92rem;
+      font-weight: 800
+    }
+
+    .input {
+      width: 100%;
+      min-height: 58px;
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color .2s ease, box-shadow .2s ease
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255, 204, 0, .16)
+    }
+
+    .submit {
+      min-height: 58px;
+      border: 0;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%);
+      color: #111827;
+      font-size: 1rem;
+      font-weight: 900;
+      letter-spacing: .03em;
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(255, 204, 0, .22)
+    }
+
+    .hint-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 26px
+    }
+
+    .hint {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+      border: 1px solid var(--line)
+    }
+
+    .hint strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: .94rem
+    }
+
+    .hint span {
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.55
+    }
+
+    .panel-side {
+      padding: 42px 34px;
+      background: radial-gradient(circle at top right, rgba(255, 204, 0, .12), transparent 32%), linear-gradient(180deg, #fbfcfe 0%, #f4f7fb 100%)
+    }
+
+    .side-title {
+      margin: 0 0 18px;
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -.03em
+    }
+
+    .result,
+    .empty-state,
+    .error-state,
+    .loading-state {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .05)
+    }
+
+    .empty-state,
+    .error-state,
+    .loading-state {
+      padding: 26px;
+      color: var(--muted);
+      line-height: 1.7
+    }
+
+    .error-state {
+      border-color: rgba(221, 16, 31, .16);
+      background: #fff7f7;
+      color: #b42318
+    }
+
+    .result-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .order-no {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      font-weight: 900
+    }
+
+    .order-date {
+      color: var(--muted);
+      font-size: .92rem
+    }
+
+    .status {
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-weight: 900;
+      white-space: nowrap
+    }
+
+    .status.pending {
+      background: #fff7d6;
+      color: #7a5800
+    }
+
+    .status.processing {
+      background: #e8f1ff;
+      color: #1d4ed8
+    }
+
+    .status.shipped {
+      background: #eafaf1;
+      color: #027a48
+    }
+
+    .status.delivered {
+      background: #e7f8ef;
+      color: #0f8a55
+    }
+
+    .status.cancelled {
+      background: #fff0f0;
+      color: #b42318
+    }
+
+    .result-body {
+      padding: 24px;
+      display: grid;
+      gap: 16px
+    }
+
+    .metric {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line)
+    }
+
+    .metric strong {
+      font-size: .92rem;
+      color: #475569
+    }
+
+    .metric span {
+      text-align: right;
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--text)
+    }
+
+    .carrier-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .carrier-logo img {
+      max-height: 28px;
+      width: auto;
+      object-fit: contain
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.7
+    }
+
+    @media (max-width:960px) {
+      .shell {
+        width: min(calc(100vw - 20px), 1120px);
+        margin: 18px auto
+      }
+
+      .hero {
+        grid-template-columns: 1fr
+      }
+
+      .panel-main {
+        border-right: 0;
+        border-bottom: 1px solid var(--line)
+      }
+
+      .hint-grid {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media (max-width:640px) {
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start
+      }
+
+      .panel-main,
+      .panel-side {
+        padding: 22px 16px
+      }
+
+      .title {
+        font-size: 2.3rem
+      }
+
+      .result-head {
+        flex-direction: column
+      }
+
+      .metric {
+        flex-direction: column;
+        align-items: flex-start
+      }
+
+      .metric span {
+        text-align: left
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="shell">
     <div class="topbar">
-      <a class="brand" href="/"><img src="/logo_v2_full.svg" alt="BoomerItems"></a>
+      <a class="brand" href="/"><img src="/Boomer.svg" alt="BoomerItems"></a>
       <a class="back-link" href="/">Ana sayfaya don</a>
     </div>
     <div class="card hero">
       <section class="panel-main">
         <div class="eyebrow">Siparis Takibi</div>
         <h1 class="title">Siparisinizin nerede oldugunu aninda gorun</h1>
-        <p class="lead">Siparis numaranizi veya kargo takip numaranizi girin. Durum, tarih, toplam ve teslimat bilgilerini tek ekranda gorebilirsiniz.</p>
+        <p class="lead">Siparis numaranizi veya kargo takip numaranizi girin. Durum, tarih, toplam ve teslimat
+          bilgilerini tek ekranda gorebilirsiniz.</p>
         <form class="tracker-form" id="trackerForm">
           <div>
             <label class="label" for="trackingInput">Siparis No veya Kargo No</label>
-            <input id="trackingInput" class="input" type="text" placeholder="Orn: BM1234567890 veya kargo numarasi" required>
+            <input id="trackingInput" class="input" type="text" placeholder="Orn: BM1234567890 veya kargo numarasi"
+              required>
           </div>
           <button class="submit" type="submit">Siparisimi Sorgula</button>
         </form>
         <div class="hint-grid">
-          <div class="hint"><strong>Siparis numarasi</strong><span>Satin alma sonrasinda ekranda ve e-postada gorunen siparis kodunu kullanabilirsiniz.</span></div>
-          <div class="hint"><strong>Kargo takibi</strong><span>Kargoya verildiyse kargo takip numarasi ile de ayni ekrandan sorgulama yapabilirsiniz.</span></div>
-          <div class="hint"><strong>Hizli sonuc</strong><span>Sorgu dogrudan sisteminizin aktif siparis takip API endpointine baglanir.</span></div>
+          <div class="hint"><strong>Siparis numarasi</strong><span>Satin alma sonrasinda ekranda ve e-postada gorunen
+              siparis kodunu kullanabilirsiniz.</span></div>
+          <div class="hint"><strong>Kargo takibi</strong><span>Kargoya verildiyse kargo takip numarasi ile de ayni
+              ekrandan sorgulama yapabilirsiniz.</span></div>
+          <div class="hint"><strong>Hizli sonuc</strong><span>Sorgu dogrudan sisteminizin aktif siparis takip API
+              endpointine baglanir.</span></div>
         </div>
       </section>
       <aside class="panel-side">
         <h2 class="side-title">Takip Sonucu</h2>
-        <div id="resultRoot" class="empty-state">Siparis durumunu gormek icin soldaki alana siparis numaranizi veya kargo takip numaranizi yazin.</div>
+        <div id="resultRoot" class="empty-state">Siparis durumunu gormek icin soldaki alana siparis numaranizi veya
+          kargo takip numaranizi yazin.</div>
       </aside>
     </div>
   </div>
@@ -57,13 +430,13 @@
       const form = document.getElementById('trackerForm');
       const input = document.getElementById('trackingInput');
       const resultRoot = document.getElementById('resultRoot');
-      const statusMap = { pending:'Siparis Alindi', processing:'Hazirlaniyor', shipped:'Kargoya Verildi', delivered:'Teslim Edildi', cancelled:'Iptal Edildi' };
-      const carrierLogos = { 'Yurtiçi Kargo':'/yurtici_kargo.png', 'Aras Kargo':'/aras_kargo.png', 'MNG Kargo':'/mng_kargo.png', 'Sürat Kargo':'/surat_kargo.png', 'PTT Kargo':'/ptt_kargo.png', 'Kargoist':'/kargoist.png', 'DHL Express':'/dhl_express.png' };
-      function formatCurrency(value){ return Number(value||0).toLocaleString('tr-TR') + ' ₺'; }
-      function formatDate(value){ if(!value) return '-'; const d = new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'}); }
-      function escapeHtml(value){ return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-      function renderState(className,text){ resultRoot.className = className; resultRoot.textContent = text; }
-      function renderResult(order){
+      const statusMap = { pending: 'Siparis Alindi', processing: 'Hazirlaniyor', shipped: 'Kargoya Verildi', delivered: 'Teslim Edildi', cancelled: 'Iptal Edildi' };
+      const carrierLogos = { 'Yurtiçi Kargo': '/yurtici_kargo.png', 'Aras Kargo': '/aras_kargo.png', 'MNG Kargo': '/mng_kargo.png', 'Sürat Kargo': '/surat_kargo.png', 'PTT Kargo': '/ptt_kargo.png', 'Kargoist': '/kargoist.png', 'DHL Express': '/dhl_express.png' };
+      function formatCurrency(value) { return Number(value || 0).toLocaleString('tr-TR') + ' ₺'; }
+      function formatDate(value) { if (!value) return '-'; const d = new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }); }
+      function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+      function renderState(className, text) { resultRoot.className = className; resultRoot.textContent = text; }
+      function renderResult(order) {
         const statusKey = order.status || 'pending';
         const statusLabel = statusMap[statusKey] || statusKey;
         const shipping = order.shippingAddress || {};
@@ -90,27 +463,28 @@
         note.textContent = 'Sorun yasarsaniz iletisim sayfasindan bizimle baglantiya gecebilirsiniz.';
         resultRoot.appendChild(note);
       }
-      async function fetchOrder(query){
-        renderState('loading-state','Siparisiniz sorgulaniyor...');
-        try{
-          const response = await fetch(`${apiBase}/orders/track/${encodeURIComponent(query)}`, { headers:{'Accept':'application/json'} });
-          if(!response.ok){ renderState('error-state','Siparis bulunamadi. Lutfen numarayi kontrol edip tekrar deneyin.'); return; }
+      async function fetchOrder(query) {
+        renderState('loading-state', 'Siparisiniz sorgulaniyor...');
+        try {
+          const response = await fetch(`${apiBase}/orders/track/${encodeURIComponent(query)}`, { headers: { 'Accept': 'application/json' } });
+          if (!response.ok) { renderState('error-state', 'Siparis bulunamadi. Lutfen numarayi kontrol edip tekrar deneyin.'); return; }
           const data = await response.json();
           renderResult(data);
-        }catch(error){
-          renderState('error-state','Sunucuya baglanirken bir hata olustu. Lutfen biraz sonra tekrar deneyin.');
+        } catch (error) {
+          renderState('error-state', 'Sunucuya baglanirken bir hata olustu. Lutfen biraz sonra tekrar deneyin.');
         }
       }
-      form.addEventListener('submit', function(event){
+      form.addEventListener('submit', function (event) {
         event.preventDefault();
         const query = input.value.trim();
-        if(!query){ input.focus(); return; }
+        if (!query) { input.focus(); return; }
         fetchOrder(query);
       });
       const params = new URLSearchParams(window.location.search);
       const preset = params.get('q');
-      if(preset){ input.value = preset; fetchOrder(preset); }
+      if (preset) { input.value = preset; fetchOrder(preset); }
     })();
   </script>
 </body>
+
 </html>

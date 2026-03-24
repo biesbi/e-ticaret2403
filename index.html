@@ -813,14 +813,14 @@
 			display: none;
 		}
 
-		@media (max-width: 900px) {
-			.order-track-fab {
-				position: fixed;
-				right: 14px;
-				top: 14px;
-				bottom: auto;
-				z-index: 10001;
-				display: inline-flex;
+			@media (max-width: 900px) {
+				.order-track-fab {
+					position: fixed;
+					right: 14px;
+					top: 14px;
+					bottom: auto;
+					z-index: 10001;
+					display: inline-flex;
 				align-items: center;
 				justify-content: center;
 				width: 54px;
@@ -865,6 +865,80 @@
 				stroke-linecap: round;
 				stroke-linejoin: round;
 			}
+
+			.app-header .header-right .order-track-fab {
+				position: static !important;
+				top: auto !important;
+				right: auto !important;
+				bottom: auto !important;
+				width: 44px !important;
+				height: 44px !important;
+				border-radius: 14px !important;
+				box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
+				margin: 0 !important;
+				flex-shrink: 0 !important;
+			}
+		}
+
+		@media (max-width: 768px) {
+			.products-grid {
+				gap: 12px !important;
+				padding: 10px 12px 18px !important;
+			}
+
+			.product-card {
+				min-width: 0;
+			}
+
+			.product-info {
+				padding: 12px 12px 14px !important;
+			}
+
+			.product-title {
+				font-family: Inter, sans-serif !important;
+				font-size: 0.84rem !important;
+				font-weight: 800 !important;
+				line-height: 1.35 !important;
+				letter-spacing: -0.01em !important;
+				display: -webkit-box !important;
+				-webkit-box-orient: vertical !important;
+				-webkit-line-clamp: 3 !important;
+				line-clamp: 3 !important;
+				overflow: hidden !important;
+				min-height: 3.6em !important;
+				height: auto !important;
+				word-break: break-word;
+				margin-bottom: 10px !important;
+			}
+
+			.product-price-wrapper {
+				gap: 6px !important;
+				align-items: center !important;
+			}
+
+			.product-price {
+				font-size: 0.95rem !important;
+			}
+
+			.product-old-price {
+				font-size: 0.72rem !important;
+			}
+
+			.product-category,
+			.product-category-tag,
+			.product-category-label,
+			.product-meta-category,
+			.product-info > div:first-child:not(.product-price-wrapper):not(.product-title) {
+				display: none !important;
+			}
+
+			.mobile-bottom-nav .nav-item {
+				flex: 1 1 0 !important;
+			}
+
+			.app-header.mobile-only .icon-btn[data-mobile-hidden="inventory-hidden"] {
+				display: none !important;
+			}
 		}
 	</style>
 	<script>
@@ -891,6 +965,29 @@
 		(function() {
 			var origFetch = window.fetch;
 			var origAlert = window.alert;
+			var observedOrderIds = window.__observedOrderIds || (window.__observedOrderIds = []);
+
+			var rememberOrderIds = function(payload) {
+				var collect = function(value) {
+					if (!value) return;
+					if (Array.isArray(value)) {
+						value.forEach(collect);
+						return;
+					}
+					if (typeof value !== 'object') return;
+					var rawId = value.id;
+					if (typeof rawId === 'string' && /^BM[A-Z0-9]{8,}$/i.test(rawId)) {
+						if (observedOrderIds.indexOf(rawId) === -1) {
+							observedOrderIds.push(rawId);
+						}
+					}
+					Object.keys(value).forEach(function(key) {
+						collect(value[key]);
+					});
+				};
+
+				collect(payload);
+			};
 
 			/* alert() yerine toast kullan (React hataları için) */
 			window.alert = function(msg) {
@@ -908,8 +1005,8 @@
 				var opts = args[1] || {};
 				var method = (opts.method || 'GET').toUpperCase();
 
-				/* ── Auth header enjeksiyonu: PATCH/PUT/DELETE admin isteklerine token ekle ── */
-				if ((method === 'PATCH' || method === 'PUT' || method === 'DELETE') && url.indexOf('/api/') !== -1) {
+				/* ── Auth header enjeksiyonu: admin API isteklerine token ekle ── */
+				if ((method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE') && url.indexOf('/api/') !== -1) {
 					var token = null;
 					try { token = localStorage.getItem('token'); } catch(e) {}
 					if (token) {
@@ -929,6 +1026,9 @@
 
 				return origFetch.apply(this, args).then(function(response) {
 					var cloned = response.clone();
+					cloned.json().then(function(data) {
+						rememberOrderIds(data);
+					}).catch(function() {});
 
 					/* ── 2. Sepete ekleme: Stok kontrolü + miktar bildirimi ── */
 					if (url.indexOf('/api/cart') !== -1 && method === 'POST') {
@@ -1123,6 +1223,49 @@
 					document.body.classList.toggle('mobile-overlay-open', hasOverlay);
 				};
 
+				var syncMobileUiTweaks = function () {
+					if (window.innerWidth > 768) return;
+
+					var bottomNav = document.querySelector('.app-container .mobile-bottom-nav');
+					if (bottomNav) {
+						Array.prototype.slice.call(bottomNav.querySelectorAll('.nav-item')).forEach(function (item) {
+							var text = (item.textContent || '').toLowerCase();
+							if (text.indexOf('kategori') !== -1) {
+								item.style.display = 'none';
+							}
+						});
+					}
+
+					var mobileHeader = document.querySelector('.app-header.mobile-only, .modern-header.mobile-only, header.mobile-only');
+					if (mobileHeader) {
+						var inventoryButton = Array.prototype.slice.call(mobileHeader.querySelectorAll('button, a')).find(function (el) {
+							if (!el || el.classList.contains('order-track-fab')) return false;
+							var label = ((el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute('title') || '')).toLowerCase();
+							if (label.indexOf('envanter') !== -1 || label.indexOf('urun') !== -1 || label.indexOf('koleksiyon') !== -1) {
+								return true;
+							}
+							return !!el.querySelector('svg path[d*="M12 3l7 4"], svg path[d*="M5 7v8l7 4 7-4V7"], svg path[d*="M12 3.5 18.5 7"]');
+						});
+
+						if (inventoryButton) {
+							inventoryButton.setAttribute('data-mobile-hidden', 'inventory-hidden');
+							inventoryButton.style.display = 'none';
+						}
+					}
+
+					Array.prototype.slice.call(document.querySelectorAll('.product-card .product-info')).forEach(function (info) {
+						if (!info || info.dataset.mobileTuned === '1') return;
+						var firstChild = info.firstElementChild;
+						if (firstChild) {
+							var text = (firstChild.textContent || '').trim().toUpperCase();
+							if ((text === 'DIECAST' || text === 'FIGÜR' || text === 'FIGUR' || text === 'LEGO') && text.length <= 12) {
+								firstChild.remove();
+							}
+						}
+						info.dataset.mobileTuned = '1';
+					});
+				};
+
 				var hideNewsletterPopup = function () {
 					var nodes = Array.prototype.slice.call(
 						document.querySelectorAll(
@@ -1214,7 +1357,7 @@
 					var header = document.createElement('header');
 					header.className = 'desktop-polished-header';
 					header.innerHTML = ''
-						+ '<a class="brand" href="#"><img src="/logo_v2_full.png" alt="Boomer Items"></a>'
+						+ '<a class="brand" href="#"><img src="/Boomer.svg" alt="Boomer Items"></a>'
 						+ '<nav class="nav-links" aria-label="Desktop">'
 						+ '<a class="nav-link active" href="/">Ana Sayfa</a>'
 						+ '<button class="nav-link products-link" type="button">Urunler</button>'
@@ -1286,6 +1429,7 @@
 				normalizeAdminEntryState();
 				syncDesktopHeader();
 				syncMobileOverlayLock();
+				syncMobileUiTweaks();
 				hideNewsletterPopup();
 				syncStaticFooter();
 
@@ -1298,6 +1442,7 @@
 							ticking = false;
 							syncDesktopHeader();
 							syncMobileOverlayLock();
+							syncMobileUiTweaks();
 							hideNewsletterPopup();
 							syncStaticFooter();
 						});
@@ -1310,7 +1455,10 @@
 					desktopMq.addListener(syncDesktopHeader);
 				}
 
-				window.addEventListener('resize', syncMobileOverlayLock);
+				window.addEventListener('resize', function () {
+					syncMobileOverlayLock();
+					syncMobileUiTweaks();
+				});
 			} catch (error) { }
 		});
 	</script>
@@ -1369,7 +1517,7 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="BoomerItems" />
 	<meta property="og:description" content="Koleksiyonunuz iÃƒÂ§in aradÃ„Â±Ã„Å¸Ã„Â±nÃ„Â±z herÃ…Å¸ey!" />
-	<meta property="og:image" content="/logo_v2_full.png" />
+	<meta property="og:image" content="/Boomer.svg" />
 	<style id='wp-img-auto-sizes-contain-inline-css'>
 		img:is([sizes=auto i], [sizes^="auto," i]) {
 			contain-intrinsic-size: 3000px 1500px
@@ -3270,6 +3418,539 @@
 		type='text/css' media='all' />
 	<script type="module" crossorigin src="/assets/index-Du6Gv6sE.js"></script>
 	<link rel="stylesheet" crossorigin href="/assets/index--Mnj2wD-.css">
+	<style id="final-mobile-fixes">
+		.app-product-card,
+		.product-card {
+			position: relative;
+		}
+
+		.product-stock-chip {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			margin: 0 0 10px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			font-size: 0.72rem;
+			font-weight: 800;
+			line-height: 1;
+			letter-spacing: 0.01em;
+		}
+
+		.product-stock-chip.is-instock {
+			background: #ecfdf5;
+			color: #166534;
+			border: 1px solid #bbf7d0;
+		}
+
+		.product-stock-chip.is-lowstock {
+			background: #fff7ed;
+			color: #c2410c;
+			border: 1px solid #fed7aa;
+		}
+
+		.product-stock-chip.is-outofstock {
+			background: #fef2f2;
+			color: #b91c1c;
+			border: 1px solid #fecaca;
+		}
+
+		.product-stock-banner {
+			position: absolute;
+			top: 12px;
+			left: 12px;
+			right: 12px;
+			z-index: 4;
+			display: none;
+			align-items: center;
+			justify-content: center;
+			padding: 9px 12px;
+			border-radius: 14px;
+			background: rgba(148, 163, 184, 0.92);
+			color: #fff;
+			font-size: 0.78rem;
+			font-weight: 900;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+		}
+
+		.app-product-card.is-out-of-stock .product-stock-banner,
+		.product-card.is-out-of-stock .product-stock-banner {
+			display: flex;
+		}
+
+		.app-product-card.is-out-of-stock .card-media img,
+		.product-card.is-out-of-stock img {
+			filter: grayscale(1);
+			opacity: 0.58;
+		}
+
+		.app-product-card.is-out-of-stock,
+		.product-card.is-out-of-stock {
+			background: #f8fafc !important;
+			border-color: #dbe3ee !important;
+		}
+
+		.app-product-card.is-out-of-stock .card-title,
+		.product-card.is-out-of-stock .product-title,
+		.product-card.is-out-of-stock h3,
+		.product-card.is-out-of-stock h4 {
+			color: #64748b !important;
+		}
+
+		.product-stock-total {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin: 12px 0 18px;
+			padding: 12px 14px;
+			border-radius: 16px;
+			background: #f8fafc;
+			border: 1px solid #e2e8f0;
+			color: #0f172a;
+			font-size: 0.92rem;
+			font-weight: 700;
+		}
+
+		.product-stock-total strong {
+			font-weight: 900;
+		}
+
+		@media (max-width: 768px) {
+			.app-header .header-right > .icon-btn,
+			.app-header.mobile-only .icon-btn:last-of-type,
+			.app-header.mobile-only .header-actions .icon-btn:last-of-type,
+			.app-header.mobile-only button[aria-label*="Urun"],
+			.app-header.mobile-only button[aria-label*="ürün"],
+			.app-header.mobile-only button[title*="Urun"],
+			.app-header.mobile-only button[title*="ürün"] {
+				display: none !important;
+			}
+
+			.mobile-bottom-nav .nav-item:nth-child(2) {
+				display: none !important;
+			}
+
+			.mobile-bottom-nav {
+				display: flex !important;
+				align-items: stretch !important;
+				justify-content: space-between !important;
+			}
+
+			.mobile-bottom-nav .nav-item {
+				flex: 1 1 25% !important;
+				max-width: 25% !important;
+			}
+
+			.order-track-fab {
+				top: calc(env(safe-area-inset-top, 0px) + 86px) !important;
+				bottom: auto !important;
+			}
+
+			.products-grid {
+				gap: 12px !important;
+				padding: 10px 12px 18px !important;
+			}
+
+			.product-card,
+			.product-card * {
+				min-width: 0 !important;
+			}
+
+			.product-info {
+				padding: 12px !important;
+			}
+
+			.product-info > div:first-child,
+			.product-info > span:first-child,
+			.product-info > p:first-child,
+			.card-body > .card-cat,
+			span.card-cat,
+			.product-info .product-category,
+			.product-info .product-category-tag,
+			.product-info .product-category-label {
+				display: none !important;
+			}
+
+			.product-card .product-title,
+			.product-card h3,
+			.product-card h4 {
+				font-family: Inter, sans-serif !important;
+				font-size: 0.8rem !important;
+				font-weight: 800 !important;
+				line-height: 1.42 !important;
+				letter-spacing: 0 !important;
+				display: -webkit-box !important;
+				-webkit-box-orient: vertical !important;
+				-webkit-line-clamp: 3 !important;
+				line-clamp: 3 !important;
+				overflow: hidden !important;
+				height: auto !important;
+				min-height: 3.7em !important;
+				margin: 0 0 10px !important;
+				word-break: break-word !important;
+				white-space: normal !important;
+				text-wrap: balance;
+			}
+
+			.product-price-wrapper {
+				align-items: center !important;
+				gap: 6px !important;
+				margin-top: 0 !important;
+			}
+
+			.product-price {
+				font-size: 0.98rem !important;
+				line-height: 1 !important;
+			}
+
+			.product-old-price {
+				font-size: 0.72rem !important;
+				line-height: 1 !important;
+			}
+		}
+	</style>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var applyFinalMobileFixes = function () {
+				if (window.innerWidth > 768) return;
+
+				document.querySelectorAll('.app-header .header-right > .icon-btn').forEach(function (button) {
+					button.style.display = 'none';
+				});
+
+				var fab = document.querySelector('.order-track-fab');
+				var headerRight = document.querySelector('.app-header .header-right');
+				if (fab && headerRight && fab.parentElement !== headerRight) {
+					headerRight.appendChild(fab);
+				}
+
+				var mobileNavItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
+				if (mobileNavItems[1]) {
+					mobileNavItems[1].style.display = 'none';
+				}
+
+				document.querySelectorAll('.product-card').forEach(function (card) {
+					Array.prototype.slice.call(card.querySelectorAll('div, span, p, small, strong')).forEach(function (node) {
+						var text = (node.textContent || '').trim().toUpperCase();
+						if (text === 'DIECAST' || text === 'FIGÜR' || text === 'FIGUR' || text === 'LEGO') {
+							node.style.display = 'none';
+						}
+					});
+				});
+
+				document.querySelectorAll('.card-cat, span.card-cat').forEach(function (node) {
+					node.style.display = 'none';
+				});
+			};
+
+			applyFinalMobileFixes();
+
+			if (window.MutationObserver) {
+				new MutationObserver(function () {
+					applyFinalMobileFixes();
+				}).observe(document.body, { childList: true, subtree: true });
+			}
+
+			window.addEventListener('resize', applyFinalMobileFixes);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var API_BASE = '/api';
+			var productIndexPromise = null;
+			var productIndex = [];
+			var productDetailCache = {};
+			var lastOpenedProductId = null;
+			var refreshQueued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var parsePrice = function (value) {
+				var clean = String(value || '').replace(/[^\d.,]/g, '').replace(/\./g, '').replace(',', '.');
+				var num = parseFloat(clean);
+				return Number.isFinite(num) ? num : null;
+			};
+
+			var stockValueFromProduct = function (product) {
+				if (!product) return 0;
+				if (product.hasVariants) {
+					return Math.max(0, parseInt(product.totalVariantStock || 0, 10) || 0);
+				}
+				return Math.max(0, parseInt(product.available_stock || product.stock || 0, 10) || 0);
+			};
+
+			var stockStateClass = function (stock) {
+				if (stock <= 0) return 'is-outofstock';
+				if (stock <= 5) return 'is-lowstock';
+				return 'is-instock';
+			};
+
+			var stockText = function (stock) {
+				if (stock <= 0) return 'Stok Bitti';
+				return 'Stok: ' + stock + ' adet';
+			};
+
+			var fetchProductIndex = function () {
+				if (productIndexPromise) return productIndexPromise;
+				productIndexPromise = fetch(API_BASE + '/products?limit=100&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (data) {
+						var items = (data && data.items) || [];
+						var totalPages = Math.max(1, parseInt(data && data.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) {
+							productIndex = items;
+							return items;
+						}
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch(API_BASE + '/products?limit=100&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (payload) { return (payload && payload.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems);
+							});
+							productIndex = items;
+							return items;
+						});
+					})
+					.catch(function () {
+						productIndex = [];
+						return [];
+					});
+				return productIndexPromise;
+			};
+
+			var fetchProductDetail = function (productId) {
+				if (!productId) return Promise.resolve(null);
+				if (productDetailCache[productId]) return productDetailCache[productId];
+				productDetailCache[productId] = fetch(API_BASE + '/products/' + encodeURIComponent(productId))
+					.then(function (response) { return response.json(); })
+					.then(function (payload) { return payload || null; })
+					.catch(function () { return null; });
+				return productDetailCache[productId];
+			};
+
+			var findProductForCard = function (card) {
+				if (!card) return null;
+				var titleNode = card.querySelector('.card-title, .product-title, h3, h4');
+				if (!titleNode) return null;
+				var title = normalizeText(titleNode.textContent);
+				if (!title) return null;
+				var priceNode = card.querySelector('.product-price, .card-footer, .price, .price-current, .current-price');
+				var price = parsePrice(priceNode ? priceNode.textContent : '');
+				var candidates = productIndex.filter(function (item) {
+					return normalizeText(item.title || item.name) === title;
+				});
+				if (!candidates.length) return null;
+				if (price === null) return candidates[0];
+				var exact = candidates.find(function (item) {
+					return Math.abs((parseFloat(item.price) || 0) - price) < 0.01;
+				});
+				return exact || candidates[0];
+			};
+
+			var ensureStockBanner = function (card) {
+				var media = card.querySelector('.card-media, .product-image, .product-thumb, .product-media') || card;
+				var banner = card.querySelector('.product-stock-banner');
+				if (!banner) {
+					banner = document.createElement('div');
+					banner.className = 'product-stock-banner';
+					banner.textContent = 'Stok Bitti';
+					media.appendChild(banner);
+				}
+				return banner;
+			};
+
+			var ensureStockChip = function (card) {
+				var body = card.querySelector('.card-body, .product-info, .product-content') || card;
+				var chip = card.querySelector('.product-stock-chip');
+				if (!chip) {
+					chip = document.createElement('div');
+					chip.className = 'product-stock-chip';
+					body.insertBefore(chip, body.firstChild);
+				}
+				return chip;
+			};
+
+			var applyStockToCard = function (card, product) {
+				if (!card || !product) return;
+				var stock = stockValueFromProduct(product);
+				var chip = ensureStockChip(card);
+				var banner = ensureStockBanner(card);
+				var stateClass = stockStateClass(stock);
+
+				chip.textContent = stockText(stock);
+				chip.className = 'product-stock-chip ' + stateClass;
+				banner.textContent = 'Stok Bitti';
+				card.classList.toggle('is-out-of-stock', stock <= 0);
+				card.dataset.productId = product.id || '';
+				card.dataset.stockValue = String(stock);
+			};
+
+			var resolveCardStocks = function () {
+				if (!productIndex.length) return;
+				document.querySelectorAll('.app-product-card, .product-card').forEach(function (card) {
+					var product = findProductForCard(card);
+					if (!product) return;
+					lastOpenedProductId = lastOpenedProductId || product.id || null;
+					fetchProductDetail(product.id).then(function (detail) {
+						applyStockToCard(card, detail || product);
+					});
+				});
+			};
+
+			var findDetailProductId = function (modal) {
+				if (lastOpenedProductId) return lastOpenedProductId;
+				var titleNode = modal.querySelector('h1, h2, h3, .detail-title, .product-title');
+				var title = normalizeText(titleNode ? titleNode.textContent : '');
+				if (!title) return null;
+				var match = productIndex.find(function (item) {
+					return normalizeText(item.title || item.name) === title;
+				});
+				return match ? match.id : null;
+			};
+
+			var applyStockToDetail = function (modal, product) {
+				if (!modal || !product) return;
+				var stock = stockValueFromProduct(product);
+				var host = modal.querySelector('.detail-info-section') || modal.querySelector('.product-detail-modal > div:last-child') || modal;
+				var titleNode = host.querySelector('h1, h2, h3, .detail-title, .product-title');
+				var stockNode = host.querySelector('.product-stock-total');
+				if (!stockNode) {
+					stockNode = document.createElement('div');
+					stockNode.className = 'product-stock-total';
+					if (titleNode && titleNode.parentNode === host) {
+						titleNode.insertAdjacentElement('afterend', stockNode);
+					} else {
+						host.insertBefore(stockNode, host.firstChild);
+					}
+				}
+				stockNode.innerHTML = stock <= 0
+					? '<strong>Stok Durumu:</strong> Bu urun tukenmistir.'
+					: '<strong>Toplam Stok:</strong> ' + stock + ' adet';
+			};
+
+			var resolveDetailStocks = function () {
+				var modal = document.querySelector('.product-detail-modal');
+				if (!modal) return;
+				var productId = findDetailProductId(modal);
+				if (!productId) return;
+				fetchProductDetail(productId).then(function (detail) {
+					if (detail) applyStockToDetail(modal, detail);
+				});
+			};
+
+			var queueRefresh = function () {
+				if (refreshQueued) return;
+				refreshQueued = true;
+				requestAnimationFrame(function () {
+					refreshQueued = false;
+					resolveCardStocks();
+					resolveDetailStocks();
+				});
+			};
+
+			document.addEventListener('click', function (event) {
+				var card = event.target && event.target.closest ? event.target.closest('.app-product-card, .product-card') : null;
+				if (!card) return;
+				if (card.dataset.productId) {
+					lastOpenedProductId = card.dataset.productId;
+					return;
+				}
+				var product = findProductForCard(card);
+				if (product && product.id) {
+					lastOpenedProductId = product.id;
+				}
+			}, true);
+
+			fetchProductIndex().then(function () {
+				queueRefresh();
+			});
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueRefresh).observe(document.body, { childList: true, subtree: true });
+			}
+
+			window.addEventListener('resize', queueRefresh);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var refreshPending = false;
+
+			var expandOrderCode = function (text) {
+				var ids = window.__observedOrderIds || [];
+				var match = String(text || '').match(/^#?(BM[A-Z0-9]{6,})$/i);
+				if (!match) return null;
+				var shortId = match[1].toUpperCase();
+				var fullId = ids.find(function (id) {
+					return String(id).toUpperCase().indexOf(shortId) === 0 && String(id).length > shortId.length;
+				});
+				if (!fullId) return null;
+				return '#' + fullId.toUpperCase();
+			};
+
+			var patchOrderCodeNodes = function () {
+				var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+					acceptNode: function (node) {
+						if (!node || !node.nodeValue) return NodeFilter.FILTER_REJECT;
+						var value = node.nodeValue.trim();
+						return /^#?BM[A-Z0-9]{6,}$/i.test(value)
+							? NodeFilter.FILTER_ACCEPT
+							: NodeFilter.FILTER_REJECT;
+					}
+				});
+
+				var current;
+				while ((current = walker.nextNode())) {
+					var nextValue = expandOrderCode(current.nodeValue.trim());
+					if (!nextValue || current.nodeValue.trim() === nextValue) continue;
+					current.nodeValue = current.nodeValue.replace(/#?BM[A-Z0-9]{6,}/i, nextValue);
+				}
+
+				document.querySelectorAll('[title],[aria-label]').forEach(function (node) {
+					['title', 'aria-label'].forEach(function (attr) {
+						var value = node.getAttribute(attr);
+						var nextValue = expandOrderCode(value);
+						if (nextValue && value !== nextValue) {
+							node.setAttribute(attr, nextValue);
+						}
+					});
+				});
+			};
+
+			var queueOrderCodePatch = function () {
+				if (refreshPending) return;
+				refreshPending = true;
+				requestAnimationFrame(function () {
+					refreshPending = false;
+					patchOrderCodeNodes();
+				});
+			};
+
+			queueOrderCodePatch();
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueOrderCodePatch).observe(document.body, { childList: true, subtree: true, characterData: true });
+			}
+
+			setInterval(queueOrderCodePatch, 1500);
+		});
+	</script>
 	<style id="custom-footer-style">
 		/* Custom Premium Footer Styles */
 		.modern-footer {
@@ -4183,7 +4864,7 @@
 	<footer class="modern-footer site-legal-footer">
 		<div class="footer-content">
 			<div class="footer-brand">
-				<img src="/logo_v2_full.png" alt="Boomer Items">
+				<img src="/Boomer.svg" alt="Boomer Items">
 				<h2>BOOMER ITEMS</h2>
 				<p>Koleksiyon tutkunu büyütecek eşsiz parçalar BoomerItems'ta seni bekliyor.</p>
 			</div>

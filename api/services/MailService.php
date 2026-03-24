@@ -1,7 +1,9 @@
 <?php
 
-final class MailService {
-    public static function ensureSchema(): void {
+final class MailService
+{
+    public static function ensureSchema(): void
+    {
         if (!tableExists('email_queue')) {
             db()->exec(
                 'CREATE TABLE IF NOT EXISTS email_queue (
@@ -38,16 +40,19 @@ final class MailService {
         }
     }
 
-    public static function verificationLifetimeHours(): int {
+    public static function verificationLifetimeHours(): int
+    {
         $hours = (int) env('MAIL_VERIFICATION_EXPIRE_HOURS', 24);
         return $hours > 0 ? $hours : 24;
     }
 
-    public static function generateVerificationToken(): string {
+    public static function generateVerificationToken(): string
+    {
         return bin2hex(random_bytes(32));
     }
 
-    public static function issueVerificationToken(string|int $userId, string $email, string $name): string {
+    public static function issueVerificationToken(string|int $userId, string $email, string $name): string
+    {
         self::ensureSchema();
 
         $token = self::generateVerificationToken();
@@ -74,7 +79,8 @@ final class MailService {
         return $token;
     }
 
-    public static function sendVerificationEmail(string $email, string $name, string $token): void {
+    public static function sendVerificationEmail(string $email, string $name, string $token): void
+    {
         $verifyUrl = rtrim((string) env('APP_URL', ''), '/') . '/verify-email.html?token=' . urlencode($token);
         $subject = 'BoomerItems e-posta dogrulama';
         $html = self::wrapTemplate(
@@ -97,7 +103,8 @@ final class MailService {
         self::queueAndAttempt($email, $subject, $html);
     }
 
-    public static function sendOrderReceivedEmail(string $email, string $name, array $order): void {
+    public static function sendOrderReceivedEmail(string $email, string $name, array $order): void
+    {
         $orderId = (string) ($order['id'] ?? '');
         $subtotal = number_format((float) ($order['subtotal'] ?? 0), 2, ',', '.');
         $discount = (float) ($order['discount'] ?? 0);
@@ -137,7 +144,8 @@ final class MailService {
         self::queueAndAttempt($email, $subject, $html);
     }
 
-    public static function sendOrderStatusEmail(string $email, string $name, string $orderId, string $newStatus): void {
+    public static function sendOrderStatusEmail(string $email, string $name, string $orderId, string $newStatus): void
+    {
         $statusLabels = [
             'pending' => 'Beklemede',
             'confirmed' => 'Onaylandi',
@@ -180,7 +188,8 @@ final class MailService {
         self::queueAndAttempt($email, $subject, $html);
     }
 
-    public static function sendCargoEmail(string $email, string $name, string $orderId, string $trackingNo, ?string $carrier): void {
+    public static function sendCargoEmail(string $email, string $name, string $orderId, string $trackingNo, ?string $carrier): void
+    {
         $subject = 'BoomerItems siparisiniz kargoya verildi - #' . $orderId;
         $infoRows = [
             'Siparis No' => $orderId,
@@ -206,7 +215,8 @@ final class MailService {
         self::queueAndAttempt($email, $subject, $html);
     }
 
-    public static function sendRegistrationAdminEmail(string $registeredEmail, string $registeredName): void {
+    public static function sendRegistrationAdminEmail(string $registeredEmail, string $registeredName): void
+    {
         $adminEmail = trim((string) env('MAIL_ADMIN_EMAIL', 'boomeritems@gmail.com'));
         if ($adminEmail === '' || !filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
             return;
@@ -229,7 +239,8 @@ final class MailService {
         self::queueAndAttempt($adminEmail, $subject, $html);
     }
 
-    public static function wrapTemplate(string $title, string $name, string $bodyHtml): string {
+    public static function wrapTemplate(string $title, string $name, string $bodyHtml): string
+    {
         $safeTitle = self::escape($title);
         $safeName = self::escape($name !== '' ? $name : 'BoomerItems kullanicisi');
         $year = date('Y');
@@ -275,7 +286,8 @@ final class MailService {
 </html>';
     }
 
-    public static function sendTestEmail(string $toEmail): array {
+    public static function sendTestEmail(string $toEmail): array
+    {
         self::ensureSchema();
         $enabled = filter_var(env('MAIL_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN);
         $html = self::wrapTemplate(
@@ -316,7 +328,8 @@ final class MailService {
         ];
     }
 
-    private static function queueAndAttempt(string $toEmail, string $subject, string $html): void {
+    private static function queueAndAttempt(string $toEmail, string $subject, string $html): void
+    {
         self::ensureSchema();
 
         $stmt = db()->prepare('INSERT INTO email_queue (to_email, subject, body, status) VALUES (?,?,?,?)');
@@ -335,7 +348,8 @@ final class MailService {
         )->execute([$sent ? 'sent' : 'failed', $sent ? 'sent' : 'failed', $queueId]);
     }
 
-    private static function deliver(string $toEmail, string $subject, string $html): bool {
+    private static function deliver(string $toEmail, string $subject, string $html): bool
+    {
         $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
         if (!file_exists($vendorAutoload)) {
             $vendorAutoload = __DIR__ . '/../vendor/autoload.php';
@@ -389,7 +403,8 @@ final class MailService {
         }
     }
 
-    private static function renderInfoTable(array $rows): string {
+    private static function renderInfoTable(array $rows): string
+    {
         $html = '<table style="width:100%;border-collapse:separate;border-spacing:0;margin:24px 0;background:#f8fafc;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;">';
         $total = count($rows);
         $index = 0;
@@ -405,21 +420,24 @@ final class MailService {
         return $html;
     }
 
-    private static function renderNoticeBox(string $title, string $text): string {
+    private static function renderNoticeBox(string $title, string $text): string
+    {
         return '<div style="margin:22px 0 18px;padding:18px 20px;border-radius:20px;background:linear-gradient(135deg,#fff8dc 0%,#fff1bd 100%);border:1px solid rgba(255,204,0,0.45);">'
             . '<div style="font-size:13px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;color:#8a6500;margin-bottom:6px;">' . self::escape($title) . '</div>'
             . '<div style="color:#4b5563;">' . self::escape($text) . '</div>'
             . '</div>';
     }
 
-    private static function renderMiniCard(string $title, string $content): string {
+    private static function renderMiniCard(string $title, string $content): string
+    {
         return '<div style="margin:22px 0 0;padding:20px;border-radius:20px;background:#ffffff;border:1px solid #e7ebf1;box-shadow:0 10px 30px rgba(15,23,42,0.06);">'
             . '<div style="font-size:13px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;color:#dd101f;margin-bottom:8px;">' . self::escape($title) . '</div>'
             . '<div style="color:#334155;line-height:1.7;">' . $content . '</div>'
             . '</div>';
     }
 
-    private static function renderOrderItems(array $items): string {
+    private static function renderOrderItems(array $items): string
+    {
         if ($items === []) {
             return '';
         }
@@ -456,22 +474,25 @@ final class MailService {
         return $html;
     }
 
-    private static function renderButton(string $url, string $label): string {
+    private static function renderButton(string $url, string $label): string
+    {
         return '<div style="margin:24px 0;">'
             . '<a href="' . self::escape($url) . '" style="display:inline-block;padding:15px 28px;border-radius:16px;background:linear-gradient(135deg,#ffcc00 0%,#f2b900 100%);border:1px solid #d8a400;color:#111827;text-decoration:none;font-weight:800;box-shadow:0 10px 24px rgba(255,204,0,0.28);">' . self::escape($label) . '</a>'
             . '</div>';
     }
 
-    private static function renderBrandLogo(): string {
+    private static function renderBrandLogo(): string
+    {
         $baseUrl = rtrim((string) env('APP_URL', 'https://www.boomeritems.com'), '/');
-        $logoUrl = $baseUrl . '/logo_v2_full.svg';
+        $logoUrl = $baseUrl . '/Boomer.svg';
 
         return '<div style="display:inline-block;">'
             . '<img src="' . self::escape($logoUrl) . '" alt="BoomerItems" style="display:block;max-width:280px;width:100%;height:auto;margin:0 auto;">'
             . '</div>';
     }
 
-    private static function escape(string $value): string {
+    private static function escape(string $value): string
+    {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 }

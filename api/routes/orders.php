@@ -443,11 +443,39 @@ if ($id !== null && $sub === 'cargo') {
     if ($tracking === '') error('Takip numarasi gerekli.');
 
     $targetStatus = StockService::resolveStatus(['shipped', 'processing', 'confirmed'], 'pending');
+
+    $setParts = [];
+    $values = [];
+
+    if (tableHasColumn('orders', 'cargo_number')) {
+        $setParts[] = 'cargo_number = ?';
+        $values[] = $tracking;
+    }
+    if (tableHasColumn('orders', 'tracking_no')) {
+        $setParts[] = 'tracking_no = ?';
+        $values[] = $tracking;
+    }
+    if (tableHasColumn('orders', 'cargo_company')) {
+        $setParts[] = 'cargo_company = ?';
+        $values[] = $carrier !== '' ? $carrier : null;
+    }
+    if (tableHasColumn('orders', 'cargo_carrier')) {
+        $setParts[] = 'cargo_carrier = ?';
+        $values[] = $carrier !== '' ? $carrier : null;
+    }
+
+    $setParts[] = 'status = ?';
+    $values[] = $targetStatus;
+    $values[] = $id;
+
+    $exists = db()->prepare('SELECT id FROM orders WHERE id = ? LIMIT 1');
+    $exists->execute([$id]);
+    if (!$exists->fetch()) error('Siparis bulunamadi.', 404);
+
     $stmt = db()->prepare(
-        'UPDATE orders SET cargo_number = ?, cargo_company = ?, status = ? WHERE id = ?'
+        'UPDATE orders SET ' . implode(', ', $setParts) . ' WHERE id = ?'
     );
-    $stmt->execute([$tracking, $carrier !== '' ? $carrier : null, $targetStatus, $id]);
-    if ($stmt->rowCount() === 0) error('Siparis bulunamadi.', 404);
+    $stmt->execute($values);
 
     orderApplyStockTransition((string) $id, $targetStatus, null);
 

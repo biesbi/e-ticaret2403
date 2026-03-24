@@ -207,6 +207,8 @@ function legacyOrder(array $order): array {
         'createdAt' => $order['created_at'] ?? ($order['createdAt'] ?? null),
         'cargo_number' => $order['tracking_no'] ?? ($order['cargo_number'] ?? null),
         'cargo_company' => $order['cargo_carrier'] ?? ($order['cargo_company'] ?? null),
+        'cargoNumber' => $order['tracking_no'] ?? ($order['cargo_number'] ?? ($order['cargoNumber'] ?? null)),
+        'cargoCompany' => $order['cargo_carrier'] ?? ($order['cargo_company'] ?? ($order['cargoCompany'] ?? null)),
         'order_note' => $order['order_note'] ?? ($order['orderNote'] ?? null),
         'shippingAddress' => [
             'fullname' => $order['fullname'] ?? ($shipping['fullname'] ?? null),
