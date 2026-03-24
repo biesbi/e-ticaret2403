@@ -2,6 +2,11 @@
 
 StockService::ensureSchema();
 
+// Otomatik stok temizleme: %1 ihtimalle terk edilen siparişleri temizle
+if (random_int(1, 100) === 1) {
+    try { StockService::releaseAbandonedReservations(24); } catch (Throwable) {}
+}
+
 function generateOrderId(): string {
     return 'BM' . strtoupper(substr(bin2hex(random_bytes(6)), 0, 10));
 }
@@ -166,8 +171,36 @@ if ($id === null && $method === 'POST') {
     $paymentMethod = (string) ($data['paymentMethod'] ?? $data['payment_method'] ?? 'card');
     $rawItems = is_array($data['items'] ?? null) ? $data['items'] : [];
 
+    // --- Input Validasyonları ---
     if ($customerName === '' || $customerEmail === '' || $city === '' || $district === '') {
         error('Teslimat bilgileri eksik.');
+    }
+    if (mb_strlen($customerName) > 100) {
+        error('Ad soyad en fazla 100 karakter olabilir.');
+    }
+    if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+        error('Gecerli bir e-posta adresi girin.');
+    }
+    if ($customerPhone !== '' && !preg_match('/^[0-9\s\-\+\(\)]{7,20}$/', $customerPhone)) {
+        error('Gecerli bir telefon numarasi girin.');
+    }
+    if ($customerPhone === '') {
+        error('Telefon numarasi zorunludur.');
+    }
+    if (mb_strlen($addressDetail) > 500) {
+        error('Adres detayi en fazla 500 karakter olabilir.');
+    }
+    if ($addressDetail === '') {
+        error('Adres detayi zorunludur.');
+    }
+    if (mb_strlen($orderNote) > 1000) {
+        error('Siparis notu en fazla 1000 karakter olabilir.');
+    }
+    if (mb_strlen($couponCode) > 50) {
+        error('Kupon kodu en fazla 50 karakter olabilir.');
+    }
+    if (!in_array($paymentMethod, ['card', 'bank_transfer', 'cash_on_delivery'], true)) {
+        error('Gecersiz odeme yontemi.');
     }
     if ($rawItems === []) error('Siparis kalemleri bos.');
 
@@ -181,8 +214,19 @@ if ($id === null && $method === 'POST') {
 
         $discount = 0.0;
         if ($couponCode !== '') {
-            $coupon = fetchCoupon($couponCode);
+            // Kupon race condition önlemi: SELECT FOR UPDATE ile kilitle
+            $couponStmt = $pdo->prepare('SELECT * FROM coupons WHERE code = ? AND is_active = 1 LIMIT 1 FOR UPDATE');
+            $couponStmt->execute([strtoupper($couponCode)]);
+            $coupon = $couponStmt->fetch();
             if ($coupon) {
+                if (!empty($coupon['expires_at']) && strtotime((string) $coupon['expires_at']) < time()) {
+                    throw new RuntimeException('Kuponun suresi dolmus.');
+                }
+                $usageLimit = $coupon['usage_limit'] ?? null;
+                $usedCount = (int) ($coupon['used_count'] ?? 0);
+                if ($usageLimit !== null && $usedCount >= (int) $usageLimit) {
+                    throw new RuntimeException('Kupon limitine ulasildi.');
+                }
                 $minOrderAmount = (float) ($coupon['min_order_amount'] ?? ($coupon['min_order_total'] ?? 0));
                 if ($subtotal < $minOrderAmount) {
                     throw new RuntimeException('Minimum siparis tutari saglanmadi.');

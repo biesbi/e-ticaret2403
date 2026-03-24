@@ -92,6 +92,21 @@ final class PaytrService {
             exit('FAILED');
         }
 
+        // İdempotency kontrolü: zaten işlenmiş callback'i tekrar işleme
+        $orderCheck = db()->prepare('SELECT id, payment_status, stock_state FROM orders WHERE id = ? LIMIT 1');
+        $orderCheck->execute([$merchantOid]);
+        $existingOrder = $orderCheck->fetch();
+        if (!$existingOrder) {
+            http_response_code(404);
+            exit('FAILED');
+        }
+        // Ödeme zaten işlenmişse tekrar işleme
+        if (in_array($existingOrder['payment_status'] ?? '', ['paid', 'failed'], true)
+            && ($existingOrder['stock_state'] ?? 'none') !== 'reserved') {
+            http_response_code(200);
+            exit('OK');
+        }
+
         $paymentStatus = $status === 'success' ? 'paid' : 'failed';
         $orderStatus = $status === 'success'
             ? StockService::resolveStatus(['processing', 'confirmed', 'paid'], 'pending')
