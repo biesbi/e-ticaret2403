@@ -125,10 +125,18 @@ if ($id === 'track') {
     if ($method !== 'GET') error('Method not allowed.', 405);
     if (!$sub) error('Takip numarasi gerekli.');
 
+    RateLimit::check('order_track_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 20, 300);
+
     $query = trim((string) $sub);
+    if (mb_strlen($query) < 5 || mb_strlen($query) > 50) {
+        error('Takip numarasi 5-50 karakter arasinda olmali.');
+    }
+
     $compact = str_replace('-', '', strtoupper($query));
     $stmt = db()->prepare(
-        'SELECT *
+        'SELECT id, status, total, subtotal, discount, shipping_cost,
+                cargo_number, cargo_company, tracking_no, cargo_carrier,
+                created_at, updated_at, payment_status
          FROM orders
          WHERE UPPER(REPLACE(id, "-", "")) = ?
             OR cargo_number = ?
@@ -137,7 +145,24 @@ if ($id === 'track') {
     $stmt->execute([$compact, $query]);
     $order = $stmt->fetch();
     if (!$order) error('Siparis bulunamadi.', 404);
-    ok(legacyOrder($order));
+
+    // Takip sayfası: sadece sipariş durumu, kargo bilgisi ve toplam göster
+    // Kişisel bilgiler (email, telefon, adres) paylaşılmaz
+    ok([
+        'id' => (string) ($order['id'] ?? ''),
+        'status' => $order['status'] ?? 'pending',
+        'payment_status' => $order['payment_status'] ?? null,
+        'total' => isset($order['total']) ? (float) $order['total'] : 0.0,
+        'subtotal' => isset($order['subtotal']) ? (float) $order['subtotal'] : 0.0,
+        'discount' => isset($order['discount']) ? (float) $order['discount'] : 0.0,
+        'shipping_cost' => isset($order['shipping_cost']) ? (float) $order['shipping_cost'] : 0.0,
+        'cargo_number' => $order['tracking_no'] ?? ($order['cargo_number'] ?? null),
+        'cargo_company' => $order['cargo_carrier'] ?? ($order['cargo_company'] ?? null),
+        'cargoNumber' => $order['tracking_no'] ?? ($order['cargo_number'] ?? null),
+        'cargoCompany' => $order['cargo_carrier'] ?? ($order['cargo_company'] ?? null),
+        'date' => $order['created_at'] ?? null,
+        'createdAt' => $order['created_at'] ?? null,
+    ]);
 }
 
 if ($id === null && $method === 'GET') {
@@ -216,14 +241,13 @@ if ($id === 'retry-payment' && $method === 'POST') {
 }
 
 if ($id === null && $method === 'POST') {
+    // Sipariş oluşturma rate limit: IP başına 5 dakikada max 10 sipariş
+    RateLimit::check('order_create_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 300);
+
     $data = body();
 
     // Çift sipariş koruması: aynı kullanıcıdan 30 saniye içinde aynı sipariş engellenir
-    $payload = null;
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (str_starts_with($authHeader, 'Bearer ')) {
-        $payload = jwtDecode(substr($authHeader, 7));
-    }
+    $payload = Auth::optional();
 
     if ($payload !== null) {
         $recentOrder = db()->prepare(
@@ -236,15 +260,19 @@ if ($id === null && $method === 'POST') {
     }
 
     $shipping = is_array($data['shippingAddress'] ?? null) ? $data['shippingAddress'] : $data;
-    $customerName = trim((string) ($shipping['fullname'] ?? $shipping['name'] ?? ''));
+
+    // XSS koruması: tüm metin alanlarını sanitize et
+    $sanitize = static fn(string $value): string => htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');
+
+    $customerName = $sanitize((string) ($shipping['fullname'] ?? $shipping['name'] ?? ''));
     $customerEmail = strtolower(trim((string) ($shipping['email'] ?? '')));
     $customerPhone = trim((string) ($shipping['phone'] ?? ''));
-    $city = trim((string) ($shipping['city'] ?? ''));
-    $district = trim((string) ($shipping['district'] ?? ''));
-    $neighborhood = trim((string) ($shipping['neighborhood'] ?? ''));
-    $street = trim((string) ($shipping['street'] ?? ''));
-    $addressDetail = trim((string) ($shipping['address_detail'] ?? $shipping['addressDetail'] ?? ''));
-    $orderNote = trim((string) ($data['orderNote'] ?? $data['order_note'] ?? ''));
+    $city = $sanitize((string) ($shipping['city'] ?? ''));
+    $district = $sanitize((string) ($shipping['district'] ?? ''));
+    $neighborhood = $sanitize((string) ($shipping['neighborhood'] ?? ''));
+    $street = $sanitize((string) ($shipping['street'] ?? ''));
+    $addressDetail = $sanitize((string) ($shipping['address_detail'] ?? $shipping['addressDetail'] ?? ''));
+    $orderNote = $sanitize((string) ($data['orderNote'] ?? $data['order_note'] ?? ''));
     $couponCode = strtoupper(trim((string) ($data['couponCode'] ?? $data['coupon_code'] ?? '')));
     $giftWrap = !empty($data['giftWrap']) || !empty($data['gift_wrap']);
     $giftWrapCost = $giftWrap ? 25.0 : 0.0;
@@ -334,10 +362,11 @@ if ($id === null && $method === 'POST') {
         foreach ($items as $line) {
             $totalDesi += max(1, (float) ($line['desi'] ?? 1)) * (int) ($line['quantity'] ?? 1);
         }
+        // Kargo grubu otomatik hesaplanır, kullanıcı girdisi kabul edilmez
         $shippingCalculation = calculateShippingFeeByDesi(
             $totalDesi,
             max(0.0, $subtotal - $discount),
-            isset($data['shipping_group_id']) ? (int) $data['shipping_group_id'] : null
+            null
         );
         $shippingFee = (float) ($shippingCalculation['fee'] ?? 0);
 
