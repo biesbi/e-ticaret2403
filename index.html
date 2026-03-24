@@ -853,23 +853,168 @@
 			}, duration);
 		};
 
-		/* ═══ API Response Interceptor - Miktar kırpma bildirimi ═══ */
+		/* ═══ API Response Interceptor - Stok kontrolü + Bildirimler ═══ */
 		(function() {
 			var origFetch = window.fetch;
+			var origAlert = window.alert;
+
+			/* alert() yerine toast kullan (React hataları için) */
+			window.alert = function(msg) {
+				if (typeof msg === 'string' && msg.length < 300) {
+					var isError = /hata|error|başarısız|basarisiz|bulunamad|gecersiz|eksik|yetki/i.test(msg);
+					window.showToast(msg, isError ? 'error' : 'info', isError ? 5000 : 3500);
+				} else {
+					origAlert.call(window, msg);
+				}
+			};
+
 			window.fetch = function() {
-				return origFetch.apply(this, arguments).then(function(response) {
-					var url = typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url || '');
-					if (url.indexOf('/api/cart') !== -1 && response.ok) {
-						response.clone().json().then(function(data) {
-							var added = data && data.added;
-							if (added && added.quantity_adjusted) {
-								window.showToast(added.message || 'Stok sinirli, miktar ayarlandi.', 'info');
+				var args = arguments;
+				var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url || '');
+				var opts = args[1] || {};
+				var method = (opts.method || 'GET').toUpperCase();
+
+				return origFetch.apply(this, args).then(function(response) {
+					var cloned = response.clone();
+
+					/* ── 2. Sepete ekleme: Stok kontrolü + miktar bildirimi ── */
+					if (url.indexOf('/api/cart') !== -1 && method === 'POST') {
+						cloned.json().then(function(data) {
+							if (response.ok) {
+								var added = data && data.added;
+								if (added && added.quantity_adjusted) {
+									window.showToast(
+										'⚠️ ' + (added.message || 'Stok sinirli, miktar ayarlandi.'),
+										'info', 4000
+									);
+								} else if (added) {
+									window.showToast('Urun sepete eklendi!', 'success', 2000);
+								}
+							} else {
+								/* Stok hatası: kullanıcıya net mesaj göster */
+								var msg = (data && data.message) || 'Urun eklenemedi.';
+								if (/stok/i.test(msg)) {
+									window.showToast('Bu urun icin yeterli stok bulunmuyor.', 'error', 4000);
+								} else {
+									window.showToast(msg, 'error', 4000);
+								}
 							}
 						}).catch(function() {});
 					}
+
+					/* ── Sipariş oluşturma sonucu ── */
+					if (url.indexOf('/api/orders') !== -1 && method === 'POST' && url.indexOf('track') === -1 && url.indexOf('status') === -1 && url.indexOf('cargo') === -1 && url.indexOf('retry') === -1) {
+						cloned.json().then(function(data) {
+							if (response.ok && data && data.id) {
+								/* Sipariş başarılı - son sipariş ID'sini kaydet (retry için) */
+								try { localStorage.setItem('lastOrderId', data.id); } catch(e) {}
+								if (data.payment && data.payment.mock) {
+									window.showToast('Siparis olusturuldu! Odeme bekleniyor...', 'info', 4000);
+								}
+							}
+						}).catch(function() {});
+					}
+
+					/* ── Sepet validasyonu: checkout öncesi stok uyarısı ── */
+					if (url.indexOf('/api/cart/validate') !== -1) {
+						cloned.json().then(function(data) {
+							if (data && data.issues && data.issues.length > 0) {
+								data.issues.forEach(function(issue) {
+									window.showToast(
+										(issue.name || 'Urun') + ': ' + (issue.reason || 'Stok sorunu'),
+										'error', 6000
+									);
+								});
+							}
+						}).catch(function() {});
+					}
+
 					return response;
 				});
 			};
+		})();
+
+		/* ═══ 3. Ödeme Yeniden Deneme UI ═══ */
+		(function() {
+			var API = 'https://www.boomeritems.com/api';
+
+			/* Order success sayfasında "Ödemeyi Tekrar Dene" butonu ekle */
+			function checkAndAddRetryButton() {
+				var successPage = document.querySelector('.order-success-page');
+				if (!successPage) return;
+				if (successPage.querySelector('.retry-payment-btn')) return;
+
+				var orderId = null;
+				try { orderId = localStorage.getItem('lastOrderId'); } catch(e) {}
+				if (!orderId) return;
+
+				/* Sipariş durumunu kontrol et */
+				var token = null;
+				try { token = localStorage.getItem('token'); } catch(e) {}
+				var headers = { 'Content-Type': 'application/json' };
+				if (token) headers['Authorization'] = 'Bearer ' + token;
+
+				fetch(API + '/payments/paytr/status/' + encodeURIComponent(orderId), { headers: headers })
+					.then(function(r) { return r.json(); })
+					.then(function(data) {
+						var status = data && data.payment_status;
+						if (status === 'failed' || status === 'pending') {
+							var btn = document.createElement('button');
+							btn.className = 'retry-payment-btn';
+							btn.textContent = status === 'failed' ? 'Odemeyi Tekrar Dene' : 'Odemeye Git';
+							btn.style.cssText = 'margin-top:16px;padding:14px 32px;background:#ffcc00;color:#1e293b;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;';
+							btn.addEventListener('click', function() {
+								btn.disabled = true;
+								btn.textContent = 'Yükleniyor...';
+
+								fetch(API + '/orders/retry-payment', {
+									method: 'POST',
+									headers: headers,
+									body: JSON.stringify({ order_id: orderId })
+								})
+								.then(function(r) { return r.json(); })
+								.then(function(result) {
+									if (result.payment && result.payment.iframe_token) {
+										/* Paytr iframe'e yönlendir */
+										window.location.href = result.payment.payment_url;
+									} else if (result.payment && result.payment.mock) {
+										window.location.href = result.payment.payment_url;
+									} else {
+										window.showToast(result.message || 'Odeme yeniden baslatildi.', 'success');
+										btn.disabled = false;
+										btn.textContent = 'Odemeyi Tekrar Dene';
+									}
+								})
+								.catch(function() {
+									window.showToast('Baglanti hatasi. Lutfen tekrar deneyin.', 'error');
+									btn.disabled = false;
+									btn.textContent = 'Odemeyi Tekrar Dene';
+								});
+							});
+
+							/* Butonun konumlandırılacağı yer */
+							var trackingCard = successPage.querySelector('.order-tracking-card');
+							if (trackingCard) {
+								trackingCard.parentNode.insertBefore(btn, trackingCard.nextSibling);
+							} else {
+								successPage.appendChild(btn);
+							}
+						}
+					})
+					.catch(function() {});
+			}
+
+			/* DOM değişikliklerini izle - React render ettiğinde yakala */
+			if (window.MutationObserver) {
+				var retryObserver = new MutationObserver(function() {
+					checkAndAddRetryButton();
+				});
+				document.addEventListener('DOMContentLoaded', function() {
+					retryObserver.observe(document.body, { childList: true, subtree: true });
+				});
+			}
+			/* Periyodik kontrol (fallback) */
+			setInterval(checkAndAddRetryButton, 3000);
 		})();
 	</script>
 	<script>
