@@ -584,8 +584,28 @@
 
 		@media (max-width: 767px) {
 			.detail-back-btn { display: flex; align-items: center; gap: 6px; }
-			/* Kategori filtre alanini mobilde gizle */
-			.app-storefront-filters { display: none !important; }
+			/* Kategori filtre - mobilde yatay scroll chip bar */
+			.app-storefront-filters {
+				display: flex !important;
+				overflow-x: auto !important;
+				-webkit-overflow-scrolling: touch !important;
+				scrollbar-width: none !important;
+				gap: 6px !important;
+				padding: 8px 12px !important;
+				margin: 0 !important;
+				white-space: nowrap !important;
+				flex-wrap: nowrap !important;
+				background: #fff !important;
+				border-bottom: 1px solid #f1f5f9 !important;
+			}
+			.app-storefront-filters::-webkit-scrollbar { display: none !important; }
+			.app-storefront-filters .chip-btn {
+				flex-shrink: 0 !important;
+				padding: 7px 14px !important;
+				font-size: 0.78rem !important;
+				border-radius: 20px !important;
+				white-space: nowrap !important;
+			}
 			.hero-title { font-size: 2.6rem !important; line-height: 1.05 !important; }
 			.hero-subtitle { font-size: 0.9rem !important; padding: 0 12px; }
 			.app-grid { padding: 10px !important; gap: 8px !important; }
@@ -3546,8 +3566,13 @@
 			}
 
 			.order-track-fab {
-				top: calc(env(safe-area-inset-top, 0px) + 86px) !important;
+				top: calc(env(safe-area-inset-top, 0px) + 10px) !important;
+				right: 12px !important;
 				bottom: auto !important;
+				width: 44px !important;
+				height: 44px !important;
+				border-radius: 14px !important;
+				box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18) !important;
 			}
 
 			.products-grid {
@@ -3622,10 +3647,10 @@
 					button.style.display = 'none';
 				});
 
+				/* Siparis takip FAB - mobilde body'de kalsin, header-right gizli */
 				var fab = document.querySelector('.order-track-fab');
-				var headerRight = document.querySelector('.app-header .header-right');
-				if (fab && headerRight && fab.parentElement !== headerRight) {
-					headerRight.appendChild(fab);
+				if (fab && fab.parentElement !== document.body) {
+					document.body.appendChild(fab);
 				}
 
 				var mobileNavItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
