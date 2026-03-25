@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /paytr-result.html
+Disallow: /paytr-test.html
+Disallow: /verify-email.html
+Disallow: /uploads/
+Disallow: /public/uploads/
+Disallow: /logs/
+
+Sitemap: https://boomeritems.com/sitemap.xml
