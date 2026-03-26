@@ -165,7 +165,7 @@ function legacyProduct(array $product): array {
     $primaryImg = (isset($product['primary_image_url']) && $product['primary_image_url'] !== '')
         ? $product['primary_image_url']
         : null;
-    $image = $primaryImg ?? ($product['img'] ?? ($images[0] ?? '/fallback.png'));
+    $image = $primaryImg ?? ($product['img'] ?? ($images[0] ?? '/logo.png'));
     $stock = isset($product['stock']) ? (int) $product['stock'] : 0;
     $reservedStock = isset($product['reserved_stock']) ? max(0, (int) $product['reserved_stock']) : 0;
     $availableStock = max(0, $stock - $reservedStock);
