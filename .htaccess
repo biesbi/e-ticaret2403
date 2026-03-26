@@ -12,3 +12,13 @@
   RewriteCond %{REQUEST_FILENAME} !-l
   RewriteRule . /index.html [L]
 </IfModule>
+
+# Force UTF-8 encoding for all text-based files
+AddDefaultCharset UTF-8
+
+<IfModule mod_mime.c>
+  AddCharset UTF-8 .html .htm .css .js .json .txt .xml .svg
+  AddType application/javascript;charset=UTF-8 .js
+  AddType text/css;charset=UTF-8 .css
+  AddType text/html;charset=UTF-8 .html .htm
+</IfModule>
