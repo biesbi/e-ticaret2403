@@ -3,10 +3,9 @@
 StockService::ensureSchema();
 
 // Otomatik stok temizleme: terk edilen siparişleri temizle
-// Test modunda her istekte 1 saat esikle, canli modda %1 ihtimalle 24 saat esikle
-$isTestEnv = PaytrService::isTestMode();
-if ($isTestEnv || random_int(1, 100) === 1) {
-    try { StockService::releaseAbandonedReservations($isTestEnv ? 1 : 24); } catch (Throwable) {}
+// %5 ihtimalle 2 saatlik esikle calisir
+if (random_int(1, 20) === 1) {
+    try { StockService::releaseAbandonedReservations(2); } catch (Throwable) {}
 }
 
 function generateOrderId(): string {
