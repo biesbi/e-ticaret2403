@@ -2,9 +2,10 @@
 
 StockService::ensureSchema();
 
-// Otomatik stok temizleme: %1 ihtimalle terk edilen siparişleri temizle
-if (random_int(1, 100) === 1) {
-    try { StockService::releaseAbandonedReservations(24); } catch (Throwable) {}
+// Otomatik stok temizleme: terk edilen siparişleri temizle
+// %5 ihtimalle 2 saatlik esikle calisir
+if (random_int(1, 20) === 1) {
+    try { StockService::releaseAbandonedReservations(2); } catch (Throwable) {}
 }
 
 function generateOrderId(): string {
@@ -96,6 +97,21 @@ function orderInsertItem(string $orderId, array $line): void {
     db()->prepare(
         'INSERT INTO order_items (' . implode(', ', $columns) . ') VALUES (' . $placeholder . ')'
     )->execute($values);
+}
+
+// POST /orders/release-abandoned — admin: terk edilen siparis stoklarini serbest birak
+if ($id === 'release-abandoned' && $method === 'POST') {
+    adminRequired();
+    $hours = max(0, (int) input('hours', 0));
+    $released = StockService::releaseAbandonedReservations($hours);
+    ok([
+        'success' => true,
+        'released_count' => $released,
+        'threshold_hours' => $hours,
+        'message' => $released > 0
+            ? "{$released} terk edilmis siparisin stok rezervasyonu serbest birakildi."
+            : 'Serbest birakilacak terk edilmis siparis bulunamadi.',
+    ]);
 }
 
 if ($id === 'validate-coupon') {
