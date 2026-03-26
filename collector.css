@@ -34,7 +34,9 @@
 
 html { font-size: 16px; }
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   background: var(--bg-base);
   color: var(--text-primary);
   min-height: 100vh;
@@ -86,7 +88,7 @@ body {
   background: linear-gradient(135deg, var(--accent), #e6a800);
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'Bebas Neue'; font-size: 1.6rem;
+  font-family: 'Poppins'; font-size: 1.6rem;
   color: #000; font-weight: 700;
   box-shadow: 0 4px 16px rgba(255,204,0,0.3);
 }
@@ -243,7 +245,7 @@ body {
   width: 36px; height: 36px; min-width: 36px;
   background: linear-gradient(135deg, var(--accent), #e6a800);
   border-radius: 10px; display: flex; align-items: center; justify-content: center;
-  font-family: 'Bebas Neue'; font-size: 1.1rem; color: #000;
+  font-family: 'Poppins'; font-size: 1.1rem; color: #000;
 }
 .sidebar-toggle {
   background: transparent; border: none; color: var(--text-muted);

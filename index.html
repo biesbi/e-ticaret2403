@@ -3,9 +3,12 @@
 
 <head>
 
-	<meta charset="UTF-8">
+	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="format-detection" content="telephone=no">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 	<link rel="profile" href="http://gmpg.org/xfn/11">
 	<title>BoomerItems | LEGO, Diecast & Figür Koleksiyonu</title>
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
@@ -505,9 +508,32 @@
 
 		/* 15. Yazı tipi optimizasyonu */
 		body {
+			font-family: 'Poppins', 'Inter', 'Roboto', sans-serif !important;
 			-webkit-font-smoothing: antialiased;
 			-moz-osx-font-smoothing: grayscale;
 			text-rendering: optimizeLegibility;
+		}
+
+		/* 16. Hero / Banner yazı stili - Poppins premium görünüm */
+		.hero-title {
+			font-family: 'Poppins', sans-serif !important;
+			font-weight: 800 !important;
+			text-transform: uppercase !important;
+			letter-spacing: 1px !important;
+			line-height: 1.1 !important;
+		}
+		.hero-subtitle {
+			font-family: 'Poppins', sans-serif !important;
+			font-weight: 400 !important;
+			opacity: 0.9;
+		}
+		.btn-primary, .hero-buttons a {
+			font-family: 'Poppins', sans-serif !important;
+			font-weight: 600 !important;
+			border-radius: 999px !important;
+		}
+		.hero-badge {
+			font-family: 'Poppins', sans-serif !important;
 		}
 
 		.modern-footer:not(.site-legal-footer) {
@@ -1674,7 +1700,7 @@
 			--wp--preset--font-size--x-large: clamp(25.014px, 1.563rem + ((1vw - 3.2px) * 1.751), 42px);
 			--wp--preset--font-family--p-font: Roboto, sans-serif;
 			--wp--preset--font-family--post-font: inherit;
-			--wp--preset--font-family--h-1-font: "Bebas Neue", cursive;
+			--wp--preset--font-family--h-1-font: "Poppins", sans-serif;
 			--wp--preset--spacing--20: 0.44rem;
 			--wp--preset--spacing--30: 0.67rem;
 			--wp--preset--spacing--40: 1rem;
@@ -2930,7 +2956,7 @@
 		}
 
 		.elementor-17507 .elementor-element.elementor-element-7e5b976f {
-			font-family: "Bebas Neue", Sans-serif;
+			font-family: "Poppins", sans-serif;
 			letter-spacing: 0.4px;
 		}
 
@@ -4027,7 +4053,7 @@
 		}
 
 		.footer-brand h2 {
-			font-family: 'Bebas Neue', cursive;
+			font-family: 'Poppins', sans-serif;
 			font-size: 2.2rem !important;
 			letter-spacing: 2px;
 			margin-bottom: 12px !important;
