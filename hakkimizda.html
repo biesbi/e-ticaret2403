@@ -1,115 +1,478 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hakkımızda - BoomerItems</title>
-    <meta name="description" content="BoomerItems hakkında bilgi edinin. LEGO setleri, diecast araçlar ve koleksiyon figürleri sunan güvenilir koleksiyon mağazanız.">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Hakkimizda | BoomerItems</title>
+    <meta name="description" content="BoomerItems hakkinda bilgi edinin. LEGO setleri, diecast urunler ve koleksiyon figurlari icin guvenilir koleksiyon magazaniz.">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon_zoomed.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon_zoomed.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #dd101f;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --bg: #ffffff;
-            --bg-alt: #f8fafc;
-            --border: #e2e8f0;
+            --accent: #ffcc00;
+            --accent-strong: #f4be00;
+            --ink: #101828;
+            --muted: #667085;
+            --line: #e8edf3;
+            --panel: rgba(255, 255, 255, 0.92);
+            --bg: #f6f7fb;
+            --shadow: 0 18px 45px rgba(16, 24, 40, 0.08);
         }
+
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
         }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            background-color: var(--bg);
-            color: var(--text);
-            line-height: 1.8;
-            padding: 40px 20px;
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(255, 204, 0, 0.18), transparent 24%),
+                linear-gradient(180deg, #fbfbfd 0%, #f4f6fa 100%);
+            padding-top: 42px;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 60px;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        .logo {
-            height: 80px;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-        }
-        .content {
-            font-size: 1.1rem;
-            color: var(--text);
-        }
-        .content p {
-            margin-bottom: 25px;
-        }
-        .highlight-box {
-            background: var(--bg-alt);
-            padding: 30px;
-            border-radius: 20px;
-            border-left: 5px solid var(--primary);
-            margin: 40px 0;
-        }
-        .footer {
-            margin-top: 50px;
-            text-align: center;
-            padding-top: 30px;
-            border-top: 1px solid var(--border);
-        }
-        .btn-back {
-            display: inline-block;
-            padding: 12px 24px;
-            background: var(--primary);
-            color: white;
+
+        a {
+            color: inherit;
             text-decoration: none;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: transform 0.2s;
         }
-        .btn-back:hover {
-            transform: translateY(-2px);
+
+        .top-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            height: 42px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(90deg, #0f172a 0%, #111827 52%, #1f2937 100%);
+            border-bottom: 1px solid rgba(255, 204, 0, 0.28);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+        }
+
+        .top-banner-track {
+            display: flex;
+            min-width: max-content;
+            align-items: center;
+            animation: marquee 18s linear infinite;
+        }
+
+        .top-banner-text {
+            white-space: nowrap;
+            color: #fff7cc;
+            font-size: 0.88rem;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            padding-right: 18px;
+        }
+
+        .top-banner-text strong {
+            color: var(--accent);
+        }
+
+        @keyframes marquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        .site-header {
+            position: sticky;
+            top: 42px;
+            z-index: 35;
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+        }
+
+        .site-header-inner {
+            width: min(1180px, calc(100% - 28px));
+            margin: 0 auto;
+            min-height: 82px;
+            display: grid;
+            grid-template-columns: 180px 1fr 140px;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand img {
+            width: 126px;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #6b7280;
+        }
+
+        .nav-link.active {
+            color: #111827;
+        }
+
+        .header-tools {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            color: #98a2b3;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .page {
+            width: min(1180px, calc(100% - 28px));
+            margin: 52px auto 56px;
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 22px;
+            margin-bottom: 22px;
+        }
+
+        .hero-card,
+        .panel,
+        .story-card {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero-card,
+        .panel {
+            padding: 34px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: #fff7d6;
+            color: #a16207;
+            font-size: 0.78rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 18px 0 14px;
+            font-size: clamp(2.2rem, 4.6vw, 4rem);
+            line-height: 1;
+            letter-spacing: -0.04em;
+        }
+
+        .hero-card p,
+        .panel p,
+        .story-card p {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .hero-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .mini-card {
+            padding: 22px;
+        }
+
+        .mini-card strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1.08rem;
+            color: #111827;
+        }
+
+        .mini-card span {
+            color: var(--muted);
+            line-height: 1.65;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+        }
+
+        .panel h2 {
+            margin: 0 0 12px;
+            font-size: 1.4rem;
+            letter-spacing: -0.03em;
+        }
+
+        .story-list {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .story-card {
+            padding: 22px;
+        }
+
+        .story-card strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #111827;
+            font-size: 1rem;
+        }
+
+        .quote-card {
+            display: grid;
+            place-items: center;
+            min-height: 100%;
+            background: linear-gradient(135deg, #fff9e3 0%, #ffffff 100%);
+            border: 1px solid #f5e6a7;
+        }
+
+        .quote-text {
+            max-width: 420px;
+            text-align: center;
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            line-height: 1.35;
+            font-weight: 800;
+            color: #1f2937;
+        }
+
+        .quote-text span {
+            color: #a16207;
+        }
+
+        .site-footer {
+            border-top: 1px solid rgba(16, 24, 40, 0.08);
+            background: #ffffff;
+        }
+
+        .site-footer-inner {
+            width: min(1180px, calc(100% - 28px));
+            margin: 0 auto;
+            padding: 28px 0 34px;
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            color: #667085;
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 920px) {
+            .hero,
+            .content-grid,
+            .site-footer-inner {
+                grid-template-columns: 1fr;
+                display: grid;
+            }
+
+            .site-header-inner {
+                grid-template-columns: 1fr;
+                padding: 14px 0;
+                min-height: auto;
+            }
+
+            .brand,
+            .nav-links,
+            .header-tools {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page {
+                width: calc(100% - 18px);
+                margin-top: 18px;
+            }
+
+            .site-header-inner {
+                width: calc(100% - 18px);
+            }
+
+            .hero-card,
+            .panel {
+                padding: 22px 18px;
+                border-radius: 22px;
+            }
+
+            .nav-links {
+                gap: 18px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .site-header {
+                position: fixed;
+                top: 42px;
+                left: 0;
+                width: 100%;
+                background: linear-gradient(to bottom, rgba(28, 25, 23, 0.36), rgba(28, 25, 23, 0.16));
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .site-header-inner {
+                width: 100%;
+                min-height: 100px;
+                grid-template-columns: 300px 1fr auto;
+                gap: 24px;
+                padding: 0 28px;
+            }
+
+            .brand {
+                width: 320px;
+                display: flex;
+                align-items: center;
+            }
+
+            .brand img {
+                height: 110px;
+                width: auto;
+                object-fit: contain;
+                filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.42)) drop-shadow(0 10px 20px rgba(0, 0, 0, 0.24));
+                transform: scale(1.32);
+                transform-origin: left center;
+            }
+
+            .nav-links {
+                gap: 34px;
+            }
+
+            .nav-link {
+                color: #f8fafc;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            }
+
+            .nav-link.active {
+                color: #ffcc00;
+            }
+
+            .header-tools {
+                color: #f8fafc;
+            }
+
+            .page {
+                margin-top: 156px;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <img src="/Boomer.svg" alt="BoomerItems" class="logo">
-            <h1>HAKKIMIZDA</h1>
-        </div>
-
-        <div class="content">
-            <p><strong>BoomerItems</strong>, sadece bir e-ticaret platformu değil; her parçası özenle seçilmiş, çocukluk hayallerini ve koleksiyon tutkusunu bir araya getiren bir evrendir.</p>
-            
-            <p>LEGO dünyasının büyüleyici karmaşıklığına olan hayranlığımızla yola çıktık. Amacımız, hem koleksiyonerlerin nadir parçalara ulaşmasını sağlamak hem de yeni nesil yapım tutkunlarını bu yaratıcı dünyayla tanıştırmaktır. Birvit Danışmanlık bünyesinde hayata geçen bu proje, dijital pazarlamanın gücünü oyuncak ve hobi tutkusuyla birleştiriyor.</p>
-
-            <div class="highlight-box">
-                "Hayal gücü, inşaa edilebilen en büyük yapıdır. Biz sadece size doğru parçaları sunuyoruz."
-            </div>
-
-            <p>Sitemizde yer alan her ürün, orijinallik ve kalite standartlarımızdan geçerek kapınıza kadar ulaştırılır. LEGO'nun zamansız dünyasında, kaybolan parçaları bulmanızdan devasa setleri kütüphanenize eklemenize kadar her adımda yanınızdayız.</p>
-
-            <p>Güvenli ödeme altyapımız, hızlı teslimat süreçlerimiz ve müşteri memnuniyeti odaklı çalışma prensibimizle, BoomerItems olarak hobinizi bir üst seviyeye taşımak için buradayız.</p>
-        </div>
-
-        <div class="footer">
-            <a href="/" class="btn-back">Ana Sayfaya Dön</a>
+    <div class="top-banner">
+        <div class="top-banner-track">
+            <div class="top-banner-text"><strong>2500 TL UZERI KARGO BEDAVA</strong> • 2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO • </div>
+            <div class="top-banner-text"><strong>2500 TL UZERI KARGO BEDAVA</strong> • 2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO • </div>
         </div>
     </div>
+
+    <header class="site-header">
+        <div class="site-header-inner">
+            <a class="brand" href="/"><img src="/Boomer.svg" alt="Boomer Items"></a>
+            <nav class="nav-links" aria-label="Ana menu">
+                <a class="nav-link" href="/">ANA SAYFA</a>
+                <a class="nav-link" href="/#categories">URUNLER</a>
+                <a class="nav-link active" href="/hakkimizda.html">BIZ KIMIZ</a>
+                <a class="nav-link" href="/iletisim.html">ILETISIM</a>
+            </nav>
+            <div class="header-tools" aria-hidden="true">
+                <span>○</span>
+                <span>○</span>
+                <span>○</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="hero">
+            <div class="hero-card">
+                <div class="eyebrow">BoomerItems Hikayesi</div>
+                <h1>Koleksiyon tutkusunu duzgun bir yapida sunuyoruz.</h1>
+                <p>BoomerItems, LEGO setleri, diecast urunler ve figur koleksiyonlarini daha secili, daha guvenilir ve daha temiz bir deneyimle sunmak icin kuruldu.</p>
+            </div>
+            <div class="hero-grid">
+                <div class="hero-card mini-card">
+                    <strong>Secili urun yapisi</strong>
+                    <span>Kalite, sunum ve koleksiyon degeri on planda tutulur.</span>
+                </div>
+                <div class="hero-card mini-card">
+                    <strong>Guven odakli ilerleme</strong>
+                    <span>Odeme, destek ve urun bilgisinde netlik hedeflenir.</span>
+                </div>
+                <div class="hero-card mini-card">
+                    <strong>Uzun vadeli marka dili</strong>
+                    <span>Sadece vitrin degil, tutarli bir koleksiyon markasi insa edilir.</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="panel">
+                <h2>Biz Kimiz</h2>
+                <div class="story-list">
+                    <div class="story-card">
+                        <strong>Koleksiyon merkezli dusunce</strong>
+                        <p>BoomerItems sadece urun satan bir alan degil; secim mantigi, sunum dili ve urun hissiyle koleksiyon dunyasina odaklanan bir yapidir.</p>
+                    </div>
+                    <div class="story-card">
+                        <strong>LEGO, diecast ve figur ekseni</strong>
+                        <p>Yapim tutkusu, detay sevgisi ve karakter odakli koleksiyon anlayisi ayni cizgide bulusturulur.</p>
+                    </div>
+                    <div class="story-card">
+                        <strong>Dijital guc + hobi kulturu</strong>
+                        <p>Birvit Danismanlik bunyesinde gelisen marka, dijital pazarlama gucunu hobi urunleriyle birlestirir.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel quote-card">
+                <div class="quote-text">“Hayal gucu, insa edilebilen en buyuk yapidir. <span>Biz sadece dogru parcalari sunuyoruz.</span>”</div>
+            </div>
+        </section>
+
+        <section class="content-grid" style="margin-top: 22px;">
+            <div class="panel">
+                <h2>Nasil Calisiyoruz</h2>
+                <p>Urun seciminde orijinallik, durum kalitesi ve koleksiyon degeri temel kriterlerdir. Sunulan her urun, markanin cizgisine uygun bir secimden gecer.</p>
+            </div>
+            <div class="panel">
+                <h2>Nereye Gidiyoruz</h2>
+                <p>BoomerItems, secili urun anlayisi ve guven veren marka diliyle koleksiyon dunyasinda daha guclu, daha taninir ve daha tutarli bir yer edinmeyi hedefler.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <div>Boomer Items</div>
+            <div>boomeritems@gmail.com</div>
+            <div>© 2026 Tum haklari saklidir.</div>
+        </div>
+    </footer>
 </body>
+
 </html>

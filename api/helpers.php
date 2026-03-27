@@ -156,6 +156,26 @@ function normalizeImages(mixed $images): array {
     return array_values(array_unique($normalized));
 }
 
+function inferPiecesFromProduct(array $product): int {
+    $rawPieces = $product['pieces'] ?? null;
+    $pieces = is_numeric($rawPieces) ? (int) $rawPieces : 0;
+    if ($pieces > 0) {
+        return $pieces;
+    }
+
+    $title = (string) ($product['name'] ?? ($product['title'] ?? ''));
+    if ($title === '') {
+        return 0;
+    }
+
+    if (preg_match('/\(([\d.]+)\s*Par[çc]a\)/iu', $title, $match) !== 1
+        && preg_match('/([\d.]+)\s*Par[çc]a/iu', $title, $match) !== 1) {
+        return 0;
+    }
+
+    return (int) str_replace('.', '', $match[1]);
+}
+
 function legacyProduct(array $product): array {
     $images = normalizeImages($product['images'] ?? []);
     if ($images === [] && !empty($product['img']) && is_string($product['img'])) {
@@ -170,6 +190,7 @@ function legacyProduct(array $product): array {
     $reservedStock = isset($product['reserved_stock']) ? max(0, (int) $product['reserved_stock']) : 0;
     $availableStock = max(0, $stock - $reservedStock);
     $isActive = isset($product['is_active']) ? (int) $product['is_active'] : 1;
+    $pieces = inferPiecesFromProduct($product);
 
     return [
         ...$product,
@@ -181,6 +202,7 @@ function legacyProduct(array $product): array {
         'categoryId' => $product['category_id'] ?? ($product['categoryId'] ?? null),
         'brandId' => $product['brand_id'] ?? ($product['brandId'] ?? null),
         'desi' => isset($product['desi']) ? (float) $product['desi'] : 1.0,
+        'pieces' => $pieces,
         'price' => isset($product['price']) ? (float) $product['price'] : 0.0,
         'oldPrice' => isset($product['old_price']) ? (float) $product['old_price'] : (isset($product['oldPrice']) ? (float) $product['oldPrice'] : 0.0),
         'reserved_stock' => $reservedStock,

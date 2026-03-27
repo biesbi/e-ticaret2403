@@ -7,18 +7,455 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="format-detection" content="telephone=no">
 	<link rel="profile" href="http://gmpg.org/xfn/11">
-	<title>BoomerItems | LEGO, Diecast & Figür Koleksiyonu</title>
+	<title>BoomerItems | LEGO, Diecast &amp; Fig&#252;r Koleksiyonu</title>
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon_zoomed.png">
 	<link rel="apple-touch-icon" sizes="180x180" href="/favicon_zoomed.png">
 	<meta name="description"
-		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor.">
+		content="Hayal Et, Ke&#351;fet, Koleksiyonunu B&#252;y&#252;t! LEGO setleri, diecast ara&#231;lar ve koleksiyon fig&#252;rleri BoomerItems'ta seni bekliyor.">
 	<meta name="theme-color" content="#ffcc00">
 	<meta name='robots' content='index, follow' />
 	<style>
 		/* UTILITY: Hide legacy sections */
 		.category-blocks-section {
 			display: none !important;
+		}
+
+		body {
+			padding-top: 42px;
+		}
+
+		.top-shipping-banner {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 18000;
+			height: 42px;
+			display: flex;
+			align-items: center;
+			overflow: hidden;
+			border-bottom: 1px solid rgba(255, 204, 0, 0.28);
+			background: linear-gradient(90deg, #0f172a 0%, #111827 52%, #1f2937 100%);
+			box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+		}
+
+		.top-shipping-banner::before,
+		.top-shipping-banner::after {
+			content: "";
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 72px;
+			z-index: 1;
+			pointer-events: none;
+		}
+
+		.top-shipping-banner::before {
+			left: 0;
+			background: linear-gradient(90deg, #0f172a 0%, rgba(15, 23, 42, 0) 100%);
+		}
+
+		.top-shipping-banner::after {
+			right: 0;
+			background: linear-gradient(270deg, #1f2937 0%, rgba(31, 41, 55, 0) 100%);
+		}
+
+		.top-shipping-banner-track {
+			display: flex;
+			align-items: center;
+			flex: 0 0 auto;
+			min-width: max-content;
+			animation: shippingBannerMarquee 30s linear infinite;
+		}
+
+		.top-shipping-banner-text {
+			display: inline-flex;
+			align-items: center;
+			gap: 24px;
+			padding-right: 24px;
+			font-size: 0.88rem;
+			font-weight: 900;
+			letter-spacing: 0.16em;
+			text-transform: uppercase;
+			white-space: nowrap;
+			color: #fff7cc;
+			text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+		}
+
+		.top-shipping-banner-text strong {
+			color: #ffcc00;
+		}
+
+		.top-shipping-banner-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 999px;
+			background: #ffcc00;
+			box-shadow: 0 0 12px rgba(255, 204, 0, 0.72);
+			flex: 0 0 auto;
+		}
+
+		.admin-zero-stock-filter {
+			display: inline-flex;
+			align-items: center;
+			gap: 10px;
+			padding: 10px 14px;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			background: #fff;
+			color: #334155;
+			font-size: 0.88rem;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.admin-zero-stock-filter input {
+			width: 16px;
+			height: 16px;
+			margin: 0;
+			accent-color: #ffcc00;
+		}
+
+		.admin-zero-stock-filter.is-loading {
+			opacity: 0.7;
+		}
+
+		.admin-stock-cell,
+		.admin-stock-head {
+			white-space: nowrap;
+			text-align: left;
+		}
+
+		.admin-stock-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 54px;
+			padding: 6px 10px;
+			border-radius: 999px;
+			background: #f8fafc;
+			border: 1px solid #dbe3ee;
+			color: #334155;
+			font-size: 0.82rem;
+			font-weight: 800;
+			line-height: 1;
+		}
+
+		.admin-stock-badge.is-zero {
+			background: #fff1f2;
+			border-color: #fecdd3;
+			color: #be123c;
+		}
+
+		.admin-inventory-summary {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+			gap: 16px;
+			margin: 0 0 24px;
+		}
+
+		#adminInventoryShell {
+			margin: 0 0 20px;
+		}
+
+		.admin-inventory-card {
+			padding: 18px 20px;
+			border-radius: 18px;
+			border: 1px solid #e2e8f0;
+			background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+			box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+		}
+
+		.admin-inventory-card strong {
+			display: block;
+			margin-top: 8px;
+			color: #0f172a;
+			font-size: 1.5rem;
+			font-weight: 800;
+			line-height: 1.1;
+		}
+
+		.admin-inventory-label {
+			display: block;
+			color: #64748b;
+			font-size: 0.76rem;
+			font-weight: 800;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.admin-inventory-note {
+			display: block;
+			margin-top: 7px;
+			color: #94a3b8;
+			font-size: 0.82rem;
+			font-weight: 600;
+		}
+
+		.admin-inventory-card.is-alert {
+			border-color: #fecdd3;
+			background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%);
+		}
+
+		.admin-inventory-card.is-warning {
+			border-color: #fde68a;
+			background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+		}
+
+		.admin-inventory-toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin: 0 0 20px;
+			position: sticky;
+			top: 148px;
+			z-index: 45;
+			padding: 12px 0;
+			background: linear-gradient(180deg, rgba(248, 250, 252, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+			backdrop-filter: blur(8px);
+		}
+
+		.admin-inventory-filter {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			padding: 10px 14px;
+			border-radius: 999px;
+			border: 1px solid #dbe3ee;
+			background: #fff;
+			color: #334155;
+			font-size: 0.88rem;
+			font-weight: 800;
+			line-height: 1;
+			cursor: pointer;
+			transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		}
+
+		.admin-inventory-filter:hover {
+			transform: translateY(-1px);
+			border-color: #cbd5e1;
+			box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+		}
+
+		.admin-inventory-filter.is-active {
+			border-color: #facc15;
+			background: #fef3c7;
+			color: #1f2937;
+		}
+
+		.admin-inventory-filter-count {
+			color: #64748b;
+			font-size: 0.8rem;
+			font-weight: 700;
+		}
+
+		.admin-inventory-advanced {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin: 0 0 18px;
+		}
+
+		.admin-inventory-select {
+			min-width: 170px;
+			padding: 10px 14px;
+			border: 1px solid #dbe3ee;
+			border-radius: 14px;
+			background: #fff;
+			color: #334155;
+			font-size: 0.9rem;
+			font-weight: 700;
+		}
+
+		.admin-inventory-mini {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin: 0 0 20px;
+		}
+
+		.admin-inventory-mini-card {
+			padding: 10px 14px;
+			border-radius: 14px;
+			border: 1px solid #e2e8f0;
+			background: #fff;
+			color: #334155;
+			font-size: 0.88rem;
+			font-weight: 700;
+		}
+
+		.admin-inventory-mini-card strong {
+			color: #0f172a;
+		}
+
+		.admin-order-items {
+			margin-top: 8px;
+			padding-top: 8px;
+			border-top: 1px dashed #e2e8f0;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+
+		.admin-order-items-label {
+			color: #64748b;
+			font-size: 0.72rem;
+			font-weight: 800;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.admin-order-items-list {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.admin-order-item-line {
+			display: grid;
+			grid-template-columns: 44px minmax(0, 1fr);
+			gap: 10px;
+			align-items: center;
+			color: #334155;
+			font-size: 0.82rem;
+			font-weight: 600;
+			line-height: 1.35;
+		}
+
+		.admin-order-item-thumb {
+			width: 44px;
+			height: 44px;
+			border-radius: 10px;
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			object-fit: contain;
+			padding: 4px;
+		}
+
+		.admin-order-item-meta {
+			min-width: 0;
+		}
+
+		.admin-order-item-line strong {
+			color: #0f172a;
+			font-weight: 800;
+		}
+
+		.admin-order-items-empty {
+			color: #94a3b8;
+			font-size: 0.8rem;
+			font-weight: 600;
+		}
+
+		.auth-submit-lock {
+			position: fixed;
+			inset: 0;
+			z-index: 2147483000;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(15, 23, 42, 0.2);
+			backdrop-filter: blur(3px);
+			-webkit-backdrop-filter: blur(3px);
+		}
+
+		.auth-submit-lock[hidden] {
+			display: none !important;
+		}
+
+		.auth-submit-lock-card {
+			padding: 14px 18px;
+			border-radius: 16px;
+			background: rgba(255, 255, 255, 0.96);
+			border: 1px solid rgba(226, 232, 240, 0.95);
+			box-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+			color: #0f172a;
+			font-size: 0.92rem;
+			font-weight: 800;
+			letter-spacing: 0.02em;
+		}
+
+		@media (max-width: 768px) {
+			.admin-inventory-summary {
+				grid-template-columns: 1fr 1fr;
+			}
+
+			.admin-inventory-toolbar {
+				top: 126px;
+				padding: 10px 0;
+			}
+
+			.admin-inventory-advanced {
+				flex-direction: column;
+			}
+
+			.admin-inventory-select {
+				width: 100%;
+				min-width: 0;
+			}
+
+			.admin-inventory-card strong {
+				font-size: 1.2rem;
+			}
+		}
+
+		@keyframes shippingBannerMarquee {
+			from {
+				transform: translateX(0);
+			}
+
+			to {
+				transform: translateX(-50%);
+			}
+		}
+
+
+		.bi-collection-split {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			justify-content: center;
+			gap: 14px;
+			width: min(100%, 760px);
+			margin: 20px auto 0;
+		}
+
+		.bi-collection-split-item {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 72px;
+			padding: 16px 22px;
+			border-radius: 999px;
+			border: 1px solid rgba(255, 204, 0, 0.22);
+			background: linear-gradient(135deg, #fff6cc 0%, #ffcc00 100%);
+			box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+			font-family: "Bebas Neue", cursive;
+			font-size: clamp(1.35rem, 1.05rem + 1vw, 2rem);
+			letter-spacing: 0.09em;
+			line-height: 1;
+			color: #0f172a;
+			text-align: center;
+			text-transform: uppercase;
+			transition: transform 0.24s ease, box-shadow 0.24s ease;
+		}
+
+		.bi-collection-split-item:hover {
+			transform: translateY(-3px);
+			box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+		}
+
+		.bi-collection-split-item:nth-child(2) {
+			background: linear-gradient(135deg, #ffffff 0%, #f8fafc 55%, #e2e8f0 100%);
+			border-color: rgba(15, 23, 42, 0.08);
+			color: #111827;
+		}
+
+		.bi-collection-split-item:nth-child(3) {
+			background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+			border-color: rgba(255, 204, 0, 0.26);
+			color: #ffcc00;
 		}
 
 		.newsletter-popup-hidden,
@@ -43,6 +480,10 @@
 			body.mobile-overlay-open {
 				overflow: hidden !important;
 				touch-action: none !important;
+			}
+
+			body {
+				padding-top: 42px;
 			}
 
 			.app-styled-mobile {
@@ -202,7 +643,7 @@
 			}
 		}
 
-		/* TABLET: 769px-1023px - mobil navigasyon ve grid düzeltmesi */
+		/* TABLET: 769px-1023px - mobil navigasyon ve grid dÃƒÂ¼zeltmesi */
 		@media (min-width: 769px) and (max-width: 1023px) {
 			.mobile-bottom-nav {
 				display: flex !important;
@@ -267,7 +708,7 @@
 			z-index: 20;
 		}
 
-		/* ═══ MÜŞTERİ DENEYİMİ İYİLEŞTİRMELERİ ═══ */
+		/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â MÃƒÅ“Ã…ÂTERÃ„Â° DENEYÃ„Â°MÃ„Â° Ã„Â°YÃ„Â°LEÃ…ÂTÃ„Â°RMELERÃ„Â° Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 
 		/* 1. Mobil touch hedefleri - minimum 44x44px (Apple HIG) */
 		@media (max-width: 768px) {
@@ -287,7 +728,7 @@
 			}
 		}
 
-		/* 2. Noscript fallback - JS yüklenemezse kullanıcıyı bilgilendir */
+		/* 2. Noscript fallback - JS yÃƒÂ¼klenemezse kullanÃ„Â±cÃ„Â±yÃ„Â± bilgilendir */
 		noscript .noscript-warning {
 			display: flex;
 			align-items: center;
@@ -309,7 +750,7 @@
 			font-size: 1rem;
 		}
 
-		/* 3. Form validasyon stilleri - hata ve başarı durumları */
+		/* 3. Form validasyon stilleri - hata ve baÃ…Å¸arÃ„Â± durumlarÃ„Â± */
 		.form-group input:invalid:not(:placeholder-shown),
 		.form-group select:invalid:not(:placeholder-shown),
 		.checkout-form input:invalid:not(:placeholder-shown),
@@ -362,7 +803,7 @@
 			pointer-events: none !important;
 		}
 
-		/* 6. Sepet boş durumu stili */
+		/* 6. Sepet boÃ…Å¸ durumu stili */
 		.empty-cart-state {
 			display: flex;
 			flex-direction: column;
@@ -380,7 +821,7 @@
 			opacity: 0.4;
 		}
 
-		/* 7. Stok durumu renk göstergeleri */
+		/* 7. Stok durumu renk gÃƒÂ¶stergeleri */
 		.stock-badge-instock {
 			color: #16a34a;
 			font-weight: 600;
@@ -399,7 +840,7 @@
 			font-size: 0.85rem;
 		}
 
-		/* 8. Checkout adım göstergesi iyileştirmesi */
+		/* 8. Checkout adÃ„Â±m gÃƒÂ¶stergesi iyileÃ…Å¸tirmesi */
 		.checkout-step-indicator {
 			display: flex;
 			justify-content: center;
@@ -483,7 +924,7 @@
 			}
 		}
 
-		/* 10. Sipariş onay sayfası iyileştirmeleri */
+		/* 10. SipariÃ…Å¸ onay sayfasÃ„Â± iyileÃ…Å¸tirmeleri */
 		.order-success-page {
 			text-align: center;
 			padding: 40px 20px;
@@ -500,7 +941,7 @@
 			justify-content: center;
 		}
 
-		/* 11. Ürün kartı hover efekti - masaüstü */
+		/* 11. ÃƒÅ“rÃƒÂ¼n kartÃ„Â± hover efekti - masaÃƒÂ¼stÃƒÂ¼ */
 		@media (min-width: 1024px) {
 			.product-card {
 				transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -512,7 +953,7 @@
 			}
 		}
 
-		/* 12. Ücretsiz kargo progress bar iyileştirmesi */
+		/* 12. ÃƒÅ“cretsiz kargo progress bar iyileÃ…Å¸tirmesi */
 		.free-shipping-progress {
 			background: #f1f5f9;
 			border-radius: 8px;
@@ -527,7 +968,7 @@
 			transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 		}
 
-		/* 13. Smooth scroll davranışı */
+		/* 13. Smooth scroll davranÃ„Â±Ã…Å¸Ã„Â± */
 		html {
 			scroll-behavior: smooth;
 		}
@@ -538,7 +979,7 @@
 			outline-offset: 2px;
 		}
 
-		/* 15. Yazı tipi optimizasyonu */
+		/* 15. YazÃ„Â± tipi optimizasyonu */
 		body {
 			-webkit-font-smoothing: antialiased;
 			-moz-osx-font-smoothing: grayscale;
@@ -554,7 +995,7 @@
 		}
 
 		.site-legal-footer .footer-brand img {
-			height: 86px;
+			height: 130px;
 			width: auto;
 			object-fit: contain;
 			margin-bottom: 14px;
@@ -583,7 +1024,7 @@
 		}
 	</style>
 	<style>
-		/* === CONDITION LABELS (Sıfır / İkinci El) === */
+		/* === CONDITION LABELS (SÃ„Â±fÃ„Â±r / Ã„Â°kinci El) === */
 		.condition-label {
 			position: absolute;
 			top: 10px;
@@ -753,6 +1194,21 @@
 				padding: 0 12px;
 			}
 
+			.bi-collection-split {
+				grid-template-columns: 1fr;
+				width: 100%;
+				margin-top: 14px;
+				gap: 10px;
+			}
+
+			.bi-collection-split-item {
+				min-height: 56px;
+				padding: 12px 16px;
+				border-radius: 999px;
+				font-size: clamp(1.15rem, 0.95rem + 1.6vw, 1.5rem);
+				letter-spacing: 0.06em;
+			}
+
 			.app-grid {
 				padding: 10px !important;
 				gap: 8px !important;
@@ -806,7 +1262,7 @@
 				height: auto !important;
 			}
 
-			/* Logo'yu mobilde göster ve boyutlandır */
+			/* Logo'yu mobilde gÃƒÂ¶ster ve boyutlandÃ„Â±r */
 			.header-center {
 				display: flex !important;
 				justify-content: center;
@@ -909,12 +1365,17 @@
 		/* STICKY CATEGORIES FIX */
 		.app-storefront-filters {
 			position: sticky !important;
-			top: 100px !important;
+			top: 42px !important;
 			z-index: 1000 !important;
 			background: rgba(255, 255, 255, 0.95) !important;
 			backdrop-filter: blur(10px);
 			border-bottom: 1px solid #f1f5f9;
 			padding: 10px 0 !important;
+		}
+
+		body.desktop-polished .app-storefront-filters {
+			top: 142px !important;
+			z-index: 10002 !important;
 		}
 
 		@media (max-width: 768px) {
@@ -923,7 +1384,7 @@
 			}
 
 			.app-storefront-filters {
-				top: 74px !important;
+				top: 116px !important;
 				z-index: 10001 !important;
 				background: rgba(255, 255, 255, 0.98) !important;
 				padding: 12px 10px !important;
@@ -944,7 +1405,7 @@
 		@media (min-width: 1024px) {
 			body.desktop-polished .desktop-polished-header {
 				position: fixed;
-				top: 0;
+				top: 42px;
 				left: 0;
 				width: 100%;
 				height: 100px;
@@ -1260,7 +1721,7 @@
 		}
 	</style>
 	<script>
-		/* ═══ Global Toast Notification Sistemi ═══ */
+		/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Global Toast Notification Sistemi Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 		window.showToast = function (message, type, duration) {
 			type = type || 'info';
 			duration = duration || 3500;
@@ -1279,7 +1740,7 @@
 			}, duration);
 		};
 
-		/* ═══ API Response Interceptor - Stok kontrolü + Bildirimler ═══ */
+		/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â API Response Interceptor - Stok kontrolÃƒÂ¼ + Bildirimler Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 		(function () {
 			var origFetch = window.fetch;
 			var origAlert = window.alert;
@@ -1307,10 +1768,10 @@
 				collect(payload);
 			};
 
-			/* alert() yerine toast kullan (React hataları için) */
+			/* alert() yerine toast kullan (React hatalarÃ„Â± iÃƒÂ§in) */
 			window.alert = function (msg) {
 				if (typeof msg === 'string' && msg.length < 300) {
-					var isError = /hata|error|başarısız|basarisiz|bulunamad|gecersiz|eksik|yetki/i.test(msg);
+					var isError = /hata|error|baÃ…Å¸arÃ„Â±sÃ„Â±z|basarisiz|bulunamad|gecersiz|eksik|yetki/i.test(msg);
 					window.showToast(msg, isError ? 'error' : 'info', isError ? 5000 : 3500);
 				} else {
 					origAlert.call(window, msg);
@@ -1323,7 +1784,7 @@
 				var opts = args[1] || {};
 				var method = (opts.method || 'GET').toUpperCase();
 
-				/* ── Auth header enjeksiyonu: admin API isteklerine token ekle ── */
+				/* Ã¢â€â‚¬Ã¢â€â‚¬ Auth header enjeksiyonu: admin API isteklerine token ekle Ã¢â€â‚¬Ã¢â€â‚¬ */
 				if ((method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE') && url.indexOf('/api/') !== -1) {
 					var token = null;
 					try { token = localStorage.getItem('token'); } catch (e) { }
@@ -1348,21 +1809,21 @@
 						rememberOrderIds(data);
 					}).catch(function () { });
 
-					/* ── 2. Sepete ekleme: Stok kontrolü + miktar bildirimi ── */
+					/* Ã¢â€â‚¬Ã¢â€â‚¬ 2. Sepete ekleme: Stok kontrolÃƒÂ¼ + miktar bildirimi Ã¢â€â‚¬Ã¢â€â‚¬ */
 					if (url.indexOf('/api/cart') !== -1 && method === 'POST') {
 						cloned.json().then(function (data) {
 							if (response.ok) {
 								var added = data && data.added;
 								if (added && added.quantity_adjusted) {
 									window.showToast(
-										'⚠️ ' + (added.message || 'Stok sinirli, miktar ayarlandi.'),
+										'Ã¢Å¡Â Ã¯Â¸Â ' + (added.message || 'Stok sinirli, miktar ayarlandi.'),
 										'info', 4000
 									);
 								} else if (added) {
 									window.showToast('Urun sepete eklendi!', 'success', 2000);
 								}
 							} else {
-								/* Stok hatası: kullanıcıya net mesaj göster */
+								/* Stok hatasÃ„Â±: kullanÃ„Â±cÃ„Â±ya net mesaj gÃƒÂ¶ster */
 								var msg = (data && data.message) || 'Urun eklenemedi.';
 								if (/stok/i.test(msg)) {
 									window.showToast('Bu urun icin yeterli stok bulunmuyor.', 'error', 4000);
@@ -1373,11 +1834,11 @@
 						}).catch(function () { });
 					}
 
-					/* ── Sipariş oluşturma sonucu ── */
+					/* Ã¢â€â‚¬Ã¢â€â‚¬ SipariÃ…Å¸ oluÃ…Å¸turma sonucu Ã¢â€â‚¬Ã¢â€â‚¬ */
 					if (url.indexOf('/api/orders') !== -1 && method === 'POST' && url.indexOf('track') === -1 && url.indexOf('status') === -1 && url.indexOf('cargo') === -1 && url.indexOf('retry') === -1) {
 						cloned.json().then(function (data) {
 							if (response.ok && data && data.id) {
-								/* Sipariş başarılı - son sipariş ID'sini kaydet (retry için) */
+								/* SipariÃ…Å¸ baÃ…Å¸arÃ„Â±lÃ„Â± - son sipariÃ…Å¸ ID'sini kaydet (retry iÃƒÂ§in) */
 								try { localStorage.setItem('lastOrderId', data.id); } catch (e) { }
 								if (data.payment && data.payment.mock) {
 									window.showToast('Siparis olusturuldu! Odeme bekleniyor...', 'info', 4000);
@@ -1386,7 +1847,7 @@
 						}).catch(function () { });
 					}
 
-					/* ── Sepet validasyonu: checkout öncesi stok uyarısı ── */
+					/* Ã¢â€â‚¬Ã¢â€â‚¬ Sepet validasyonu: checkout ÃƒÂ¶ncesi stok uyarÃ„Â±sÃ„Â± Ã¢â€â‚¬Ã¢â€â‚¬ */
 					if (url.indexOf('/api/cart/validate') !== -1) {
 						cloned.json().then(function (data) {
 							if (data && data.issues && data.issues.length > 0) {
@@ -1405,11 +1866,11 @@
 			};
 		})();
 
-		/* ═══ 3. Ödeme Yeniden Deneme UI ═══ */
+		/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â 3. Ãƒâ€“deme Yeniden Deneme UI Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 		(function () {
 			var API = 'https://www.boomeritems.com/api';
 
-			/* Order success sayfasında "Ödemeyi Tekrar Dene" butonu ekle */
+			/* Order success sayfasÃ„Â±nda "Ãƒâ€“demeyi Tekrar Dene" butonu ekle */
 			function checkAndAddRetryButton() {
 				var successPage = document.querySelector('.order-success-page');
 				if (!successPage) return;
@@ -1419,7 +1880,7 @@
 				try { orderId = localStorage.getItem('lastOrderId'); } catch (e) { }
 				if (!orderId) return;
 
-				/* Sipariş durumunu kontrol et */
+				/* SipariÃ…Å¸ durumunu kontrol et */
 				var token = null;
 				try { token = localStorage.getItem('token'); } catch (e) { }
 				var headers = { 'Content-Type': 'application/json' };
@@ -1436,7 +1897,7 @@
 							btn.style.cssText = 'margin-top:16px;padding:14px 32px;background:#ffcc00;color:#1e293b;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;';
 							btn.addEventListener('click', function () {
 								btn.disabled = true;
-								btn.textContent = 'Yükleniyor...';
+								btn.textContent = 'YÃƒÂ¼kleniyor...';
 
 								fetch(API + '/orders/retry-payment', {
 									method: 'POST',
@@ -1446,7 +1907,7 @@
 									.then(function (r) { return r.json(); })
 									.then(function (result) {
 										if (result.payment && result.payment.iframe_token) {
-											/* Paytr iframe'e yönlendir */
+											/* Paytr iframe'e yÃƒÂ¶nlendir */
 											window.location.href = result.payment.payment_url;
 										} else if (result.payment && result.payment.mock) {
 											window.location.href = result.payment.payment_url;
@@ -1463,7 +1924,7 @@
 									});
 							});
 
-							/* Butonun konumlandırılacağı yer */
+							/* Butonun konumlandÃ„Â±rÃ„Â±lacaÃ„Å¸Ã„Â± yer */
 							var trackingCard = successPage.querySelector('.order-tracking-card');
 							if (trackingCard) {
 								trackingCard.parentNode.insertBefore(btn, trackingCard.nextSibling);
@@ -1475,7 +1936,7 @@
 					.catch(function () { });
 			}
 
-			/* DOM değişikliklerini izle - React render ettiğinde yakala */
+			/* DOM deÃ„Å¸iÃ…Å¸ikliklerini izle - React render ettiÃ„Å¸inde yakala */
 			if (window.MutationObserver) {
 				var retryObserver = new MutationObserver(function () {
 					checkAndAddRetryButton();
@@ -1576,7 +2037,7 @@
 						var firstChild = info.firstElementChild;
 						if (firstChild) {
 							var text = (firstChild.textContent || '').trim().toUpperCase();
-							if ((text === 'DIECAST' || text === 'FIGÜR' || text === 'FIGUR' || text === 'LEGO') && text.length <= 12) {
+							if ((text === 'DIECAST' || text === 'FIG\u00DCR' || text === 'FIGUR' || text === 'LEGO') && text.length <= 12) {
 								firstChild.remove();
 							}
 						}
@@ -1611,10 +2072,10 @@
 						var text = (node.textContent || '').toLowerCase();
 						var hasNewsletterText =
 							text.indexOf('newsletter') !== -1 ||
-							text.indexOf('yeni ürünleri ilk sen gör') !== -1 ||
+							text.indexOf('yeni ÃƒÂ¼rÃƒÂ¼nleri ilk sen gÃƒÂ¶r') !== -1 ||
 							text.indexOf('yeni urunleri ilk sen gor') !== -1 ||
 							text.indexOf('e-posta adresiniz') !== -1 ||
-							text.indexOf('katıl ve gör') !== -1 ||
+							text.indexOf('katÃ„Â±l ve gÃƒÂ¶r') !== -1 ||
 							text.indexOf('katil ve gor') !== -1;
 						if (!hasNewsletterText) return;
 
@@ -1696,9 +2157,9 @@
 						+ '<a class="brand" href="#"><img src="/Boomer.svg" alt="Boomer Items"></a>'
 						+ '<nav class="nav-links" aria-label="Desktop">'
 						+ '<a class="nav-link active" href="/">Ana Sayfa</a>'
-						+ '<button class="nav-link products-link" type="button">Urunler</button>'
+						+ '<button class="nav-link products-link" type="button">&#220;r&#252;nler</button>'
 						+ '<a class="nav-link" href="/hakkimizda.html">Biz Kimiz</a>'
-						+ '<a class="nav-link" href="/iletisim.html">İletişim</a>'
+						+ '<a class="nav-link" href="/iletisim.html">&#304;leti&#351;im</a>'
 						+ '</nav>'
 						+ '<div class="actions">'
 						+ '<button class="icon-btn search-btn" type="button" aria-label="Ara">' + svgSearch + '</button>'
@@ -1813,7 +2274,7 @@
 				var maybeButton = target.closest('button');
 				if (maybeButton) {
 					var text = (maybeButton.textContent || '').trim().toUpperCase();
-					if (text === 'SIPARIŞIM NEREDE?' || text === 'SIPARISIM NEREDE?') {
+					if (text === 'SIPARIÃ…ÂIM NEREDE?' || text === 'SIPARISIM NEREDE?') {
 						button = maybeButton;
 					}
 				}
@@ -1845,30 +2306,33 @@
 	<script>window._wca = window._wca || [];</script>
 	<link rel='dns-prefetch' href='http://stats.wp.com/' />
 	<link rel='dns-prefetch' href='http://fonts.googleapis.com/' />
-	<link rel="alternate" type="application/rss+xml" title="BoomerItems &raquo; akÃ„Â±Ã…Å¸Ã„Â±"
+	<link rel="alternate" type="application/rss+xml"
+		title="BoomerItems &raquo; akÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â±ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€¦Ã‚Â¸ÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â±"
 		href="https://boomeritems.com/feed/" />
-	<link rel="alternate" type="application/rss+xml" title="BoomerItems &raquo; yorum akÃ„Â±Ã…Å¸Ã„Â±"
+	<link rel="alternate" type="application/rss+xml"
+		title="BoomerItems &raquo; yorum akÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â±ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€¦Ã‚Â¸ÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â±"
 		href="https://boomeritems.com/comments/feed/" />
-	<link rel="alternate" type="text/calendar" title="iCal Ã„Â°ÃƒÂ§erik KaynaÃ„Å¸Ã„Â± BoomerItems &raquo;"
+	<link rel="alternate" type="text/calendar"
+		title="iCal ÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§erik KaynaÃƒÆ’Ã¢â‚¬ÂÃƒâ€¦Ã‚Â¸ÃƒÆ’Ã¢â‚¬ÂÃƒâ€šÃ‚Â± BoomerItems &raquo;"
 		href="https://boomeritems.com/events/?ical=1" />
 	<link rel="alternate" title="oEmbed (JSON)" type="application/json+oembed"
 		href="https://boomeritems.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fboomeritems.com%2F" />
 	<link rel="alternate" title="oEmbed (XML)" type="text/xml+oembed"
 		href="https://boomeritems.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fboomeritems.com%2F&amp;format=xml" />
 	<meta property="og:type" content="website" />
-	<meta property="og:title" content="BoomerItems | LEGO, Diecast & Figür Koleksiyonu" />
+	<meta property="og:title" content="BoomerItems | LEGO, Diecast &amp; Fig&#252;r Koleksiyonu" />
 	<meta property="og:site_name" content="BoomerItems" />
 	<meta property="og:description"
-		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
+		content="Hayal Et, Ke&#351;fet, Koleksiyonunu B&#252;y&#252;t! LEGO setleri, diecast ara&#231;lar ve koleksiyon fig&#252;rleri BoomerItems'ta seni bekliyor." />
 	<meta property="og:url" content="https://boomeritems.com/" />
 	<meta property="og:image" content="https://boomeritems.com/logo_v2_full.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
 	<meta property="og:locale" content="tr_TR" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="BoomerItems | LEGO, Diecast & Figür Koleksiyonu" />
+	<meta name="twitter:title" content="BoomerItems | LEGO, Diecast &amp; Fig&#252;r Koleksiyonu" />
 	<meta name="twitter:description"
-		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
+		content="Hayal Et, Ke&#351;fet, Koleksiyonunu B&#252;y&#252;t! LEGO setleri, diecast ara&#231;lar ve koleksiyon fig&#252;rleri BoomerItems'ta seni bekliyor." />
 
 	<style id='wp-img-auto-sizes-contain-inline-css'>
 		img:is([sizes=auto i], [sizes^="auto," i]) {
@@ -2855,7 +3319,7 @@
 	<div class="woocommerce-variation-availability">{{{ data.variation.availability_html }}}</div>
 </script>
 	<script type="text/template" id="tmpl-unavailable-variation-template">
-	<p role="alert">Maalesef, bu ÃƒÂ¼rÃƒÂ¼n mevcut deÃ„Å¸il. LÃƒÂ¼tfen farklÃ„Â± bir kombinasyon seÃƒÂ§in.</p>
+	<p role="alert">Maalesef, bu &#252;r&#252;n mevcut de&#287;il. L&#252;tfen farkl&#305; bir kombinasyon se&#231;in.</p>
 </script>
 	<script src="https://boomeritems.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.1" id="jquery-core-js"></script>
 	<script src="https://boomeritems.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1"
@@ -3877,9 +4341,9 @@
 			.app-header.mobile-only .icon-btn:last-of-type,
 			.app-header.mobile-only .header-actions .icon-btn:last-of-type,
 			.app-header.mobile-only button[aria-label*="Urun"],
-			.app-header.mobile-only button[aria-label*="ürün"],
+			.app-header.mobile-only button[aria-label*="ÃƒÂ¼rÃƒÂ¼n"],
 			.app-header.mobile-only button[title*="Urun"],
-			.app-header.mobile-only button[title*="ürün"] {
+			.app-header.mobile-only button[title*="ÃƒÂ¼rÃƒÂ¼n"] {
 				display: none !important;
 			}
 
@@ -3994,7 +4458,7 @@
 				document.querySelectorAll('.product-card').forEach(function (card) {
 					Array.prototype.slice.call(card.querySelectorAll('div, span, p, small, strong')).forEach(function (node) {
 						var text = (node.textContent || '').trim().toUpperCase();
-						if (text === 'DIECAST' || text === 'FIGÜR' || text === 'FIGUR' || text === 'LEGO') {
+						if (text === 'DIECAST' || text === 'FIG\u00DCR' || text === 'FIGUR' || text === 'LEGO') {
 							node.style.display = 'none';
 						}
 					});
@@ -4028,6 +4492,12 @@
 			var normalizeText = function (value) {
 				return String(value || '')
 					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
 					.replace(/\s+/g, ' ')
 					.trim();
 			};
@@ -4055,6 +4525,23 @@
 			var stockText = function (stock) {
 				if (stock <= 0) return 'Stok Bitti';
 				return 'Stok: ' + stock + ' adet';
+			};
+
+			var pieceTextFromProduct = function (product) {
+				if (!product) return '';
+				var directPieces = product.pieces || product.piece || product.piece_count || product.pieceCount || product.parca;
+				var numericPieces = parseInt(directPieces, 10);
+				if (typeof directPieces === 'string' && directPieces.trim() !== '' && Number.isNaN(numericPieces)) {
+					return directPieces;
+				}
+				if (Number.isFinite(numericPieces) && numericPieces > 0) {
+					return numericPieces.toLocaleString('tr-TR') + ' Par\u00e7a';
+				}
+				var title = String(product.title || product.name || '');
+				var titleMatch = title.match(/\(([\d.]+)\s*Par[çc]a\)/i) || title.match(/([\d.]+)\s*Par[çc]a/i);
+				if (!titleMatch) return '';
+				var parsedFromTitle = parseInt(String(titleMatch[1]).replace(/\./g, ''), 10);
+				return parsedFromTitle > 0 ? parsedFromTitle.toLocaleString('tr-TR') + ' Par\u00e7a' : '';
 			};
 
 			var fetchProductIndex = function () {
@@ -4144,16 +4631,31 @@
 				return chip;
 			};
 
+			var ensurePiecesBadge = function (card) {
+				var media = card.querySelector('.card-media, .product-image-wrapper, .product-thumb, .product-media') || card;
+				var badge = card.querySelector('.product-pieces-badge');
+				if (!badge) {
+					badge = document.createElement('div');
+					badge.className = 'product-pieces-badge';
+					media.appendChild(badge);
+				}
+				return badge;
+			};
+
 			var applyStockToCard = function (card, product) {
 				if (!card || !product) return;
 				var stock = stockValueFromProduct(product);
 				var chip = ensureStockChip(card);
 				var banner = ensureStockBanner(card);
+				var piecesBadge = ensurePiecesBadge(card);
+				var piecesText = pieceTextFromProduct(product);
 				var stateClass = stockStateClass(stock);
 
 				chip.textContent = stockText(stock);
 				chip.className = 'product-stock-chip ' + stateClass;
 				banner.textContent = 'Stok Bitti';
+				piecesBadge.textContent = piecesText;
+				piecesBadge.style.display = piecesText ? '' : 'none';
 				card.classList.toggle('is-out-of-stock', stock <= 0);
 				card.dataset.productId = product.id || '';
 				card.dataset.stockValue = String(stock);
@@ -4198,7 +4700,7 @@
 					}
 				}
 				stockNode.innerHTML = stock <= 0
-					? '<strong>Stok Durumu:</strong> Bu urun tukenmistir.'
+					? '<strong>Stok Durumu:</strong> Bu \u00fcr\u00fcn t\u00fckenmi\u015ftir.'
 					: '<strong>Toplam Stok:</strong> ' + stock + ' adet';
 			};
 
@@ -4309,6 +4811,1803 @@
 			setInterval(queueOrderCodePatch, 1500);
 		});
 	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var legoPieceIndex = null;
+			var legoPieceIndexPromise = null;
+			var pieceRefreshQueued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var inferPieces = function (product) {
+				if (!product) return 0;
+				var direct = parseInt(product.pieces || product.piece || product.piece_count || product.pieceCount || 0, 10);
+				if (Number.isFinite(direct) && direct > 0) return direct;
+				var title = String(product.title || product.name || '');
+				var match = title.match(/\(([\d.]+)\s*Par[çc]a\)/i) || title.match(/([\d.]+)\s*Par[çc]a/i);
+				if (!match) return 0;
+				return parseInt(String(match[1]).replace(/\./g, ''), 10) || 0;
+			};
+
+			var fetchLegoPieceIndex = function () {
+				if (legoPieceIndex) return Promise.resolve(legoPieceIndex);
+				if (legoPieceIndexPromise) return legoPieceIndexPromise;
+
+				legoPieceIndexPromise = fetch('/api/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch('/api/products?limit=500&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						legoPieceIndex = {};
+						(items || []).forEach(function (item) {
+							var key = normalizeText(item && (item.title || item.name));
+							var pieces = inferPieces(item);
+							if (!key || pieces <= 0) return;
+							legoPieceIndex[key] = pieces;
+						});
+						return legoPieceIndex;
+					})
+					.catch(function () {
+						legoPieceIndex = {};
+						return legoPieceIndex;
+					});
+
+				return legoPieceIndexPromise;
+			};
+
+			var ensurePieceBadge = function (card) {
+				var media = card.querySelector('.card-media, .product-image-wrapper, .post_featured, .thumb, .product-thumb') || card;
+				if (media && getComputedStyle(media).position === 'static') {
+					media.style.position = 'relative';
+				}
+				var badge = card.querySelector('.product-pieces-badge');
+				if (!badge) {
+					badge = document.createElement('div');
+					badge.className = 'product-pieces-badge';
+					media.appendChild(badge);
+				}
+				return badge;
+			};
+
+			var applyLegoPieces = function () {
+				fetchLegoPieceIndex().then(function (index) {
+					document.querySelectorAll('.app-product-card, .product-card').forEach(function (card) {
+						var tagNode = card.querySelector('.product-tag, .card-cat, .post_header .post_meta, .trx_addons_hover_content .cat_post, span');
+						var titleNode = card.querySelector('.product-title, .card-title, h3, h4');
+						if (!titleNode) return;
+
+						var tagText = normalizeText(tagNode ? tagNode.textContent : '');
+						var titleKey = normalizeText(titleNode.textContent);
+						var isLego = tagText.indexOf('lego') !== -1 || titleKey.indexOf('lego') !== -1;
+						if (!isLego) return;
+
+						var pieces = index[titleKey] || 0;
+						if (!pieces) return;
+
+						var badge = ensurePieceBadge(card);
+						badge.textContent = pieces.toLocaleString('tr-TR') + ' Par\u00e7a';
+						badge.style.display = 'block';
+					});
+				});
+			};
+
+			var queueLegoPieces = function () {
+				if (pieceRefreshQueued) return;
+				pieceRefreshQueued = true;
+				requestAnimationFrame(function () {
+					pieceRefreshQueued = false;
+					applyLegoPieces();
+				});
+			};
+
+			queueLegoPieces();
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueLegoPieces).observe(document.body, { childList: true, subtree: true });
+			}
+
+			setTimeout(queueLegoPieces, 500);
+			setTimeout(queueLegoPieces, 1500);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var normalizedMarkup = ''
+				+ '<div class="bi-collection-split" aria-label="Koleksiyon kategorileri">'
+				+ '<div class="bi-collection-split-item">LEGO SETLER&#304;</div>'
+				+ '<div class="bi-collection-split-item">DIECAST</div>'
+				+ '<div class="bi-collection-split-item">F&#304;G&#220;RLER</div>'
+				+ '</div>';
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/??|?/g, 'i')
+					.replace(/??|?/g, 'u')
+					.replace(/??|?/g, 'o')
+					.replace(/??|?/g, 'c')
+					.replace(/??|?/g, 's')
+					.replace(/??|?/g, 'g')
+					.replace(/\\s+/g, ' ')
+					.trim();
+			};
+
+			var patchCollectionSplit = function () {
+				var built = document.querySelector('.bi-collection-split');
+				if (built) {
+					built.innerHTML = ''
+						+ '<div class="bi-collection-split-item">LEGO SETLER&#304;</div>'
+						+ '<div class="bi-collection-split-item">DIECAST</div>'
+						+ '<div class="bi-collection-split-item">F&#304;G&#220;RLER</div>';
+					return;
+				}
+
+				var target = Array.prototype.slice.call(
+					document.querySelectorAll('h1, h2, h3, h4, p, div, span')
+				).find(function (node) {
+					var text = normalizeText(node && node.textContent);
+					if (!text) return false;
+					return text.indexOf('lego') !== -1
+						&& text.indexOf('diecast') !== -1
+						&& text.indexOf('fig') !== -1
+						&& (text.indexOf('+') !== -1 || text.indexOf('setleri') !== -1);
+				});
+
+				if (!target) return;
+				target.innerHTML = normalizedMarkup;
+			};
+
+			patchCollectionSplit();
+			setTimeout(patchCollectionSplit, 250);
+			setTimeout(patchCollectionSplit, 1000);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLowerCase()
+					.replace(/[ıi]/g, 'i')
+					.replace(/[üu]/g, 'u')
+					.replace(/[öo]/g, 'o')
+					.replace(/[çc]/g, 'c')
+					.replace(/[şs]/g, 's')
+					.replace(/[ğg]/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var clearStartShoppingUnderline = function () {
+				Array.prototype.slice.call(document.querySelectorAll('a, button, span, div')).forEach(function (node) {
+					var text = normalizeText(node.textContent);
+					if (text !== 'alisverise basla') return;
+					node.style.textDecoration = 'none';
+					node.style.setProperty('text-decoration', 'none', 'important');
+					node.style.setProperty('box-shadow', 'none');
+					node.style.setProperty('border-bottom', 'none', 'important');
+				});
+			};
+
+			clearStartShoppingUnderline();
+
+			if (window.MutationObserver) {
+				new MutationObserver(clearStartShoppingUnderline).observe(document.body, { childList: true, subtree: true });
+			}
+
+			setTimeout(clearStartShoppingUnderline, 400);
+			setTimeout(clearStartShoppingUnderline, 1200);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var adminProductsObserver = null;
+			var adminStockIndex = null;
+			var adminStockIndexPromise = null;
+			var zeroStockStorageKey = 'admin_zero_stock_only';
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var shouldActivateAdminFilter = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				return headerTitle && normalizeText(headerTitle.textContent) === 'urunleri yonet';
+			};
+
+			var scheduleAdminProductsTask = function (task) {
+				var queued = false;
+				return function () {
+					if (queued) return;
+					queued = true;
+					requestAnimationFrame(function () {
+						queued = false;
+						task();
+					});
+				};
+			};
+
+			var observeAdminProductsView = function (task) {
+				var runTask = scheduleAdminProductsTask(task);
+				runTask();
+
+				if (!window.MutationObserver) return;
+				if (adminProductsObserver) adminProductsObserver.disconnect();
+
+				adminProductsObserver = new MutationObserver(function () {
+					if (!shouldActivateAdminFilter()) return;
+					runTask();
+				});
+
+				var adminView = document.querySelector('.admin-view');
+				if (adminView) {
+					adminProductsObserver.observe(adminView, { childList: true, subtree: true });
+				}
+			};
+
+			var fetchAdminStockIndex = function () {
+				if (adminStockIndex) return Promise.resolve(adminStockIndex);
+				if (adminStockIndexPromise) return adminStockIndexPromise;
+
+				adminStockIndexPromise = fetch('/api/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch('/api/products?limit=500&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						adminStockIndex = {};
+						(items || []).forEach(function (item) {
+							var key = normalizeText(item && (item.name || item.title));
+							if (!key) return;
+							adminStockIndex[key] = parseInt(item.stock, 10);
+						});
+						return adminStockIndex;
+					})
+					.catch(function () {
+						adminStockIndex = {};
+						return adminStockIndex;
+					});
+
+				return adminStockIndexPromise;
+			};
+
+			var applyZeroStockTableFilter = function () {
+				if (!shouldActivateAdminFilter()) return;
+				var toggle = document.getElementById('adminZeroStockToggle');
+				var orderZeroFirst = !!(toggle && toggle.checked);
+				var tbody = document.querySelector('.admin-table tbody');
+				var rows = tbody ? Array.prototype.slice.call(tbody.querySelectorAll('tr')) : [];
+				if (!rows.length) return;
+
+				rows.forEach(function (row, index) {
+					if (!row.dataset.originalIndex) {
+						row.dataset.originalIndex = String(index);
+					}
+				});
+
+				rows.sort(function (leftRow, rightRow) {
+					var leftTitleCell = leftRow.children && leftRow.children[1];
+					var rightTitleCell = rightRow.children && rightRow.children[1];
+					var leftTitle = normalizeText(leftTitleCell ? leftTitleCell.textContent : '');
+					var rightTitle = normalizeText(rightTitleCell ? rightTitleCell.textContent : '');
+					var leftStock = leftTitle ? adminStockIndex && adminStockIndex[leftTitle] : null;
+					var rightStock = rightTitle ? adminStockIndex && adminStockIndex[rightTitle] : null;
+					var leftOriginalIndex = parseInt(leftRow.dataset.originalIndex || '0', 10);
+					var rightOriginalIndex = parseInt(rightRow.dataset.originalIndex || '0', 10);
+
+					if (!orderZeroFirst) {
+						return leftOriginalIndex - rightOriginalIndex;
+					}
+
+					var leftPriority = leftStock === 0 ? 0 : 1;
+					var rightPriority = rightStock === 0 ? 0 : 1;
+					if (leftPriority !== rightPriority) {
+						return leftPriority - rightPriority;
+					}
+
+					return leftOriginalIndex - rightOriginalIndex;
+				});
+
+				rows.forEach(function (row) {
+					row.style.display = '';
+					tbody.appendChild(row);
+				});
+			};
+
+			var ensureZeroStockToggle = function () {
+				if (!shouldActivateAdminFilter()) return;
+				var controls = document.querySelector('.admin-view .admin-header > div');
+				if (!controls) return;
+				if (!document.getElementById('adminZeroStockToggle')) {
+					var label = document.createElement('label');
+					label.className = 'admin-zero-stock-filter is-loading';
+					label.innerHTML = '<input id="adminZeroStockToggle" type="checkbox"><span>0 stoklar\u0131 g\u00f6ster</span>';
+					controls.appendChild(label);
+
+					var checkbox = label.querySelector('input');
+					try {
+						checkbox.checked = localStorage.getItem(zeroStockStorageKey) === '1';
+					} catch (error) { }
+					checkbox.addEventListener('change', function () {
+						try {
+							localStorage.setItem(zeroStockStorageKey, checkbox.checked ? '1' : '0');
+						} catch (error) { }
+						applyZeroStockTableFilter();
+					});
+				}
+
+				fetchAdminStockIndex().then(function () {
+					var label = document.querySelector('.admin-zero-stock-filter');
+					if (label) label.classList.remove('is-loading');
+					applyZeroStockTableFilter();
+				});
+			};
+
+			var queueEnsureZeroStockToggle = function () {
+				if (!shouldActivateAdminFilter()) return;
+				ensureZeroStockToggle();
+			};
+
+			observeAdminProductsView(queueEnsureZeroStockToggle);
+			setTimeout(queueEnsureZeroStockToggle, 500);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var adminStockObserver = null;
+			var adminStockColumnIndex = null;
+			var adminStockMap = null;
+			var adminStockMapPromise = null;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminProductsView = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				if (headerTitle && normalizeText(headerTitle.textContent) === 'urunleri yonet') {
+					return true;
+				}
+				var table = document.querySelector('.admin-view .admin-table');
+				if (!table) return false;
+				var headerText = normalizeText(table.querySelector('thead') ? table.querySelector('thead').textContent : '');
+				return headerText.indexOf('baslik') !== -1
+					&& headerText.indexOf('marka') !== -1
+					&& headerText.indexOf('fiyat') !== -1;
+			};
+
+			var scheduleAdminStockTask = function (task) {
+				var queued = false;
+				return function () {
+					if (queued) return;
+					queued = true;
+					requestAnimationFrame(function () {
+						queued = false;
+						task();
+					});
+				};
+			};
+
+			var observeAdminProductsTable = function (task) {
+				var runTask = scheduleAdminStockTask(task);
+				runTask();
+
+				if (!window.MutationObserver) return;
+				if (adminStockObserver) adminStockObserver.disconnect();
+
+				adminStockObserver = new MutationObserver(function () {
+					if (!isAdminProductsView()) return;
+					runTask();
+				});
+
+				var tableWrap = document.querySelector('.admin-table-container') || document.querySelector('.admin-view');
+				if (tableWrap) {
+					adminStockObserver.observe(tableWrap, { childList: true, subtree: true });
+				}
+			};
+
+			var fetchAdminStocks = function () {
+				if (adminStockMap) return Promise.resolve(adminStockMap);
+				if (adminStockMapPromise) return adminStockMapPromise;
+
+				adminStockMapPromise = fetch('/api/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch('/api/products?limit=500&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						adminStockMap = {};
+						(items || []).forEach(function (item) {
+							var key = normalizeText(item && (item.name || item.title));
+							if (!key) return;
+							adminStockMap[key] = parseInt(item.stock, 10);
+						});
+						return adminStockMap;
+					})
+					.catch(function () {
+						adminStockMap = {};
+						return adminStockMap;
+					});
+
+				return adminStockMapPromise;
+			};
+
+			var ensureAdminStockHeader = function (table) {
+				if (!table) return null;
+				var headerRow = table.querySelector('thead tr');
+				if (!headerRow) return null;
+				var existing = headerRow.querySelector('.admin-stock-head');
+				if (existing) return existing.cellIndex;
+
+				var markaHead = Array.prototype.slice.call(headerRow.children).find(function (cell) {
+					return normalizeText(cell.textContent) === 'marka';
+				});
+				if (!markaHead) return null;
+
+				var stockHead = document.createElement('th');
+				stockHead.className = 'admin-stock-head';
+				stockHead.textContent = 'Stok';
+				markaHead.insertAdjacentElement('afterend', stockHead);
+				return stockHead.cellIndex;
+			};
+
+			var ensureAdminStockColumn = function () {
+				if (!isAdminProductsView()) return;
+				var table = document.querySelector('.admin-table');
+				if (!table) return;
+
+				adminStockColumnIndex = ensureAdminStockHeader(table);
+				if (adminStockColumnIndex === null || adminStockColumnIndex === undefined) return;
+
+				fetchAdminStocks().then(function (stockMap) {
+					Array.prototype.slice.call(table.querySelectorAll('tbody tr')).forEach(function (row) {
+						var titleCell = row.querySelector('td[data-label="Baslik"], td[data-label="Başlık"]') || (row.children && row.children[1]);
+						if (!titleCell) return;
+
+						var stockCell = row.querySelector('.admin-stock-cell');
+						var priceCell = row.querySelector('td[data-label="Fiyat"]');
+						if (!stockCell) {
+							stockCell = document.createElement('td');
+							stockCell.className = 'admin-stock-cell';
+							row.insertBefore(stockCell, priceCell || row.children[adminStockColumnIndex] || null);
+						}
+
+						var key = normalizeText(titleCell.textContent);
+						var stockValue = stockMap && stockMap[key];
+						var isKnown = !(stockValue === undefined || stockValue === null || Number.isNaN(stockValue));
+						var safeValue = isKnown ? stockValue : '-';
+
+						stockCell.setAttribute('data-label', 'Stok');
+						stockCell.innerHTML = '<span class="admin-stock-badge' + (safeValue === 0 ? ' is-zero' : '') + '">' + safeValue + '</span>';
+					});
+				});
+			};
+
+			observeAdminProductsTable(ensureAdminStockColumn);
+			setTimeout(ensureAdminStockColumn, 500);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var adminInventoryObserver = null;
+			var inventorySummaryData = null;
+			var inventorySummaryPromise = null;
+			var inventoryLowStockThreshold = 3;
+			var inventoryFilterStorageKey = 'adminInventoryTableFilter';
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminProductsView = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				return headerTitle && normalizeText(headerTitle.textContent) === 'urunleri yonet';
+			};
+
+			var scheduleInventoryTask = function (task) {
+				var queued = false;
+				return function () {
+					if (queued) return;
+					queued = true;
+					requestAnimationFrame(function () {
+						queued = false;
+						task();
+					});
+				};
+			};
+
+			var observeInventoryPanel = function (task) {
+				var runTask = scheduleInventoryTask(task);
+				runTask();
+
+				if (!window.MutationObserver) return;
+				if (adminInventoryObserver) adminInventoryObserver.disconnect();
+
+				adminInventoryObserver = new MutationObserver(function () {
+					if (!isAdminProductsView()) return;
+					runTask();
+				});
+
+				var adminView = document.querySelector('.admin-view');
+				if (adminView) {
+					adminInventoryObserver.observe(adminView, { childList: true, subtree: true });
+				}
+			};
+
+			var toNumber = function (value) {
+				if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+				if (typeof value === 'string') {
+					var cleaned = value.replace(/[^0-9,.-]/g, '').replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.');
+					var parsed = parseFloat(cleaned);
+					return Number.isFinite(parsed) ? parsed : 0;
+				}
+				var parsedValue = parseFloat(value);
+				return Number.isFinite(parsedValue) ? parsedValue : 0;
+			};
+
+			var formatCurrency = function (amount) {
+				try {
+					return new Intl.NumberFormat('tr-TR', {
+						style: 'currency',
+						currency: 'TRY',
+						maximumFractionDigits: 0
+					}).format(amount || 0);
+				} catch (error) {
+					return (amount || 0) + ' TL';
+				}
+			};
+
+			var fetchAdminInventoryData = function () {
+				if (inventorySummaryData) return Promise.resolve(inventorySummaryData);
+				if (inventorySummaryPromise) return inventorySummaryPromise;
+
+				inventorySummaryPromise = fetch('/api/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch('/api/products?limit=500&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						var list = Array.isArray(items) ? items : [];
+						var summary = {
+							items: list,
+							byTitle: {},
+							totalProducts: list.length,
+							totalUnits: 0,
+							zeroStock: 0,
+							lowStock: 0,
+							inStock: 0,
+							inventoryValue: 0
+						};
+
+						list.forEach(function (item) {
+							var titleKey = normalizeText(item && (item.name || item.title));
+							var stock = Math.max(0, parseInt(item && item.stock, 10) || 0);
+							var price = Math.max(0, toNumber(item && item.price));
+
+							if (titleKey) {
+								summary.byTitle[titleKey] = {
+									stock: stock,
+									price: price
+								};
+							}
+
+							summary.totalUnits += stock;
+							summary.inventoryValue += stock * price;
+
+							if (stock === 0) {
+								summary.zeroStock += 1;
+							} else {
+								summary.inStock += 1;
+								if (stock <= inventoryLowStockThreshold) {
+									summary.lowStock += 1;
+								}
+							}
+						});
+
+						inventorySummaryData = summary;
+						return inventorySummaryData;
+					})
+					.catch(function () {
+						inventorySummaryData = {
+							items: [],
+							byTitle: {},
+							totalProducts: 0,
+							totalUnits: 0,
+							zeroStock: 0,
+							lowStock: 0,
+							inStock: 0,
+							inventoryValue: 0
+						};
+						return inventorySummaryData;
+					});
+
+				return inventorySummaryPromise;
+			};
+
+			var createSummaryCard = function (label, value, note, extraClass) {
+				var article = document.createElement('article');
+				article.className = 'admin-inventory-card' + (extraClass ? ' ' + extraClass : '');
+				article.innerHTML = '<span class="admin-inventory-label">' + label + '</span><strong>' + value + '</strong><span class="admin-inventory-note">' + note + '</span>';
+				return article;
+			};
+
+			var ensureInventoryShell = function () {
+				if (!isAdminProductsView()) return;
+				var adminView = document.querySelector('.admin-view');
+				var adminCard = adminView ? adminView.querySelector('.admin-card') : null;
+				if (!adminView || !adminCard) return null;
+
+				var shell = document.getElementById('adminInventoryShell');
+				if (!shell) {
+					shell = document.createElement('section');
+					shell.id = 'adminInventoryShell';
+					adminCard.parentNode.insertBefore(shell, adminCard);
+				}
+
+				var summaryWrap = document.getElementById('adminInventorySummary');
+				if (!summaryWrap) {
+					summaryWrap = document.createElement('section');
+					summaryWrap.id = 'adminInventorySummary';
+					summaryWrap.className = 'admin-inventory-summary';
+					shell.appendChild(summaryWrap);
+				}
+
+				var toolbar = document.getElementById('adminInventoryToolbar');
+				if (!toolbar) {
+					toolbar = document.createElement('div');
+					toolbar.id = 'adminInventoryToolbar';
+					toolbar.className = 'admin-inventory-toolbar';
+					shell.appendChild(toolbar);
+				}
+
+				return {
+					shell: shell,
+					summaryWrap: summaryWrap,
+					toolbar: toolbar
+				};
+			};
+
+			var renderInventorySummary = function (summary) {
+				var inventoryShell = ensureInventoryShell();
+				if (!inventoryShell) return;
+
+				var summaryWrap = inventoryShell.summaryWrap;
+
+				summaryWrap.innerHTML = '';
+				summaryWrap.appendChild(createSummaryCard('Toplam \u00fcr\u00fcn', String(summary.totalProducts), 'Listede olan t\u00fcm \u00fcr\u00fcnler'));
+				summaryWrap.appendChild(createSummaryCard('Toplam stok', String(summary.totalUnits), 'Depodaki toplam adet'));
+				summaryWrap.appendChild(createSummaryCard('0 stok', String(summary.zeroStock), 'Biten urunler', 'is-alert'));
+				summaryWrap.appendChild(createSummaryCard('D\u00fc\u015f\u00fck stok', String(summary.lowStock), '1-' + inventoryLowStockThreshold + ' adet kalanlar', 'is-warning'));
+				summaryWrap.appendChild(createSummaryCard('Stok de\u011feri', formatCurrency(summary.inventoryValue), 'Stok x fiyat toplam de\u011feri'));
+			};
+
+			var applyInventoryTableView = function (filterKey) {
+				if (!isAdminProductsView()) return;
+				var table = document.querySelector('.admin-table');
+				var tbody = table ? table.querySelector('tbody') : null;
+				if (!tbody) return;
+
+				Array.prototype.slice.call(tbody.querySelectorAll('tr')).forEach(function (row) {
+					var titleCell = row.children && row.children[1];
+					var key = normalizeText(titleCell ? titleCell.textContent : '');
+					var meta = key && inventorySummaryData && inventorySummaryData.byTitle[key];
+					var stock = meta ? meta.stock : null;
+					var visible = true;
+
+					if (filterKey === 'zero') visible = stock === 0;
+					if (filterKey === 'low') visible = stock > 0 && stock <= inventoryLowStockThreshold;
+					if (filterKey === 'instock') visible = stock > 0;
+
+					row.style.display = visible ? '' : 'none';
+				});
+
+				Array.prototype.slice.call(document.querySelectorAll('.admin-inventory-filter')).forEach(function (button) {
+					button.classList.toggle('is-active', button.dataset.filter === filterKey);
+				});
+			};
+
+			var ensureInventoryToolbar = function (summary) {
+				var inventoryShell = ensureInventoryShell();
+				if (!inventoryShell) return;
+
+				var toolbar = inventoryShell.toolbar;
+
+				toolbar.innerHTML = '';
+				[
+					{ key: 'all', label: 'T\u00fcm \u00fcr\u00fcnler', count: summary.totalProducts },
+					{ key: 'zero', label: '0 stok', count: summary.zeroStock },
+					{ key: 'low', label: 'D\u00fc\u015f\u00fck stok', count: summary.lowStock },
+					{ key: 'instock', label: 'Stokta olanlar', count: summary.inStock }
+				].forEach(function (item) {
+					var button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'admin-inventory-filter';
+					button.dataset.filter = item.key;
+					button.innerHTML = '<span>' + item.label + '</span><span class="admin-inventory-filter-count">' + item.count + '</span>';
+					button.addEventListener('click', function () {
+						try {
+							localStorage.setItem(inventoryFilterStorageKey, item.key);
+						} catch (error) { }
+						applyInventoryTableView(item.key);
+					});
+					toolbar.appendChild(button);
+				});
+
+				var selectedFilter = 'all';
+				try {
+					selectedFilter = localStorage.getItem(inventoryFilterStorageKey) || 'all';
+				} catch (error) { }
+				applyInventoryTableView(selectedFilter);
+			};
+
+			var ensureAdminInventorySummary = function () {
+				if (!isAdminProductsView()) return;
+				fetchAdminInventoryData().then(function (summary) {
+					renderInventorySummary(summary);
+					ensureInventoryToolbar(summary);
+				});
+			};
+
+			observeInventoryPanel(ensureAdminInventorySummary);
+			setTimeout(ensureAdminInventorySummary, 500);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var state = {
+				status: 'all',
+				category: 'all',
+				brand: 'all',
+				sort: 'default'
+			};
+			var inventory = null;
+			var inventoryPromise = null;
+			var observer = null;
+			var isApplyingEnhancements = false;
+			var applyQueued = false;
+			var lowStockThreshold = 3;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminProductsView = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				return headerTitle && normalizeText(headerTitle.textContent) === 'urunleri yonet';
+			};
+
+			var toNumber = function (value) {
+				if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+				if (typeof value === 'string') {
+					var cleaned = value.replace(/[^0-9,.-]/g, '').replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.');
+					var parsed = parseFloat(cleaned);
+					return Number.isFinite(parsed) ? parsed : 0;
+				}
+				var parsedValue = parseFloat(value);
+				return Number.isFinite(parsedValue) ? parsedValue : 0;
+			};
+
+			var formatCurrency = function (amount) {
+				try {
+					return new Intl.NumberFormat('tr-TR', {
+						style: 'currency',
+						currency: 'TRY',
+						maximumFractionDigits: 0
+					}).format(amount || 0);
+				} catch (error) {
+					return (amount || 0) + ' TL';
+				}
+			};
+
+			var fetchInventory = function () {
+				if (inventory) return Promise.resolve(inventory);
+				if (inventoryPromise) return inventoryPromise;
+
+				inventoryPromise = fetch('/api/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch('/api/products?limit=500&page=' + page)
+									.then(function (resp) { return resp.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						var byTitle = {};
+						var categories = {};
+						var brands = {};
+						var summary = {
+							totalProducts: 0,
+							totalUnits: 0,
+							zeroStock: 0,
+							lowStock: 0,
+							inStock: 0,
+							totalPriceSum: 0,
+							inventoryValue: 0
+						};
+
+						(items || []).forEach(function (item) {
+							var title = normalizeText(item && (item.title || item.name));
+							var stock = Math.max(0, parseInt(item && (item.available_stock || item.stock), 10) || 0);
+							var price = Math.max(0, toNumber(item && item.price));
+							var category = String(item && (item.category || item.category_name || '') || '');
+							var brand = String(item && (item.brand || item.brand_name || '') || '');
+
+							if (!title) return;
+
+							byTitle[title] = {
+								stock: stock,
+								price: price,
+								category: category,
+								brand: brand
+							};
+
+							summary.totalProducts += 1;
+							summary.totalUnits += stock;
+							summary.totalPriceSum += price;
+							summary.inventoryValue += price * stock;
+
+							if (category) categories[category] = true;
+							if (brand) brands[brand] = true;
+
+							if (stock === 0) summary.zeroStock += 1;
+							if (stock > 0) summary.inStock += 1;
+							if (stock > 0 && stock <= lowStockThreshold) summary.lowStock += 1;
+						});
+
+						inventory = {
+							items: items || [],
+							byTitle: byTitle,
+							categories: Object.keys(categories).sort(),
+							brands: Object.keys(brands).sort(),
+							summary: summary
+						};
+
+						return inventory;
+					})
+					.catch(function () {
+						inventory = {
+							items: [],
+							byTitle: {},
+							categories: [],
+							brands: [],
+							summary: {
+								totalProducts: 0,
+								totalUnits: 0,
+								zeroStock: 0,
+								lowStock: 0,
+								inStock: 0,
+								totalPriceSum: 0,
+								inventoryValue: 0
+							}
+						};
+						return inventory;
+					});
+
+				return inventoryPromise;
+			};
+
+			var getAdminCard = function () {
+				var table = document.querySelector('.admin-view .admin-table');
+				if (table) {
+					var cardFromTable = table.closest('.admin-card');
+					if (cardFromTable) return cardFromTable;
+				}
+				var header = document.querySelector('.admin-view .admin-header');
+				if (header) {
+					var sibling = header.nextElementSibling;
+					while (sibling) {
+						if (sibling.classList && sibling.classList.contains('admin-card')) return sibling;
+						sibling = sibling.nextElementSibling;
+					}
+				}
+				return document.querySelector('.admin-view .admin-card');
+			};
+
+			var ensureShell = function () {
+				if (!isAdminProductsView()) return null;
+				var adminCard = getAdminCard();
+				if (!adminCard || !adminCard.parentNode) return null;
+
+				var legacyShell = document.getElementById('adminInventoryShell');
+				if (legacyShell) {
+					legacyShell.remove();
+				}
+
+				var shell = document.getElementById('adminInventoryShellV2');
+				if (!shell) {
+					shell = document.createElement('section');
+					shell.id = 'adminInventoryShellV2';
+				}
+				var tableContainer = adminCard.querySelector('.admin-table-container');
+				if (tableContainer) {
+					adminCard.insertBefore(shell, tableContainer);
+				} else if (adminCard.firstChild !== shell) {
+					adminCard.insertBefore(shell, adminCard.firstChild);
+				}
+				return shell;
+			};
+
+			var ensureSummary = function (data) {
+				var shell = ensureShell();
+				if (!shell) return;
+
+				var summary = data.summary;
+				shell.innerHTML = ''
+					+ '<section class="admin-inventory-summary">'
+					+ '<article class="admin-inventory-card"><span class="admin-inventory-label">Toplam \u00fcr\u00fcn</span><strong>' + summary.totalProducts + '</strong><span class="admin-inventory-note">Paneldeki t\u00fcm \u00fcr\u00fcnler</span></article>'
+					+ '<article class="admin-inventory-card"><span class="admin-inventory-label">Toplam stok</span><strong>' + summary.totalUnits + '</strong><span class="admin-inventory-note">Butun stok adetleri</span></article>'
+					+ '<article class="admin-inventory-card is-alert"><span class="admin-inventory-label">0 stok</span><strong>' + summary.zeroStock + '</strong><span class="admin-inventory-note">T\u00fckenmi\u015f \u00fcr\u00fcnler</span></article>'
+					+ '<article class="admin-inventory-card is-warning"><span class="admin-inventory-label">D\u00fc\u015f\u00fck stok</span><strong>' + summary.lowStock + '</strong><span class="admin-inventory-note">1-' + lowStockThreshold + ' adet kalanlar</span></article>'
+					+ '<article class="admin-inventory-card"><span class="admin-inventory-label">Toplam fiyat</span><strong>' + formatCurrency(summary.totalPriceSum) + '</strong><span class="admin-inventory-note">Her \u00fcr\u00fcn\u00fcn fiyat toplam\u0131</span></article>'
+					+ '<article class="admin-inventory-card"><span class="admin-inventory-label">Stok de\u011feri</span><strong>' + formatCurrency(summary.inventoryValue) + '</strong><span class="admin-inventory-note">Fiyat x stok toplam de\u011feri</span></article>'
+					+ '</section>'
+					+ '<div class="admin-inventory-mini">'
+					+ '<div class="admin-inventory-mini-card"><strong>Stokta olanlar:</strong> ' + summary.inStock + '</div>'
+					+ '<div class="admin-inventory-mini-card"><strong>Kategori:</strong> ' + data.categories.length + '</div>'
+					+ '<div class="admin-inventory-mini-card"><strong>Marka:</strong> ' + data.brands.length + '</div>'
+					+ '</div>'
+					+ '<div id="adminInventoryToolbarV2" class="admin-inventory-toolbar"></div>'
+					+ '<div id="adminInventoryAdvancedV2" class="admin-inventory-advanced"></div>';
+			};
+
+			var ensureToolbar = function (data) {
+				var toolbar = document.getElementById('adminInventoryToolbarV2');
+				var advanced = document.getElementById('adminInventoryAdvancedV2');
+				if (!toolbar || !advanced) return;
+
+				toolbar.innerHTML = '';
+				[
+					{ key: 'all', label: 'T\u00fcm \u00fcr\u00fcnler', count: data.summary.totalProducts },
+					{ key: 'zero', label: '0 stok', count: data.summary.zeroStock },
+					{ key: 'low', label: 'D\u00fc\u015f\u00fck stok', count: data.summary.lowStock },
+					{ key: 'instock', label: 'Stokta olanlar', count: data.summary.inStock }
+				].forEach(function (item) {
+					var button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'admin-inventory-filter' + (state.status === item.key ? ' is-active' : '');
+					button.dataset.filter = item.key;
+					button.innerHTML = '<span>' + item.label + '</span><span class="admin-inventory-filter-count">' + item.count + '</span>';
+					button.addEventListener('click', function () {
+						state.status = item.key;
+						applyTableEnhancements();
+					});
+					toolbar.appendChild(button);
+				});
+
+				advanced.innerHTML = '';
+
+				var categorySelect = document.createElement('select');
+				categorySelect.className = 'admin-inventory-select';
+				categorySelect.innerHTML = '<option value="all">T\u00fcm kategoriler</option>' + data.categories.map(function (category) {
+					return '<option value="' + category.replace(/"/g, '&quot;') + '">' + category + '</option>';
+				}).join('');
+				categorySelect.value = state.category;
+				categorySelect.addEventListener('change', function () {
+					state.category = categorySelect.value;
+					applyTableEnhancements();
+				});
+				advanced.appendChild(categorySelect);
+
+				var brandSelect = document.createElement('select');
+				brandSelect.className = 'admin-inventory-select';
+				brandSelect.innerHTML = '<option value="all">T\u00fcm markalar</option>' + data.brands.map(function (brand) {
+					return '<option value="' + brand.replace(/"/g, '&quot;') + '">' + brand + '</option>';
+				}).join('');
+				brandSelect.value = state.brand;
+				brandSelect.addEventListener('change', function () {
+					state.brand = brandSelect.value;
+					applyTableEnhancements();
+				});
+				advanced.appendChild(brandSelect);
+
+				var sortSelect = document.createElement('select');
+				sortSelect.className = 'admin-inventory-select';
+				sortSelect.innerHTML = ''
+					+ '<option value="default">Varsay\u0131lan s\u0131ralama</option>'
+					+ '<option value="stock_asc">Stok azdan \u00e7o\u011fa</option>'
+					+ '<option value="stock_desc">Stok \u00e7oktan aza</option>'
+					+ '<option value="price_desc">Fiyat y\u00fcksekten</option>'
+					+ '<option value="price_asc">Fiyat d\u00fc\u015f\u00fckten</option>';
+				sortSelect.value = state.sort;
+				sortSelect.addEventListener('change', function () {
+					state.sort = sortSelect.value;
+					applyTableEnhancements();
+				});
+				advanced.appendChild(sortSelect);
+			};
+
+			var getColumnIndex = function (headerRow, label) {
+				var headers = Array.prototype.slice.call(headerRow.children);
+				var target = headers.find(function (cell) {
+					return normalizeText(cell.textContent) === label;
+				});
+				return target ? target.cellIndex : -1;
+			};
+
+			var ensureStockColumn = function (data) {
+				var table = document.querySelector('.admin-table');
+				if (!table) return;
+
+				var headerRow = table.querySelector('thead tr');
+				if (!headerRow) return;
+
+				var stockHead = Array.prototype.slice.call(headerRow.children).find(function (cell) {
+					return normalizeText(cell.textContent) === 'stok';
+				});
+				var priceIndex = getColumnIndex(headerRow, 'fiyat');
+
+				if (!stockHead) {
+					stockHead = document.createElement('th');
+					stockHead.className = 'admin-stock-head';
+					stockHead.textContent = 'Stok';
+					var priceHead = priceIndex >= 0 ? headerRow.children[priceIndex] : null;
+					headerRow.insertBefore(stockHead, priceHead || null);
+				}
+
+				Array.prototype.slice.call(table.querySelectorAll('tbody tr')).forEach(function (row, index) {
+					if (!row.dataset.originalIndex) {
+						row.dataset.originalIndex = String(index);
+					}
+
+					var titleCell = row.querySelector('td[data-label="Başlık"], td[data-label="Baslik"]') || row.children[1];
+					if (!titleCell) return;
+					var titleKey = normalizeText(titleCell.textContent);
+					var meta = data.byTitle[titleKey];
+
+					var priceCell = row.querySelector('td[data-label="Fiyat"]') || row.children[Math.max(0, row.children.length - 2)];
+					var stockCell = row.querySelector('.admin-stock-cell');
+					if (!stockCell) {
+						stockCell = document.createElement('td');
+						stockCell.className = 'admin-stock-cell';
+						row.insertBefore(stockCell, priceCell || null);
+					}
+
+					var stockValue = meta ? meta.stock : null;
+					var displayValue = stockValue === null || stockValue === undefined || Number.isNaN(stockValue) ? '-' : stockValue;
+					stockCell.setAttribute('data-label', 'Stok');
+					stockCell.innerHTML = '<span class="admin-stock-badge' + (displayValue === 0 ? ' is-zero' : '') + '">' + displayValue + '</span>';
+				});
+			};
+
+			var applyFilters = function (data) {
+				var table = document.querySelector('.admin-table');
+				var tbody = table ? table.querySelector('tbody') : null;
+				if (!tbody) return;
+
+				var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+				rows.sort(function (leftRow, rightRow) {
+					var leftTitleCell = leftRow.querySelector('td[data-label="Başlık"], td[data-label="Baslik"]') || leftRow.children[1];
+					var rightTitleCell = rightRow.querySelector('td[data-label="Başlık"], td[data-label="Baslik"]') || rightRow.children[1];
+					var leftMeta = data.byTitle[normalizeText(leftTitleCell ? leftTitleCell.textContent : '')] || {};
+					var rightMeta = data.byTitle[normalizeText(rightTitleCell ? rightTitleCell.textContent : '')] || {};
+					var leftStock = leftMeta.stock || 0;
+					var rightStock = rightMeta.stock || 0;
+					var leftPrice = leftMeta.price || 0;
+					var rightPrice = rightMeta.price || 0;
+					var leftIndex = parseInt(leftRow.dataset.originalIndex || '0', 10);
+					var rightIndex = parseInt(rightRow.dataset.originalIndex || '0', 10);
+
+					if (state.status === 'zero') {
+						var leftZero = leftStock === 0 ? 0 : 1;
+						var rightZero = rightStock === 0 ? 0 : 1;
+						if (leftZero !== rightZero) return leftZero - rightZero;
+					}
+
+					if (state.sort === 'stock_asc' && leftStock !== rightStock) return leftStock - rightStock;
+					if (state.sort === 'stock_desc' && leftStock !== rightStock) return rightStock - leftStock;
+					if (state.sort === 'price_asc' && leftPrice !== rightPrice) return leftPrice - rightPrice;
+					if (state.sort === 'price_desc' && leftPrice !== rightPrice) return rightPrice - leftPrice;
+
+					return leftIndex - rightIndex;
+				});
+
+				rows.forEach(function (row) {
+					var titleCell = row.querySelector('td[data-label="Başlık"], td[data-label="Baslik"]') || row.children[1];
+					var titleKey = normalizeText(titleCell ? titleCell.textContent : '');
+					var meta = data.byTitle[titleKey] || {};
+					var stock = meta.stock || 0;
+					var category = meta.category || '';
+					var brand = meta.brand || '';
+					var visible = true;
+
+					if (state.status === 'zero') visible = stock === 0;
+					if (state.status === 'low') visible = stock > 0 && stock <= lowStockThreshold;
+					if (state.status === 'instock') visible = stock > 0;
+					if (state.category !== 'all' && category !== state.category) visible = false;
+					if (state.brand !== 'all' && brand !== state.brand) visible = false;
+
+					row.style.display = visible ? '' : 'none';
+					tbody.appendChild(row);
+				});
+			};
+
+			var applyTableEnhancements = function () {
+				if (!isAdminProductsView() || isApplyingEnhancements) return;
+				isApplyingEnhancements = true;
+				fetchInventory().then(function (data) {
+					ensureSummary(data);
+					ensureToolbar(data);
+					ensureStockColumn(data);
+					applyFilters(data);
+				}).finally(function () {
+					isApplyingEnhancements = false;
+				});
+			};
+
+			var queueApplyTableEnhancements = function () {
+				if (applyQueued) return;
+				applyQueued = true;
+				requestAnimationFrame(function () {
+					applyQueued = false;
+					applyTableEnhancements();
+				});
+			};
+
+			var observeProductsView = function () {
+				queueApplyTableEnhancements();
+				if (!window.MutationObserver) return;
+				if (observer) observer.disconnect();
+
+				observer = new MutationObserver(function () {
+					if (!isAdminProductsView()) return;
+					if (isApplyingEnhancements) return;
+					queueApplyTableEnhancements();
+				});
+
+				var adminView = document.querySelector('.admin-view') || document.body;
+				observer.observe(adminView, { childList: true, subtree: true });
+			};
+
+			observeProductsView();
+			setTimeout(queueApplyTableEnhancements, 600);
+			setTimeout(queueApplyTableEnhancements, 1400);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var detailCache = {};
+			var detailPromiseCache = {};
+			var observer = null;
+			var queued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminOrdersView = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				if (headerTitle && normalizeText(headerTitle.textContent).indexOf('siparis') !== -1) {
+					return true;
+				}
+				var table = document.querySelector('.admin-view .admin-table');
+				if (!table) return false;
+				var text = normalizeText(table.querySelector('thead') ? table.querySelector('thead').textContent : '');
+				return text.indexOf('durum') !== -1 && text.indexOf('toplam') !== -1;
+			};
+
+			var extractOrderId = function (row) {
+				var match = String(row.textContent || '').match(/\bBM[A-Z0-9-]{8,}\b/i);
+				return match ? match[0].toUpperCase() : '';
+			};
+
+			var getOrderDetail = function (orderId) {
+				if (!orderId) return Promise.resolve(null);
+				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
+				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
+					headers: { 'Accept': 'application/json' }
+				})
+					.then(function (response) {
+						if (!response.ok) throw new Error('order detail failed');
+						return response.json();
+					})
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () {
+						detailCache[orderId] = null;
+						return null;
+					});
+				return detailPromiseCache[orderId];
+			};
+
+			var getTargetCell = function (row, orderId) {
+				var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
+				return cells.find(function (cell) {
+					return String(cell.textContent || '').toUpperCase().indexOf(orderId) !== -1;
+				}) || cells[0] || null;
+			};
+
+			var ensureItemsShell = function (cell) {
+				var shell = cell.querySelector('.admin-order-items');
+				if (!shell) {
+					shell = document.createElement('div');
+					shell.className = 'admin-order-items';
+					shell.innerHTML = '<div class="admin-order-items-label">Ürünler</div><div class="admin-order-items-list"><div class="admin-order-items-empty">Yükleniyor...</div></div>';
+					cell.appendChild(shell);
+				}
+				return shell.querySelector('.admin-order-items-list');
+			};
+
+			var renderOrderItems = function (row, detail) {
+				var orderId = extractOrderId(row);
+				var cell = getTargetCell(row, orderId);
+				if (!cell) return;
+				var list = ensureItemsShell(cell);
+				var items = Array.isArray(detail && detail.items) ? detail.items : [];
+				if (!items.length) {
+					list.innerHTML = '<div class="admin-order-items-empty">Ürün bulunamadı</div>';
+					return;
+				}
+				list.innerHTML = items.map(function (item) {
+					var qty = Math.max(1, parseInt(item.quantity || 1, 10) || 1);
+					var name = String(item.product_name || item.title || item.name || 'Ürün');
+					var variant = String(item.variant_color || item.variant_name || '').trim();
+					return '<div class="admin-order-item-line"><strong>' + qty + 'x</strong> ' + name
+						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ '</div>';
+				}).join('');
+			};
+
+			var enhanceOrdersTable = function () {
+				if (!isAdminOrdersView()) return;
+				var tbody = document.querySelector('.admin-view .admin-table tbody');
+				if (!tbody) return;
+				Array.prototype.slice.call(tbody.querySelectorAll('tr')).forEach(function (row) {
+					if (row.dataset.orderItemsEnhanced === '1') return;
+					var orderId = extractOrderId(row);
+					if (!orderId) return;
+					row.dataset.orderItemsEnhanced = '1';
+					var cell = getTargetCell(row, orderId);
+					if (!cell) return;
+					ensureItemsShell(cell);
+					getOrderDetail(orderId).then(function (detail) {
+						renderOrderItems(row, detail);
+					});
+				});
+			};
+
+			var queueEnhanceOrdersTable = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceOrdersTable();
+				});
+			};
+
+			queueEnhanceOrdersTable();
+
+			if (window.MutationObserver) {
+				observer = new MutationObserver(function () {
+					queueEnhanceOrdersTable();
+				});
+				observer.observe(document.body, { childList: true, subtree: true });
+			}
+
+			setTimeout(queueEnhanceOrdersTable, 700);
+			setTimeout(queueEnhanceOrdersTable, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var lockId = 'authSubmitLock';
+			var active = false;
+			var releaseTimer = null;
+
+			var ensureLock = function () {
+				var node = document.getElementById(lockId);
+				if (node) return node;
+				node = document.createElement('div');
+				node.id = lockId;
+				node.className = 'auth-submit-lock';
+				node.hidden = true;
+				node.innerHTML = '<div class="auth-submit-lock-card">İşlem sürüyor...</div>';
+				document.body.appendChild(node);
+				return node;
+			};
+
+			var releaseLock = function () {
+				active = false;
+				if (releaseTimer) {
+					clearTimeout(releaseTimer);
+					releaseTimer = null;
+				}
+				var node = document.getElementById(lockId);
+				if (node) node.hidden = true;
+				document.body.classList.remove('mobile-overlay-open');
+			};
+
+			var holdLock = function () {
+				active = true;
+				var node = ensureLock();
+				node.hidden = false;
+				if (releaseTimer) clearTimeout(releaseTimer);
+				releaseTimer = setTimeout(releaseLock, 12000);
+			};
+
+			document.addEventListener('submit', function (event) {
+				var form = event.target;
+				if (!form || !form.matches || !form.matches('form.auth-form')) return;
+				var text = (form.textContent || '').toLocaleLowerCase('tr-TR');
+				var isRegisterForm = text.indexOf('kayit ol') !== -1 || text.indexOf('kayıt ol') !== -1;
+				if (!isRegisterForm) return;
+				holdLock();
+			}, true);
+
+			var originalShowToast = window.showToast;
+			if (typeof originalShowToast === 'function') {
+				window.showToast = function () {
+					var result = originalShowToast.apply(this, arguments);
+					if (active) {
+						setTimeout(releaseLock, 80);
+					}
+					return result;
+				};
+			}
+
+			document.addEventListener('click', function (event) {
+				if (!active) return;
+				var lockNode = document.getElementById(lockId);
+				if (lockNode && lockNode.contains(event.target)) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			}, true);
+
+			if (window.MutationObserver) {
+				new MutationObserver(function () {
+					if (!active) return;
+					if (!document.querySelector('.auth-form')) {
+						releaseLock();
+					}
+				}).observe(document.body, { childList: true, subtree: true });
+			}
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var detailCache = {};
+			var detailPromiseCache = {};
+			var queued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminOrdersView = function () {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				return !!(title && normalizeText(title.textContent).indexOf('siparis') !== -1);
+			};
+
+			var extractOrderId = function (row) {
+				var match = String(row.textContent || '').match(/\bBM[A-Z0-9-]{8,}\b/i);
+				return match ? match[0].toUpperCase() : '';
+			};
+
+			var getOrderDetail = function (orderId) {
+				if (!orderId) return Promise.resolve(null);
+				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
+				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
+					headers: { 'Accept': 'application/json' }
+				})
+					.then(function (response) { return response.ok ? response.json() : null; })
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () {
+						detailCache[orderId] = null;
+						return null;
+					});
+				return detailPromiseCache[orderId];
+			};
+
+			var ensureVisualShell = function (cell) {
+				var shell = cell.querySelector('.admin-order-items');
+				if (!shell) {
+					shell = document.createElement('div');
+					shell.className = 'admin-order-items';
+					shell.innerHTML = '<div class="admin-order-items-label">Ürünler</div><div class="admin-order-items-list"></div>';
+					cell.appendChild(shell);
+				}
+				return shell.querySelector('.admin-order-items-list');
+			};
+
+			var renderVisualItems = function (row, detail) {
+				var orderId = extractOrderId(row);
+				if (!orderId) return;
+				var targetCell = Array.prototype.slice.call(row.querySelectorAll('td')).find(function (cell) {
+					return String(cell.textContent || '').toUpperCase().indexOf(orderId) !== -1;
+				});
+				if (!targetCell) return;
+
+				var list = ensureVisualShell(targetCell);
+				var items = Array.isArray(detail && detail.items) ? detail.items : [];
+				if (!items.length) {
+					list.innerHTML = '<div class="admin-order-items-empty">Ürün bulunamadı</div>';
+					return;
+				}
+
+				list.innerHTML = items.map(function (item) {
+					var qty = Math.max(1, parseInt(item.quantity || 1, 10) || 1);
+					var name = String(item.product_name || item.title || item.name || 'Ürün');
+					var variant = String(item.variant_color || item.variant_name || '').trim();
+					var image = String(item.product_img || item.img || item.image || '/fallback.png');
+					return ''
+						+ '<div class="admin-order-item-line">'
+						+ '<img class="admin-order-item-thumb" src="' + image.replace(/"/g, '&quot;') + '" alt="">'
+						+ '<div class="admin-order-item-meta"><strong>' + qty + 'x</strong> ' + name
+						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ '</div>'
+						+ '</div>';
+				}).join('');
+			};
+
+			var enhanceAdminOrdersVisual = function () {
+				if (!isAdminOrdersView()) return;
+				var rows = document.querySelectorAll('.admin-view .admin-table tbody tr');
+				Array.prototype.slice.call(rows).forEach(function (row) {
+					var orderId = extractOrderId(row);
+					if (!orderId || row.dataset.orderVisualEnhanced === '1') return;
+					row.dataset.orderVisualEnhanced = '1';
+					getOrderDetail(orderId).then(function (detail) {
+						renderVisualItems(row, detail);
+					});
+				});
+			};
+
+			var queueEnhanceAdminOrdersVisual = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceAdminOrdersVisual();
+				});
+			};
+
+			queueEnhanceAdminOrdersVisual();
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceAdminOrdersVisual).observe(document.body, { childList: true, subtree: true });
+			}
+
+			setTimeout(queueEnhanceAdminOrdersVisual, 700);
+			setTimeout(queueEnhanceAdminOrdersVisual, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var detailCache = {};
+			var detailPromiseCache = {};
+			var queued = false;
+			var orderIdPattern = /\bBM[A-Z0-9-]{8,}\b/i;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminOrdersView = function () {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				return !!(title && normalizeText(title.textContent).indexOf('siparis') !== -1);
+			};
+
+			var extractOrderId = function (element) {
+				var match = String(element && element.textContent || '').match(orderIdPattern);
+				return match ? match[0].toUpperCase() : '';
+			};
+
+			var getOrderDetail = function (orderId) {
+				if (!orderId) return Promise.resolve(null);
+				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
+				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
+					headers: { 'Accept': 'application/json' }
+				})
+					.then(function (response) { return response.ok ? response.json() : null; })
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () {
+						detailCache[orderId] = null;
+						return null;
+					});
+				return detailPromiseCache[orderId];
+			};
+
+			var ensureShell = function (container, anchorNode) {
+				if (!container) return null;
+				var shell = container.querySelector('.admin-order-items');
+				if (!shell) {
+					shell = document.createElement('div');
+					shell.className = 'admin-order-items';
+					shell.innerHTML = '<div class="admin-order-items-label">Ürünler</div><div class="admin-order-items-list"><div class="admin-order-items-empty">Yükleniyor...</div></div>';
+					if (anchorNode && anchorNode.parentNode === container) {
+						anchorNode.insertAdjacentElement('afterend', shell);
+					} else {
+						container.appendChild(shell);
+					}
+				}
+				return shell.querySelector('.admin-order-items-list');
+			};
+
+			var renderItems = function (container, detail, anchorNode) {
+				var list = ensureShell(container, anchorNode);
+				if (!list) return;
+
+				var items = Array.isArray(detail && detail.items) ? detail.items : [];
+				if (!items.length) {
+					list.innerHTML = '<div class="admin-order-items-empty">Ürün bulunamadı</div>';
+					return;
+				}
+
+				list.innerHTML = items.map(function (item) {
+					var qty = Math.max(1, parseInt(item.quantity || 1, 10) || 1);
+					var name = String(item.product_name || item.title || item.name || 'Ürün');
+					var variant = String(item.variant_color || item.variant_name || '').trim();
+					var image = String(item.product_img || item.img || item.image || '/fallback.png');
+					return ''
+						+ '<div class="admin-order-item-line">'
+						+ '<img class="admin-order-item-thumb" src="' + image.replace(/"/g, '&quot;') + '" alt="">'
+						+ '<div class="admin-order-item-meta"><strong>' + qty + 'x</strong> ' + name
+						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ '</div>'
+						+ '</div>';
+				}).join('');
+			};
+
+			var findTextNodeElement = function (scope, keyword) {
+				if (!scope) return null;
+				var nodes = scope.querySelectorAll('div, span, p, strong, h1, h2, h3, h4, h5, h6');
+				return Array.prototype.slice.call(nodes).find(function (node) {
+					return normalizeText(node.textContent).indexOf(keyword) !== -1;
+				}) || null;
+			};
+
+			var findOrderCards = function () {
+				var adminView = document.querySelector('.admin-view');
+				if (!adminView) return [];
+
+				var candidates = Array.prototype.slice.call(adminView.querySelectorAll('div, section, article')).filter(function (element) {
+					var text = String(element.textContent || '');
+					if (!orderIdPattern.test(text)) return false;
+					var normalized = normalizeText(text);
+					return normalized.indexOf('siparis icerigi') !== -1
+						|| normalized.indexOf('teslimat bilgileri') !== -1
+						|| normalized.indexOf('kargo firmasi') !== -1
+						|| normalized.indexOf('siparis durumu') !== -1;
+				});
+
+				return candidates.filter(function (element) {
+					return !candidates.some(function (other) {
+						return other !== element && element.contains(other);
+					});
+				});
+			};
+
+			var enhanceCardLayout = function () {
+				findOrderCards().forEach(function (card) {
+					var orderId = extractOrderId(card);
+					if (!orderId || card.dataset.orderItemsCardEnhanced === '1') return;
+					card.dataset.orderItemsCardEnhanced = '1';
+
+					var contentLabel = findTextNodeElement(card, 'siparis icerigi');
+					var orderLabel = Array.prototype.slice.call(card.querySelectorAll('div, span, strong, h1, h2, h3, h4, h5, h6')).find(function (node) {
+						return String(node.textContent || '').toUpperCase().indexOf(orderId) !== -1;
+					}) || null;
+					var container = contentLabel && contentLabel.parentElement ? contentLabel.parentElement : card;
+					var anchorNode = contentLabel || orderLabel;
+
+					ensureShell(container, anchorNode);
+					getOrderDetail(orderId).then(function (detail) {
+						renderItems(container, detail, anchorNode);
+					});
+				});
+			};
+
+			var enhanceTableLayout = function () {
+				var rows = document.querySelectorAll('.admin-view .admin-table tbody tr');
+				Array.prototype.slice.call(rows).forEach(function (row) {
+					var orderId = extractOrderId(row);
+					if (!orderId || row.dataset.orderItemsCardEnhanced === '1') return;
+					row.dataset.orderItemsCardEnhanced = '1';
+
+					var targetCell = Array.prototype.slice.call(row.querySelectorAll('td')).find(function (cell) {
+						return String(cell.textContent || '').toUpperCase().indexOf(orderId) !== -1;
+					}) || row.querySelector('td');
+					if (!targetCell) return;
+
+					ensureShell(targetCell, null);
+					getOrderDetail(orderId).then(function (detail) {
+						renderItems(targetCell, detail, null);
+					});
+				});
+			};
+
+			var enhanceOrdersCards = function () {
+				if (!isAdminOrdersView()) return;
+				enhanceCardLayout();
+				enhanceTableLayout();
+			};
+
+			var queueEnhanceOrdersCards = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceOrdersCards();
+				});
+			};
+
+			queueEnhanceOrdersCards();
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceOrdersCards).observe(document.body, { childList: true, subtree: true });
+			}
+
+			setTimeout(queueEnhanceOrdersCards, 700);
+			setTimeout(queueEnhanceOrdersCards, 1600);
+		});
+	</script>
 	<style id="custom-footer-style">
 		/* Custom Premium Footer Styles */
 		.modern-footer {
@@ -4347,7 +6646,7 @@
 		}
 
 		.footer-brand img {
-			max-height: 50px;
+			max-height: 200px;
 			margin-bottom: 20px;
 			filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.2));
 		}
@@ -5226,6 +7525,134 @@
 
 <body
 	class="home wp-singular page-template-default page page-id-5002 wp-custom-logo wp-embed-responsive wp-theme-otaku wp-child-theme-otaku-child theme-otaku hide_fixed_rows_enabled frontpage woocommerce-no-js tribe-no-js tinvwl-theme-style skin_default  woo_extensions_present scheme_light blog_mode_front body_style_fullscreen  is_stream blog_style_excerpt sidebar_hide expand_content remove_margins trx_addons_present header_type_custom header_style_header-custom-17499 header_position_default menu_side_none no_layout fixed_blocks_sticky elementor-default elementor-kit-15 elementor-page elementor-page-5002">
+	<script>
+		(function () {
+			var mojibakeMap = [
+				['ğŸš€', '\ud83d\ude80'],
+				['ğŸ›’', '\ud83d\uded2'],
+				['ğŸ›ï¸', '\ud83d\udecd\ufe0f'],
+				['ğŸ†', '\ud83c\udfc6'],
+				['ğŸš«', '\ud83d\udeab'],
+				['ğŸšš', '\ud83d\ude9a'],
+				['ğŸ', '\ud83c\udf81'],
+				['Ãƒâ€šÃ‚Â°', '\u0130'],
+				['Ãƒâ€šÃ‚Â±', '\u0131'],
+				['Ãƒâ€¦Ã…Â¸', '\u015f'],
+				['Ãƒâ€¦Ã‚Â¸', '\u015f'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¼', '\u00fc'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚â€“', '\u00d6'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¶', '\u00f6'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Å“', '\u00dc'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§', '\u00e7'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚â€¡', '\u00c7'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Å¸', '\u011f'],
+				['ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Å¾', '\u011e'],
+				['Ä°', '\u0130'],
+				['Ä±', '\u0131'],
+				['Å', '\u015e'],
+				['ÅŸ', '\u015f'],
+				['Ãœ', '\u00dc'],
+				['Ã¼', '\u00fc'],
+				['Ã–', '\u00d6'],
+				['Ã¶', '\u00f6'],
+				['Ã‡', '\u00c7'],
+				['Ã§', '\u00e7'],
+				['Ä', '\u011e'],
+				['ÄŸ', '\u011f'],
+				['â‚º', '\u20ba']
+			];
+
+			var normalizeMojibake = function (text) {
+				var next = String(text || '');
+				for (var pass = 0; pass < 3; pass += 1) {
+					var prev = next;
+					mojibakeMap.forEach(function (pair) {
+						next = next.split(pair[0]).join(pair[1]);
+					});
+					if (next === prev) break;
+				}
+				return next;
+			};
+
+			var patchVisibleText = function (root) {
+				if (!root) return;
+
+				var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+				var current;
+				while ((current = walker.nextNode())) {
+					if (!current.nodeValue || !current.nodeValue.trim()) continue;
+					var fixed = normalizeMojibake(current.nodeValue);
+					if (fixed !== current.nodeValue) {
+						current.nodeValue = fixed;
+					}
+				}
+
+				Array.prototype.slice.call((root.querySelectorAll ? root.querySelectorAll('[title],[aria-label],[placeholder]') : [])).forEach(function (node) {
+					['title', 'aria-label', 'placeholder'].forEach(function (attr) {
+						var value = node.getAttribute(attr);
+						if (!value) return;
+						var fixed = normalizeMojibake(value);
+						if (fixed !== value) {
+							node.setAttribute(attr, fixed);
+						}
+					});
+				});
+
+				if (document.title) {
+					document.title = normalizeMojibake(document.title);
+				}
+			};
+
+			var queued = false;
+			var queuePatch = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					patchVisibleText(document.body);
+				});
+			};
+
+			document.addEventListener('DOMContentLoaded', function () {
+				queuePatch();
+				if (window.MutationObserver) {
+					new MutationObserver(queuePatch).observe(document.body, { childList: true, subtree: true, characterData: true });
+				}
+			});
+		})();
+	</script>
+	<div class="top-shipping-banner" aria-label="Kargo kampanyas&#305; duyuru band&#305;">
+		<div class="top-shipping-banner-track">
+			<div class="top-shipping-banner-text">
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+			</div>
+			<div class="top-shipping-banner-text">
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+				<strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
+				<span class="top-shipping-banner-dot"></span>
+				<span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
+				<span class="top-shipping-banner-dot"></span>
+			</div>
+		</div>
+	</div>
 	<noscript>
 		<div class="noscript-warning">
 			<div>
@@ -5241,42 +7668,45 @@
 			<div class="footer-brand">
 				<img src="/Boomer.svg" alt="Boomer Items">
 				<h2>BOOMER ITEMS</h2>
-				<p>Koleksiyon tutkunu büyütecek eşsiz parçalar BoomerItems'ta seni bekliyor.</p>
+				<p>Koleksiyon tutkunu b&#252;y&#252;tecek e&#351;siz par&#231;alar BoomerItems'ta seni bekliyor.</p>
 			</div>
 			<div class="footer-links">
 				<div>
 					<h5>Kurumsal</h5>
 					<ul>
-						<li><a href="/hakkimizda.html">Hakkımızda</a></li>
-						<li><a href="/iletisim.html">İletişim</a></li>
-						<li><a href="/siparis-takip.html">Sipariş Takibi</a></li>
+						<li><a href="/hakkimizda.html">Hakk&#305;m&#305;zda</a></li>
+						<li><a href="/iletisim.html">&#304;leti&#351;im</a></li>
+						<li><a href="/siparis-takip.html">Sipari&#351; Takibi</a></li>
 						<li><a href="/collector.html">Koleksiyon</a></li>
 					</ul>
 				</div>
 				<div>
-					<h5>Sözleşmeler</h5>
+					<h5>S&#246;zle&#351;meler</h5>
 					<ul>
-						<li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a></li>
-						<li><a href="/iade-cayma-kosullari.html">İade ve Cayma Koşulları</a></li>
-						<li><a href="/gizlilik-politikasi.html">Gizlilik Politikası</a></li>
-						<li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBİS Bilgisi (PDF)</a>
+						<li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Sat&#305;&#351; S&#246;zle&#351;mesi</a>
+						</li>
+						<li><a href="/iade-cayma-kosullari.html">&#304;ade ve Cayma Ko&#351;ullar&#305;</a></li>
+						<li><a href="/gizlilik-politikasi.html">Gizlilik Politikas&#305;</a></li>
+						<li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETB&#304;S Bilgisi
+								(PDF)</a>
 						</li>
 					</ul>
 				</div>
 			</div>
 			<div class="footer-contact">
-				<h5>İletişim &amp; Şirket</h5>
-				<p>📧 boomeritems@gmail.com</p>
-				<p>📞 <a href="tel:+905551234567" class="footer-phone">+90 555 123 45 67</a></p>
-				<p>📍 DARICA / KOCAELİ, TÜRKİYE</p>
+				<h5>&#304;leti&#351;im &amp; &#350;irket</h5>
+				<p>boomeritems@gmail.com</p>
+				<p><a href="tel:+905551234567" class="footer-phone">0262 645 00 00</a></p>
+				<p>DARICA / KOCAEL&#304;, T&#220;RK&#304;YE</p>
 				<div class="etbis-badge">
 					<a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">
-						🏛️ ETBİS'e Kayıtlı İşletme
+						ETB&#304;S'e Kay&#305;tl&#305; &#304;&#351;letme
 					</a>
 				</div>
 			</div>
 		</div>
-		<div class="footer-bottom">© 2026 Boomer Items. Tüm hakları saklıdır. Bu site ETBİS'e kayıtlıdır.</div>
+		<div class="footer-bottom">&copy; 2026 Boomer Items. T&#252;m haklar&#305; sakl&#305;d&#305;r. Bu site
+			ETB&#304;S'e kay&#305;tl&#305;d&#305;r.</div>
 	</footer>
 </body>
 
