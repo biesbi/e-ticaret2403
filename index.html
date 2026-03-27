@@ -11,7 +11,8 @@
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/favicon_zoomed.png">
 	<link rel="apple-touch-icon" sizes="180x180" href="/favicon_zoomed.png">
-	<meta name="description" content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor.">
+	<meta name="description"
+		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor.">
 	<meta name="theme-color" content="#ffcc00">
 	<meta name='robots' content='index, follow' />
 	<style>
@@ -297,8 +298,16 @@
 			font-family: system-ui, -apple-system, sans-serif;
 			color: #1e293b;
 		}
-		noscript .noscript-warning h2 { font-size: 1.5rem; margin-bottom: 12px; }
-		noscript .noscript-warning p { color: #64748b; font-size: 1rem; }
+
+		noscript .noscript-warning h2 {
+			font-size: 1.5rem;
+			margin-bottom: 12px;
+		}
+
+		noscript .noscript-warning p {
+			color: #64748b;
+			font-size: 1rem;
+		}
 
 		/* 3. Form validasyon stilleri - hata ve başarı durumları */
 		.form-group input:invalid:not(:placeholder-shown),
@@ -321,7 +330,7 @@
 			display: none;
 		}
 
-		input:invalid:not(:placeholder-shown) ~ .form-error-message {
+		input:invalid:not(:placeholder-shown)~.form-error-message {
 			display: block;
 		}
 
@@ -334,8 +343,13 @@
 		}
 
 		@keyframes shimmer {
-			0% { background-position: 200% 0; }
-			100% { background-position: -200% 0; }
+			0% {
+				background-position: 200% 0;
+			}
+
+			100% {
+				background-position: -200% 0;
+			}
 		}
 
 		/* 5. Buton disabled durumu */
@@ -372,11 +386,13 @@
 			font-weight: 600;
 			font-size: 0.85rem;
 		}
+
 		.stock-badge-lowstock {
 			color: #f59e0b;
 			font-weight: 600;
 			font-size: 0.85rem;
 		}
+
 		.stock-badge-outofstock {
 			color: #ef4444;
 			font-weight: 600;
@@ -390,6 +406,7 @@
 			gap: 8px;
 			padding: 16px 0;
 		}
+
 		.checkout-step-indicator .step {
 			width: 32px;
 			height: 4px;
@@ -397,9 +414,11 @@
 			background: #e2e8f0;
 			transition: background 0.3s ease;
 		}
+
 		.checkout-step-indicator .step.active {
 			background: #ffcc00;
 		}
+
 		.checkout-step-indicator .step.completed {
 			background: #22c55e;
 		}
@@ -416,6 +435,7 @@
 			gap: 8px;
 			pointer-events: none;
 		}
+
 		@media (min-width: 1024px) {
 			.toast-container {
 				bottom: 24px;
@@ -424,6 +444,7 @@
 				transform: none;
 			}
 		}
+
 		.toast-message {
 			padding: 12px 20px;
 			border-radius: 12px;
@@ -434,21 +455,32 @@
 			pointer-events: auto;
 			max-width: min(90vw, 400px);
 		}
+
 		.toast-success {
 			background: #065f46;
 			color: #ecfdf5;
 		}
+
 		.toast-error {
 			background: #991b1b;
 			color: #fef2f2;
 		}
+
 		.toast-info {
 			background: #1e3a5f;
 			color: #eff6ff;
 		}
+
 		@keyframes toastSlideUp {
-			from { transform: translateY(20px); opacity: 0; }
-			to { transform: translateY(0); opacity: 1; }
+			from {
+				transform: translateY(20px);
+				opacity: 0;
+			}
+
+			to {
+				transform: translateY(0);
+				opacity: 1;
+			}
 		}
 
 		/* 10. Sipariş onay sayfası iyileştirmeleri */
@@ -456,6 +488,7 @@
 			text-align: center;
 			padding: 40px 20px;
 		}
+
 		.order-success-page .success-icon {
 			width: 80px;
 			height: 80px;
@@ -472,6 +505,7 @@
 			.product-card {
 				transition: transform 0.2s ease, box-shadow 0.2s ease;
 			}
+
 			.product-card:hover {
 				transform: translateY(-4px);
 				box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
@@ -485,6 +519,7 @@
 			overflow: hidden;
 			margin: 8px 0;
 		}
+
 		.free-shipping-bar-fill {
 			height: 6px;
 			background: linear-gradient(90deg, #ffcc00, #22c55e);
@@ -561,29 +596,126 @@
 			letter-spacing: 0.3px;
 			text-transform: uppercase;
 		}
-		.condition-new { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-		.condition-used { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+		.condition-new {
+			background: #dcfce7;
+			color: #166534;
+			border: 1px solid #bbf7d0;
+		}
+
+		.condition-used {
+			background: #fef3c7;
+			color: #92400e;
+			border: 1px solid #fde68a;
+		}
 
 		/* === FREE SHIPPING PROGRESS BAR === */
-		.free-shipping-progress { padding: 10px 0 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 10px; }
-		.free-shipping-hint { font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 8px; text-align: center; }
-		.free-shipping-hint strong { color: #0f172a; }
-		.free-shipping-bar-bg { height: 6px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
-		.free-shipping-bar-fill { height: 100%; background: linear-gradient(90deg, #34d399, #10b981); border-radius: 99px; transition: width 0.4s ease; }
-		.free-shipping-reached { font-size: 0.8rem; font-weight: 700; color: #059669; text-align: center; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 8px 12px; }
+		.free-shipping-progress {
+			padding: 10px 0 8px;
+			border-bottom: 1px solid #f1f5f9;
+			margin-bottom: 10px;
+		}
+
+		.free-shipping-hint {
+			font-size: 0.8rem;
+			color: #64748b;
+			font-weight: 600;
+			margin-bottom: 8px;
+			text-align: center;
+		}
+
+		.free-shipping-hint strong {
+			color: #0f172a;
+		}
+
+		.free-shipping-bar-bg {
+			height: 6px;
+			background: #e2e8f0;
+			border-radius: 99px;
+			overflow: hidden;
+		}
+
+		.free-shipping-bar-fill {
+			height: 100%;
+			background: linear-gradient(90deg, #34d399, #10b981);
+			border-radius: 99px;
+			transition: width 0.4s ease;
+		}
+
+		.free-shipping-reached {
+			font-size: 0.8rem;
+			font-weight: 700;
+			color: #059669;
+			text-align: center;
+			background: #f0fdf4;
+			border: 1px solid #bbf7d0;
+			border-radius: 10px;
+			padding: 8px 12px;
+		}
 
 		/* === MOBILE DETAIL BACK BUTTON === */
-		.detail-back-btn { position: absolute; top: 14px; left: 14px; z-index: 31; background: rgba(255,255,255,0.96); border: 1px solid #e2e8f0; border-radius: 50px; padding: 8px 18px; font-size: 0.9rem; font-weight: 800; color: #0f172a; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(15,23,42,0.12); display: none; }
+		.detail-back-btn {
+			position: absolute;
+			top: 14px;
+			left: 14px;
+			z-index: 31;
+			background: rgba(255, 255, 255, 0.96);
+			border: 1px solid #e2e8f0;
+			border-radius: 50px;
+			padding: 8px 18px;
+			font-size: 0.9rem;
+			font-weight: 800;
+			color: #0f172a;
+			cursor: pointer;
+			backdrop-filter: blur(10px);
+			box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+			display: none;
+		}
 
 		/* === FOOTER PHONE + ETBIS === */
-		.footer-phone { color: inherit; text-decoration: none; font-weight: 700; }
-		.footer-phone:hover { color: #ffcc00; }
-		.etbis-badge { margin-top: 14px; display: inline-block; }
-		.etbis-badge a { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border-radius: 10px; text-decoration: none; transition: background 0.2s; }
-		.etbis-badge a:hover { background: rgba(255,204,0,0.12); border-color: rgba(255,204,0,0.35); color: #ffcc00; }
+		.footer-phone {
+			color: inherit;
+			text-decoration: none;
+			font-weight: 700;
+		}
+
+		.footer-phone:hover {
+			color: #ffcc00;
+		}
+
+		.etbis-badge {
+			margin-top: 14px;
+			display: inline-block;
+		}
+
+		.etbis-badge a {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			background: rgba(255, 255, 255, 0.08);
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			color: #e2e8f0;
+			font-size: 0.82rem;
+			font-weight: 700;
+			padding: 8px 14px;
+			border-radius: 10px;
+			text-decoration: none;
+			transition: background 0.2s;
+		}
+
+		.etbis-badge a:hover {
+			background: rgba(255, 204, 0, 0.12);
+			border-color: rgba(255, 204, 0, 0.35);
+			color: #ffcc00;
+		}
 
 		@media (max-width: 767px) {
-			.detail-back-btn { display: flex; align-items: center; gap: 6px; }
+			.detail-back-btn {
+				display: flex;
+				align-items: center;
+				gap: 6px;
+			}
+
 			/* Kategori filtre - mobilde yatay scroll chip bar */
 			.app-storefront-filters {
 				display: flex !important;
@@ -598,7 +730,11 @@
 				background: #fff !important;
 				border-bottom: 1px solid #f1f5f9 !important;
 			}
-			.app-storefront-filters::-webkit-scrollbar { display: none !important; }
+
+			.app-storefront-filters::-webkit-scrollbar {
+				display: none !important;
+			}
+
 			.app-storefront-filters .chip-btn {
 				flex-shrink: 0 !important;
 				padding: 7px 14px !important;
@@ -606,49 +742,211 @@
 				border-radius: 20px !important;
 				white-space: nowrap !important;
 			}
-			.hero-title { font-size: 2.6rem !important; line-height: 1.05 !important; }
-			.hero-subtitle { font-size: 0.9rem !important; padding: 0 12px; }
-			.app-grid { padding: 10px !important; gap: 8px !important; }
-			.app-product-card { border-radius: 14px !important; }
-			.card-media { padding: 8px !important; }
-			.card-body { padding: 10px !important; }
+
+			.hero-title {
+				font-size: 2.6rem !important;
+				line-height: 1.05 !important;
+			}
+
+			.hero-subtitle {
+				font-size: 0.9rem !important;
+				padding: 0 12px;
+			}
+
+			.app-grid {
+				padding: 10px !important;
+				gap: 8px !important;
+			}
+
+			.app-product-card {
+				border-radius: 14px !important;
+			}
+
+			.card-media {
+				padding: 8px !important;
+			}
+
+			.card-body {
+				padding: 10px !important;
+			}
+
 			/* Yazilar sigmasi icin: line-clamp kaldirildi, yukseklik auto */
-			.card-title { font-size: 0.78rem !important; height: auto !important; min-height: 0 !important; margin: 4px 0 6px !important; word-break: break-word; overflow-wrap: break-word; -webkit-line-clamp: unset !important; display: block !important; line-height: 1.3 !important; }
+			.card-title {
+				font-size: 0.78rem !important;
+				height: auto !important;
+				min-height: 0 !important;
+				margin: 4px 0 6px !important;
+				word-break: break-word;
+				overflow-wrap: break-word;
+				-webkit-line-clamp: unset !important;
+				display: block !important;
+				line-height: 1.3 !important;
+			}
+
 			/* Kategori badge'ini mobilde gizle */
-			.card-cat { display: none !important; }
-			.current-val { font-size: 0.95rem !important; }
-			.old-val { font-size: 0.72rem !important; }
-			.card-footer { gap: 4px !important; }
-			.app-logo img, .app-logo svg { width: min(160px, 42vw) !important; height: auto !important; }
+			.card-cat {
+				display: none !important;
+			}
+
+			.current-val {
+				font-size: 0.95rem !important;
+			}
+
+			.old-val {
+				font-size: 0.72rem !important;
+			}
+
+			.card-footer {
+				gap: 4px !important;
+			}
+
+			.app-logo img,
+			.app-logo svg {
+				width: min(160px, 42vw) !important;
+				height: auto !important;
+			}
+
+			/* Logo'yu mobilde göster ve boyutlandır */
+			.header-center {
+				display: flex !important;
+				justify-content: center;
+				align-items: center;
+				min-height: 44px;
+			}
+
+			.app-logo img {
+				max-height: 50px !important;
+				width: auto !important;
+				object-fit: contain;
+			}
+
 			/* Ust envanter kutusunu (header sag ikon) gizle */
-			.header-right { display: none !important; }
+			.header-right {
+				display: none !important;
+			}
 		}
 
 		/* Cok kucuk ekranlar - 375px ve alti */
 		@media (max-width: 375px) {
-			.hero-title { font-size: 2.2rem !important; }
-			.app-grid { padding: 8px !important; gap: 6px !important; }
-			.card-body { padding: 8px !important; }
-			.card-title { font-size: 0.75rem !important; }
-			.current-val { font-size: 0.88rem !important; }
-			.chip-btn { padding: 8px 12px !important; font-size: 0.78rem !important; }
+			.hero-title {
+				font-size: 2.2rem !important;
+			}
+
+			.app-grid {
+				padding: 8px !important;
+				gap: 6px !important;
+			}
+
+			.card-body {
+				padding: 8px !important;
+			}
+
+			.card-title {
+				font-size: 0.75rem !important;
+			}
+
+			.current-val {
+				font-size: 0.88rem !important;
+			}
+
+			.chip-btn {
+				padding: 8px 12px !important;
+				font-size: 0.78rem !important;
+			}
 		}
+
+		@media (max-width: 1023px) {
+			.header-inner {
+				display: grid !important;
+				grid-template-columns: 1fr 160px 1fr !important;
+				/* Force space for logo */
+				align-items: center !important;
+				width: 100% !important;
+				padding: 0 16px !important;
+			}
+
+			.header-left {
+				grid-column: 1;
+				justify-self: start;
+				display: flex !important;
+				align-items: center !important;
+			}
+
+			.header-center {
+				grid-column: 2;
+				justify-self: center;
+				display: flex !important;
+				align-items: center !important;
+			}
+
+			.header-right {
+				grid-column: 3;
+				justify-self: end;
+				display: flex !important;
+				align-items: center !important;
+				gap: 10px;
+			}
+
+			.app-logo img {
+				max-height: 24px !important;
+				width: auto !important;
+				transform: none !important;
+			}
+		}
+
 		@media (min-width: 768px) {
-			.app-logo img, .app-logo svg { width: auto !important; height: 92px !important; }
+
+			.app-logo img,
+			.app-logo svg {
+				width: auto !important;
+				height: 92px !important;
+			}
+		}
+
+		/* STICKY CATEGORIES FIX */
+		.app-storefront-filters {
+			position: sticky !important;
+			top: 100px !important;
+			z-index: 1000 !important;
+			background: rgba(255, 255, 255, 0.95) !important;
+			backdrop-filter: blur(10px);
+			border-bottom: 1px solid #f1f5f9;
+			padding: 10px 0 !important;
+		}
+
+		@media (max-width: 768px) {
+			.app-header.mobile-only {
+				height: 74px !important;
+			}
+
+			.app-storefront-filters {
+				top: 74px !important;
+				z-index: 10001 !important;
+				background: rgba(255, 255, 255, 0.98) !important;
+				padding: 12px 10px !important;
+			}
+		}
+
+
+
+		.app-header {
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
 		}
 	</style>
 	<style>
-		.desktop-polished-header { display: none; }
+		.desktop-polished-header {
+			display: none;
+		}
+
 		@media (min-width: 1024px) {
 			body.desktop-polished .desktop-polished-header {
 				position: fixed;
 				top: 0;
-				left: 50%;
-				transform: translateX(-50%);
-				width: min(1480px, calc(100vw - 44px));
+				left: 0;
+				width: 100%;
 				height: 100px;
 				display: grid;
-				grid-template-columns: 300px 1fr 220px;
+				grid-template-columns: 300px 1fr auto;
 				align-items: center;
 				gap: 24px;
 				padding: 0 28px;
@@ -676,7 +974,7 @@
 				display: flex;
 				align-items: center;
 				justify-self: start;
-				width: 340px;
+				width: 320px;
 				overflow: visible;
 				text-decoration: none;
 			}
@@ -693,7 +991,6 @@
 			body.desktop-polished .desktop-polished-header .nav-links {
 				display: flex;
 				align-items: center;
-				grid-column: 2;
 				justify-self: center;
 				gap: 34px;
 				white-space: nowrap;
@@ -727,15 +1024,13 @@
 				height: 3px;
 				border-radius: 999px;
 				background: #ffcc00;
-				box-shadow: 0 0 14px rgba(255, 204, 0, 0.5);
 			}
 
 			body.desktop-polished .desktop-polished-header .actions {
 				display: flex;
 				align-items: center;
-				grid-column: 3;
 				justify-self: end;
-				gap: 10px;
+				gap: 16px;
 				white-space: nowrap;
 			}
 
@@ -788,7 +1083,7 @@
 
 		@media (min-width: 1024px) and (max-width: 1279px) {
 			body.desktop-polished .desktop-polished-header {
-				width: calc(100vw - 28px);
+				width: 100%;
 				grid-template-columns: 200px 1fr 180px;
 				gap: 16px;
 				padding: 0 14px;
@@ -819,7 +1114,7 @@
 
 		@media (min-width: 1600px) {
 			body.desktop-polished .desktop-polished-header {
-				width: min(1560px, calc(100vw - 80px));
+				width: 100%;
 				padding: 0 34px;
 			}
 
@@ -833,14 +1128,14 @@
 			display: none;
 		}
 
-			@media (max-width: 900px) {
-				.order-track-fab {
-					position: fixed;
-					right: 14px;
-					top: 14px;
-					bottom: auto;
-					z-index: 10001;
-					display: inline-flex;
+		@media (max-width: 900px) {
+			.order-track-fab {
+				position: fixed;
+				right: 14px;
+				top: 14px;
+				bottom: auto;
+				z-index: 10001;
+				display: inline-flex;
 				align-items: center;
 				justify-content: center;
 				width: 54px;
@@ -948,7 +1243,7 @@
 			.product-category-tag,
 			.product-category-label,
 			.product-meta-category,
-			.product-info > div:first-child:not(.product-price-wrapper):not(.product-title) {
+			.product-info>div:first-child:not(.product-price-wrapper):not(.product-title) {
 				display: none !important;
 			}
 
@@ -963,7 +1258,7 @@
 	</style>
 	<script>
 		/* ═══ Global Toast Notification Sistemi ═══ */
-		window.showToast = function(message, type, duration) {
+		window.showToast = function (message, type, duration) {
 			type = type || 'info';
 			duration = duration || 3500;
 			var container = document.getElementById('toast-container');
@@ -973,22 +1268,22 @@
 			toast.textContent = message;
 			toast.setAttribute('role', 'alert');
 			container.appendChild(toast);
-			setTimeout(function() {
+			setTimeout(function () {
 				toast.style.opacity = '0';
 				toast.style.transform = 'translateY(10px)';
 				toast.style.transition = 'all 0.3s ease';
-				setTimeout(function() { toast.remove(); }, 300);
+				setTimeout(function () { toast.remove(); }, 300);
 			}, duration);
 		};
 
 		/* ═══ API Response Interceptor - Stok kontrolü + Bildirimler ═══ */
-		(function() {
+		(function () {
 			var origFetch = window.fetch;
 			var origAlert = window.alert;
 			var observedOrderIds = window.__observedOrderIds || (window.__observedOrderIds = []);
 
-			var rememberOrderIds = function(payload) {
-				var collect = function(value) {
+			var rememberOrderIds = function (payload) {
+				var collect = function (value) {
 					if (!value) return;
 					if (Array.isArray(value)) {
 						value.forEach(collect);
@@ -1001,7 +1296,7 @@
 							observedOrderIds.push(rawId);
 						}
 					}
-					Object.keys(value).forEach(function(key) {
+					Object.keys(value).forEach(function (key) {
 						collect(value[key]);
 					});
 				};
@@ -1010,7 +1305,7 @@
 			};
 
 			/* alert() yerine toast kullan (React hataları için) */
-			window.alert = function(msg) {
+			window.alert = function (msg) {
 				if (typeof msg === 'string' && msg.length < 300) {
 					var isError = /hata|error|başarısız|basarisiz|bulunamad|gecersiz|eksik|yetki/i.test(msg);
 					window.showToast(msg, isError ? 'error' : 'info', isError ? 5000 : 3500);
@@ -1019,7 +1314,7 @@
 				}
 			};
 
-			window.fetch = function() {
+			window.fetch = function () {
 				var args = arguments;
 				var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url || '');
 				var opts = args[1] || {};
@@ -1028,12 +1323,12 @@
 				/* ── Auth header enjeksiyonu: admin API isteklerine token ekle ── */
 				if ((method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE') && url.indexOf('/api/') !== -1) {
 					var token = null;
-					try { token = localStorage.getItem('token'); } catch(e) {}
+					try { token = localStorage.getItem('token'); } catch (e) { }
 					if (token) {
 						var hdrs = opts.headers || {};
 						if (typeof Headers !== 'undefined' && hdrs instanceof Headers) {
 							var plain = {};
-							hdrs.forEach(function(v, k) { plain[k] = v; });
+							hdrs.forEach(function (v, k) { plain[k] = v; });
 							hdrs = plain;
 						}
 						if (!hdrs['Authorization'] && !hdrs['authorization']) {
@@ -1044,15 +1339,15 @@
 					}
 				}
 
-				return origFetch.apply(this, args).then(function(response) {
+				return origFetch.apply(this, args).then(function (response) {
 					var cloned = response.clone();
-					cloned.json().then(function(data) {
+					cloned.json().then(function (data) {
 						rememberOrderIds(data);
-					}).catch(function() {});
+					}).catch(function () { });
 
 					/* ── 2. Sepete ekleme: Stok kontrolü + miktar bildirimi ── */
 					if (url.indexOf('/api/cart') !== -1 && method === 'POST') {
-						cloned.json().then(function(data) {
+						cloned.json().then(function (data) {
 							if (response.ok) {
 								var added = data && data.added;
 								if (added && added.quantity_adjusted) {
@@ -1072,34 +1367,34 @@
 									window.showToast(msg, 'error', 4000);
 								}
 							}
-						}).catch(function() {});
+						}).catch(function () { });
 					}
 
 					/* ── Sipariş oluşturma sonucu ── */
 					if (url.indexOf('/api/orders') !== -1 && method === 'POST' && url.indexOf('track') === -1 && url.indexOf('status') === -1 && url.indexOf('cargo') === -1 && url.indexOf('retry') === -1) {
-						cloned.json().then(function(data) {
+						cloned.json().then(function (data) {
 							if (response.ok && data && data.id) {
 								/* Sipariş başarılı - son sipariş ID'sini kaydet (retry için) */
-								try { localStorage.setItem('lastOrderId', data.id); } catch(e) {}
+								try { localStorage.setItem('lastOrderId', data.id); } catch (e) { }
 								if (data.payment && data.payment.mock) {
 									window.showToast('Siparis olusturuldu! Odeme bekleniyor...', 'info', 4000);
 								}
 							}
-						}).catch(function() {});
+						}).catch(function () { });
 					}
 
 					/* ── Sepet validasyonu: checkout öncesi stok uyarısı ── */
 					if (url.indexOf('/api/cart/validate') !== -1) {
-						cloned.json().then(function(data) {
+						cloned.json().then(function (data) {
 							if (data && data.issues && data.issues.length > 0) {
-								data.issues.forEach(function(issue) {
+								data.issues.forEach(function (issue) {
 									window.showToast(
 										(issue.name || 'Urun') + ': ' + (issue.reason || 'Stok sorunu'),
 										'error', 6000
 									);
 								});
 							}
-						}).catch(function() {});
+						}).catch(function () { });
 					}
 
 					return response;
@@ -1108,7 +1403,7 @@
 		})();
 
 		/* ═══ 3. Ödeme Yeniden Deneme UI ═══ */
-		(function() {
+		(function () {
 			var API = 'https://www.boomeritems.com/api';
 
 			/* Order success sayfasında "Ödemeyi Tekrar Dene" butonu ekle */
@@ -1118,25 +1413,25 @@
 				if (successPage.querySelector('.retry-payment-btn')) return;
 
 				var orderId = null;
-				try { orderId = localStorage.getItem('lastOrderId'); } catch(e) {}
+				try { orderId = localStorage.getItem('lastOrderId'); } catch (e) { }
 				if (!orderId) return;
 
 				/* Sipariş durumunu kontrol et */
 				var token = null;
-				try { token = localStorage.getItem('token'); } catch(e) {}
+				try { token = localStorage.getItem('token'); } catch (e) { }
 				var headers = { 'Content-Type': 'application/json' };
 				if (token) headers['Authorization'] = 'Bearer ' + token;
 
 				fetch(API + '/payments/paytr/status/' + encodeURIComponent(orderId), { headers: headers })
-					.then(function(r) { return r.json(); })
-					.then(function(data) {
+					.then(function (r) { return r.json(); })
+					.then(function (data) {
 						var status = data && data.payment_status;
 						if (status === 'failed' || status === 'pending') {
 							var btn = document.createElement('button');
 							btn.className = 'retry-payment-btn';
 							btn.textContent = status === 'failed' ? 'Odemeyi Tekrar Dene' : 'Odemeye Git';
 							btn.style.cssText = 'margin-top:16px;padding:14px 32px;background:#ffcc00;color:#1e293b;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;';
-							btn.addEventListener('click', function() {
+							btn.addEventListener('click', function () {
 								btn.disabled = true;
 								btn.textContent = 'Yükleniyor...';
 
@@ -1145,24 +1440,24 @@
 									headers: headers,
 									body: JSON.stringify({ order_id: orderId })
 								})
-								.then(function(r) { return r.json(); })
-								.then(function(result) {
-									if (result.payment && result.payment.iframe_token) {
-										/* Paytr iframe'e yönlendir */
-										window.location.href = result.payment.payment_url;
-									} else if (result.payment && result.payment.mock) {
-										window.location.href = result.payment.payment_url;
-									} else {
-										window.showToast(result.message || 'Odeme yeniden baslatildi.', 'success');
+									.then(function (r) { return r.json(); })
+									.then(function (result) {
+										if (result.payment && result.payment.iframe_token) {
+											/* Paytr iframe'e yönlendir */
+											window.location.href = result.payment.payment_url;
+										} else if (result.payment && result.payment.mock) {
+											window.location.href = result.payment.payment_url;
+										} else {
+											window.showToast(result.message || 'Odeme yeniden baslatildi.', 'success');
+											btn.disabled = false;
+											btn.textContent = 'Odemeyi Tekrar Dene';
+										}
+									})
+									.catch(function () {
+										window.showToast('Baglanti hatasi. Lutfen tekrar deneyin.', 'error');
 										btn.disabled = false;
 										btn.textContent = 'Odemeyi Tekrar Dene';
-									}
-								})
-								.catch(function() {
-									window.showToast('Baglanti hatasi. Lutfen tekrar deneyin.', 'error');
-									btn.disabled = false;
-									btn.textContent = 'Odemeyi Tekrar Dene';
-								});
+									});
 							});
 
 							/* Butonun konumlandırılacağı yer */
@@ -1174,15 +1469,15 @@
 							}
 						}
 					})
-					.catch(function() {});
+					.catch(function () { });
 			}
 
 			/* DOM değişikliklerini izle - React render ettiğinde yakala */
 			if (window.MutationObserver) {
-				var retryObserver = new MutationObserver(function() {
+				var retryObserver = new MutationObserver(function () {
 					checkAndAddRetryButton();
 				});
-				document.addEventListener('DOMContentLoaded', function() {
+				document.addEventListener('DOMContentLoaded', function () {
 					retryObserver.observe(document.body, { childList: true, subtree: true });
 				});
 			}
@@ -1284,6 +1579,22 @@
 						}
 						info.dataset.mobileTuned = '1';
 					});
+
+					// ENSURE MOBILE LOGO
+					if (window.innerWidth <= 1024) {
+						var headerInner = document.querySelector('.header-inner');
+						if (headerInner && !headerInner.querySelector('.header-center')) {
+							var center = document.createElement('div');
+							center.className = 'header-center';
+							center.innerHTML = '<a href="/" class="app-logo"><img alt="Logo" src="/Boomer.svg"></a>';
+							var left = headerInner.querySelector('.header-left');
+							if (left) {
+								left.after(center);
+							} else {
+								headerInner.prepend(center);
+							}
+						}
+					}
 				};
 
 				var hideNewsletterPopup = function () {
@@ -1347,6 +1658,33 @@
 					return !!document.querySelector('.admin-layout, .admin-panel, .admin-sidebar, .admin-dashboard, .sidebar .menu-section');
 				};
 
+				// ROBUST MOBILE LOGO INJECTION (INLINED SVG WITH CORRECTED SYMMETRY)
+				(function () {
+					// Removed extra whitespace by adjusting viewBox to drawing bounds
+					var svgLogo = '<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="480 370 1020 480" style="width:130px; height:34px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1));"><style>.st0{fill:#0067d4}.st1{fill:#69cd00}.st2{fill:#1d1d1b}.st3{fill:#f10001}.st5{fill:#fff}.st6{fill:#ffc800}.st7{fill:#ff1c4d}</style><g id="Layer_11"><path d="M876.57 455.71v168.57c0 25.83-13.89 49.89-36.26 62.81l-145.99 84.28c-11.18 6.46-23.72 9.69-36.26 9.69s-25.08-3.23-36.26-9.69l-145.99-84.28c-22.37-12.92-36.26-36.98-36.26-62.81v-168.57c0-25.83 13.89-49.89 36.26-62.81l145.99-84.28c22.37-12.92 50.15-12.92 72.52 0l145.99 84.28c22.37 12.92 36.26 36.98 36.26 62.81h0z"/><g><path class="st6" d="M741.57 427.55l-82.46 47.66c-12.53 7.24-31.21 8.18-41.75 2.09l-59.08-34.11c-10.54-6.08-8.97-16.9 3.5-24.18l82.11-47.87c12.58-7.34 31.38-8.33 41.97-2.21l59.41 34.32c10.59 6.12 8.92 17-3.71 24.31h.01z"/><path class="st6" d="M639.4 385.39l-55.73 32.46c-3.35 1.95-8.37 2.21-11.2.58l-18.44-10.65c-2.83-1.63-2.41-4.55.94-6.5l55.66-32.5c3.37-1.97 8.4-2.23 11.24-.59l18.49 10.68c2.84 1.64 2.41 4.56-.97 6.53h.01z"/><path class="st6" d="M746.68 438.73l-70.84 40.9c-3.37 1.94-8.39 2.19-11.22.56l-18.43-10.64c-2.83-1.63-2.4-4.53.96-6.48l70.76-40.96c3.38-1.96 8.43-2.22 11.27-.58l18.49 10.68c2.84 1.64 2.39 4.56-1 6.51h0z"/><g><path class="st2" d="M630.39 425.13c3.38 1.95 2.86 5.42-1.15 7.75s-9.99 2.63-13.37.68-2.87-5.42 1.14-7.75 10-2.64 13.37-.69h.01z"/><path class="st2" d="M669.25 402.55c3.38 1.95 2.86 5.43-1.16 7.77s-10.02 2.65-13.41.69c-3.38-1.95-2.86-5.43 1.16-7.77 4.02-2.34 10.03-2.65 13.41-.7h0z"/></g><path d="M649.29 449.61c15.7-2.75 35.72-10.28 42.97-25.59 3.29-6.94-7.05-13.04-10.36-6.06-5.93 12.52-23.09 17.85-35.8 20.08-7.59 1.33-4.37 12.9 3.19 11.57h0z"/></g><path class="st5" d="M632.14 600.98h0c0-24.29-19.94-55.59-44.51-69.99l-97.63-57.18c-7.69-4.5-13.99-2.06-14.08 5.47l-.88 73.24v.29l-.9 74.07c-.09 7.71 6.15 17.68 13.94 22.27l98.95 58.22c24.91 14.66 45.11 6.44 45.11-18.27h0c0-11.79-5.18-26.02-14.17-38.97l-9.77-14.06c-3.24-4.66-3.23-9.62.02-10.47l9.78-2.56c8.98-2.35 14.14-10.42 14.14-22.08v.02z"/><g><polygon class="st3" points="790.66 486.53 791.3 661.3 718.89 704.14 718.18 528.21 790.66 486.53"/><path class="st7" d="M777.69 628.08c.05 14.06-9.97 31.4-22.42 38.75-12.47 7.36-22.65 1.9-22.71-12.22s10.04-31.51 22.51-38.81c12.45-7.29 22.56-1.78 22.61 12.29h.01z"/><polygon class="st7" points="760.22 616.7 769.22 613.19 777.17 614.86 769.72 636.45 754.44 659 749.59 670.55 743.09 670 740.46 655.27 745.12 634.03 760.22 616.7"/><path class="st3" d="M786.56 629.97c.05 13.99-9.92 31.25-22.31 38.56-12.41 7.33-22.54 1.89-22.6-12.16s9.99-31.35 22.4-38.62c12.39-7.25 22.45-1.77 22.5 12.23h0z"/><path class="st7" d="M777.69 545.67c.05 14.06-9.97 31.4-22.42 38.75s-22.65 1.9-22.71-12.22 10.04-31.51 22.51-38.81c12.45-7.29 22.56-1.78 22.61 12.29h.01z"/><polygon class="st7" points="760.22 534.29 769.22 530.78 777.17 532.46 769.72 554.05 754.44 576.6 749.59 588.15 743.09 587.6 740.46 572.87 745.12 551.63 760.22 534.29"/><path class="st3" d="M786.56 547.57c.05 13.99-9.92 31.25-22.31 38.56-12.41 7.33-22.54 1.89-22.6-12.16s9.99-31.35 22.4-38.62c12.39-7.25 22.45-1.77 22.5 12.23h0z"/></g><g><g><g><path d="M532.64 562.66c5.42 2.83 9.58 8.57 9.28 12.76-.3 4.13-4.84 5.16-10.13 2.36s-9.38-8.37-9.21-12.54 4.67-5.41 10.06-2.59h0z"/><path d="M550.41 556.6c5.62 2.9 9.84 8.84 9.41 13.19-.43 4.29-5.23 5.39-10.71 2.53-5.46-2.86-9.63-8.63-9.35-12.95s5.05-5.65 10.65-2.76h0z"/><path d="M516.01 555c-5.31-2.78-9.54-8.53-9.47-12.91.07-4.44 4.52-5.81 9.96-3 5.46 2.82 9.74 8.73 9.54 13.14-.2 4.35-4.7 5.56-10.03 2.77h0z"/><path d="M534.25 533.97c5.66 2.89 10 8.99 9.67 13.55s-5.08 5.78-10.6 2.92c-5.49-2.84-9.78-8.77-9.59-13.3s4.89-6.04 10.52-3.17z"/></g><g><path class="st0" d="M532.64 562.66c5.42 2.83 9.58 8.57 9.28 12.76-.3 4.13-4.84 5.16-10.13 2.36s-9.38-8.37-9.21-12.54 4.67-5.41 10.06-2.59h0z"/><path class="st3" d="M534.25 533.97c5.66 2.89 10 8.99 9.67 13.55s-5.08 5.78-10.6 2.92c-5.49-2.84-9.78-8.77-9.59-13.3s4.89-6.04 10.52-3.17z"/><path class="st6" d="M516.49 539.09c5.46 2.82 9.74 8.73 9.54 13.14-.2 4.35-4.7 5.56-10.03 2.77s-9.54-8.53-9.47-12.91c.07-4.44 4.52-5.81 9.96-3h0z"/><path class="st1" d="M550.41 556.6c5.62 2.9 9.84 8.84 9.41 13.19-.43 4.29-5.23 5.39-10.71 2.53-5.46-2.86-9.63-8.63-9.35-12.95s5.05-5.65 10.65-2.76h0z"/></g></g><path d="M526.45 617.16l6.05 3.3c2.28 1.24 4.04 3.59 3.93 5.22l-.51 7.34 10.28 5.66c2.28 1.25 3.99 3.54 3.84 5.1l-.39 4.13c-.15 1.54-2.06 1.78-4.3.54l-10.11-5.6-.48 6.93c-.04.57-.33.96-.8 1.15h0c-.71.29-1.82.14-3.04-.5-.09-.04-.18-.09-.26-.14l-5.74-3.21c-.33-.18-.65-.39-.95-.61-.61-.45-1.16-.97-1.6-1.51-.78-.95-1.26-1.96-1.22-2.77l.31-6.98-9.91-5.49c-2.16-1.2-3.88-3.44-3.85-5.01l.09-4.22c.03-1.6 1.84-1.93 4.04-.72l10.08 5.54.33-7.4c.07-1.65 1.96-1.99 4.23-.75h-.02z"/></g></g></g><g class="st4"><path d="M988.06 538.82h-61.83v-92.78h61.83v10.32h10.32v30.95h-10.32v10.25h10.32v30.95h-10.32v10.32zm-10.32-51.52v-20.63h-30.89v20.63h30.89zm0 30.89v-20.63h-30.89v20.63h30.89z"/><path d="M1081.67 538.82h-51.52v-10.32h-10.32v-72.15h10.32v-10.32h51.52v10.32h10.25v72.15h-10.25v10.32zm-10.31-20.63v-51.52h-30.95v51.52h30.95z"/><path d="M1175.29 538.82h-51.52v-10.32h-10.32v-72.15h10.32v-10.32h51.52v10.32h10.25v72.15h-10.25v10.32zm-10.32-20.63v-51.52h-30.95v51.52h30.95z"/><path d="M1301.14 538.82h-20.63v-61.83h-10.25v10.32h-10.32v10.25h-10.32v-10.25h-10.32v-10.32h-10.32v61.83h-20.57v-92.78h20.57v10.32h10.32v10.32h10.32v10.32h10.32v-10.32h10.32v-10.32h10.25v-10.32h20.63v92.78z"/><path d="M1384.31 538.82h-51.52v-10.32h-10.32v-72.15h10.32v-10.32h51.52v20.63h-41.2v20.63h30.89v10.25h-30.89v20.63h41.2v20.63z"/><path d="M1472.99 538.82h-20.63v-10.32h-9.8v-10.32h-10.32v-10.32h-10.76v30.95h-20.63v-92.78h61.83v10.32h10.32v30.95h-10.32v10.25h-10.32v10.32h10.32v10.32h10.32v20.63zm-20.63-51.52v-20.63h-30.88v20.63h30.88z"/></g><g class="st4"><path d="M963.45 659.47h-42.55v-10.32h10.96v-72.15h-10.96v-10.32h42.55v10.32h-10.96v72.15h10.96v10.32z"/><path d="M1015.74 659.47h-20.57v-72.15h-20.63v-20.63h61.83v20.63h-20.63v72.15z"/><path d="M1108.07 659.47h-51.52v-10.32h-10.32v-72.15h10.32v-10.32h51.52v20.63h-41.2v20.63h30.89v10.25h-30.89v20.63h41.2v20.63z"/><path d="M1217.33 659.47h-20.63v-61.83h-10.25v10.32h-10.32v10.25h-10.32v-10.25h-10.32v-10.32h-10.32v61.83h-20.57v-92.78h20.57v10.32h10.32v10.32h10.32v10.32h10.32v-10.32h10.32v-10.32h10.25v-10.32h20.63v92.78z"/><path d="M1299.66 659.47h-51.52v-10.32h-10.32v-20.63h20.63v10.32h30.88v-10.32h-20.63v-10.32h-20.57v-10.25h-10.32v-30.95h10.32v-10.32h51.52v10.32h10.32v20.63h-20.63v-10.32h-30.88v10.32h20.57v10.32h20.63v10.25h10.32v30.95h-10.32v10.32z"/></g></svg>';
+					var inject = function () {
+						if (window.innerWidth > 1024) return;
+						var inner = document.querySelector('.app-header .header-inner, header .header-inner, .header-inner');
+						if (!inner) return;
+						if (inner.querySelector('[data-injected-logo]')) return;
+
+						var center = document.createElement('div');
+						center.className = 'header-center';
+						center.setAttribute('data-injected-logo', 'true');
+						center.style.cssText = 'display:flex !important; justify-content:center !important; align-items:center !important; grid-column:2 !important; min-width:160px !important; min-height:44px !important; z-index:1000;';
+						center.innerHTML = '<a href="/" class="app-logo" style="display:flex !important; align-items:center !important; text-decoration:none !important;">' + svgLogo + '</a>';
+
+						var left = inner.querySelector('.header-left');
+						if (left) {
+							left.after(center);
+						} else {
+							inner.prepend(center);
+						}
+					};
+					setInterval(inject, 500);
+					inject();
+				})();
+
 				var buildDesktopHeader = function () {
 					if (!desktopMq.matches || isAdminView()) {
 						removeDesktopHeader();
@@ -1396,10 +1734,15 @@
 
 					var productsLink = header.querySelector('.products-link');
 					var searchBtn = header.querySelector('.search-btn');
+
+
 					var trackingBtn = header.querySelector('.tracking-btn');
 					var cartBtn = header.querySelector('.cart-btn');
 					var accountBtn = header.querySelector('.account-btn');
 					var cartBadge = header.querySelector('.cart-badge');
+
+
+
 
 					var syncBadge = function () {
 						var count = cartDot && cartDot.textContent ? cartDot.textContent.trim() : '';
@@ -1537,7 +1880,8 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="BoomerItems | LEGO, Diecast & Figür Koleksiyonu" />
 	<meta property="og:site_name" content="BoomerItems" />
-	<meta property="og:description" content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
+	<meta property="og:description"
+		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
 	<meta property="og:url" content="https://boomeritems.com/" />
 	<meta property="og:image" content="https://boomeritems.com/logo_v2_full.png" />
 	<meta property="og:image:width" content="1200" />
@@ -1545,8 +1889,9 @@
 	<meta property="og:locale" content="tr_TR" />
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content="BoomerItems | LEGO, Diecast & Figür Koleksiyonu" />
-	<meta name="twitter:description" content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
-	<meta name="twitter:image" content="https://boomeritems.com/logo_v2_full.png" />
+	<meta name="twitter:description"
+		content="Hayal Et, Keşfet, Koleksiyonunu Büyüt! LEGO setleri, diecast araçlar ve koleksiyon figürleri BoomerItems'ta seni bekliyor." />
+
 	<style id='wp-img-auto-sizes-contain-inline-css'>
 		img:is([sizes=auto i], [sizes^="auto," i]) {
 			contain-intrinsic-size: 3000px 1500px
@@ -3549,7 +3894,8 @@
 		}
 
 		@media (max-width: 768px) {
-			.app-header .header-right > .icon-btn,
+
+			.app-header .header-right>.icon-btn,
 			.app-header.mobile-only .icon-btn:last-of-type,
 			.app-header.mobile-only .header-actions .icon-btn:last-of-type,
 			.app-header.mobile-only button[aria-label*="Urun"],
@@ -3598,10 +3944,10 @@
 				padding: 12px !important;
 			}
 
-			.product-info > div:first-child,
-			.product-info > span:first-child,
-			.product-info > p:first-child,
-			.card-body > .card-cat,
+			.product-info>div:first-child,
+			.product-info>span:first-child,
+			.product-info>p:first-child,
+			.card-body>.card-cat,
 			span.card-cat,
 			.product-info .product-category,
 			.product-info .product-category-tag,
@@ -3991,7 +4337,7 @@
 			background: #050505 !important;
 			color: #e2e8f0;
 			padding: 80px 48px 30px !important;
-			border-top: 1px solid rgba(255,255,255,0.05) !important;
+			border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
 			font-family: 'Inter', sans-serif;
 			position: relative;
 			overflow: hidden;
@@ -4000,7 +4346,9 @@
 		.modern-footer::before {
 			content: '';
 			position: absolute;
-			top: 0; left: 0; right: 0;
+			top: 0;
+			left: 0;
+			right: 0;
 			height: 1px;
 			background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.5), transparent);
 		}
@@ -4050,7 +4398,8 @@
 			align-items: start;
 		}
 
-		.footer-links h5, .footer-contact h5 {
+		.footer-links h5,
+		.footer-contact h5 {
 			color: #ffffff !important;
 			font-size: 1.1rem !important;
 			font-weight: 700;
@@ -4061,7 +4410,8 @@
 			padding-bottom: 10px;
 		}
 
-		.footer-links h5::after, .footer-contact h5::after {
+		.footer-links h5::after,
+		.footer-contact h5::after {
 			content: '';
 			position: absolute;
 			left: 0;
@@ -4171,37 +4521,49 @@
 			.modern-footer {
 				padding: 60px 24px 24px !important;
 			}
+
 			.footer-content {
 				grid-template-columns: 1fr !important;
 				gap: 40px !important;
 			}
+
 			.footer-links {
 				grid-template-columns: 1fr !important;
 				gap: 30px !important;
 				justify-items: center;
 			}
+
 			.footer-links div {
 				width: 100%;
 				text-align: center;
 			}
+
 			.footer-brand {
 				align-items: center;
 				text-align: center;
 			}
+
 			.footer-brand p {
 				max-width: 100%;
 			}
-			.footer-links h5::after, .footer-contact h5::after {
+
+			.footer-links h5::after,
+			.footer-contact h5::after {
 				left: 50%;
 				transform: translateX(-50%);
 			}
-			.footer-links h5, .footer-contact h5, .footer-contact p {
+
+			.footer-links h5,
+			.footer-contact h5,
+			.footer-contact p {
 				text-align: center;
 				justify-content: center;
 			}
+
 			.footer-links ul {
 				text-align: center;
 			}
+
 			.etbis-badge {
 				display: flex;
 				justify-content: center;
@@ -4437,7 +4799,7 @@
 		}
 
 		.payment-card.selected,
-		.payment-method input:checked ~ .payment-method-text {
+		.payment-method input:checked~.payment-method-text {
 			border-color: #ffcc00 !important;
 			background: linear-gradient(180deg, #fffdf5 0%, #fff8d9 100%) !important;
 			box-shadow: 0 10px 22px rgba(255, 204, 0, 0.15) !important;
@@ -4844,6 +5206,7 @@
 		}
 
 		@media (max-width: 480px) {
+
 			.checkout-nav-header,
 			.checkout-header {
 				padding: 14px 16px !important;
@@ -4918,7 +5281,8 @@
 						<li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a></li>
 						<li><a href="/iade-cayma-kosullari.html">İade ve Cayma Koşulları</a></li>
 						<li><a href="/gizlilik-politikasi.html">Gizlilik Politikası</a></li>
-						<li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBİS Bilgisi (PDF)</a></li>
+						<li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBİS Bilgisi (PDF)</a>
+						</li>
 					</ul>
 				</div>
 			</div>
