@@ -7173,6 +7173,7 @@
 			height: 96vh !important;
 			width: min(820px, calc(100vw - 48px)) !important;
 			max-width: min(820px, calc(100vw - 48px)) !important;
+			overflow: hidden !important;
 		}
 
 		.checkout-nav-header,
@@ -7194,11 +7195,8 @@
 		.checkout-modal-container .paytr-iframe-container,
 		.checkout-modal-container.wide .paytr-iframe-container {
 			padding: 0 !important;
-			display: flex !important;
-			flex-direction: column !important;
-			align-items: stretch !important;
+			display: block !important;
 			width: 100% !important;
-			height: 100% !important;
 			box-sizing: border-box !important;
 		}
 
@@ -7211,13 +7209,13 @@
 		.checkout-modal-container .paytr-iframe,
 		.checkout-modal-container.wide .paytr-iframe {
 			width: 100% !important;
-			flex: 1 1 auto !important;
-			height: 100% !important;
-			min-height: calc(96vh - 70px) !important;
+			/* PayTR form içeriği ~850px yükseklikte, sabit değer vererek
+			   içeriğin tamamı görünür; dış body-wrapper scroll yapar */
+			height: 850px !important;
+			min-height: 850px !important;
 			border: none !important;
 			border-radius: 0 !important;
 			display: block !important;
-			overflow: auto !important;
 		}
 
 		.checkout-scroll-area {
