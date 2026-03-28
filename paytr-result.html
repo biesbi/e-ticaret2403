@@ -15,7 +15,7 @@
       color: #0f172a;
     }
     .box {
-      padding: clamp(20px, 5vw, 36px) clamp(16px, 5vw, 32px);
+      padding: clamp(20px,5vw,36px) clamp(16px,5vw,32px);
       border-radius: 20px;
       background: #fff;
       box-shadow: 0 10px 40px rgba(15, 23, 42, 0.10);
@@ -48,55 +48,59 @@
   <script>
     (function () {
       var params  = new URLSearchParams(window.location.search);
-      var status  = params.get('status');   // success | failed
+      var status  = params.get('status');
       var orderId = params.get('order_id') || '';
       var isSuccess = (status === 'success');
 
-      var box      = document.getElementById('box');
-      var icon     = document.getElementById('icon');
-      var title    = document.getElementById('title');
-      var message  = document.getElementById('message');
+      var box       = document.getElementById('box');
+      var icon      = document.getElementById('icon');
+      var title     = document.getElementById('title');
+      var message   = document.getElementById('message');
       var countdown = document.getElementById('countdown');
 
-      // Görsel güncelle
       box.classList.add(isSuccess ? 'success' : 'failed');
       icon.textContent  = isSuccess ? '✅' : '❌';
       title.textContent = isSuccess ? 'Ödeme Başarılı' : 'Ödeme Başarısız';
       message.textContent = isSuccess
-        ? 'Ödemeniz alındı. Bu sekme kapandıktan sonra siparişiniz hazırlanacaktır.'
-        : 'Ödeme işlemi tamamlanamadı. Bu sekmeyi kapatıp tekrar deneyebilirsiniz.';
+        ? 'Ödemeniz alındı. Sipariş sayfanıza yönlendiriliyorsunuz...'
+        : 'Ödeme işlemi tamamlanamadı. Ana sayfaya yönlendiriliyorsunuz...';
 
-      // Ana sekmeye BroadcastChannel ile haber ver
+      // Ana sekmeye BroadcastChannel + localStorage ile haber ver
       if (orderId) {
         try {
-          var channel = new BroadcastChannel('paytr_payment_' + orderId);
-          channel.postMessage({ status: isSuccess ? 'success' : 'failed', orderId: orderId });
-          setTimeout(function () { channel.close(); }, 1000);
+          var ch = new BroadcastChannel('paytr_payment_' + orderId);
+          ch.postMessage({ status: isSuccess ? 'success' : 'failed', orderId: orderId });
+          setTimeout(function () { ch.close(); }, 2000);
+        } catch (e) {}
+
+        try {
+          localStorage.setItem('paytr_result', JSON.stringify({
+            orderId: orderId,
+            status: isSuccess ? 'success' : 'failed',
+            ts: Date.now()
+          }));
         } catch (e) {}
       }
 
-      // Geri sayım ve otomatik kapanma (yalnızca başarılı ödemede)
-      var closeDelay = isSuccess ? 4 : 0; // başarısızda otomatik kapanma yok
-      if (closeDelay > 0) {
-        var remaining = closeDelay;
-        function tick() {
-          countdown.textContent = remaining + ' saniye içinde bu sekme kapanacak…';
-          if (remaining <= 0) {
-            countdown.textContent = 'Kapanıyor...';
-            window.close();
-            // window.close() bazı tarayıcılarda engellenir; fallback mesaj
-            setTimeout(function () {
-              countdown.textContent = 'Bu sekmeyi manuel olarak kapatabilirsiniz.';
-            }, 500);
-            return;
+      // Geri sayım ve yönlendirme
+      var delay = isSuccess ? 3 : 4;
+      var remaining = delay;
+
+      function tick() {
+        countdown.textContent = remaining + ' saniye içinde yönlendiriliyorsunuz...';
+        if (remaining <= 0) {
+          countdown.textContent = 'Yönlendiriliyor...';
+          if (isSuccess && orderId) {
+            window.location.href = '/order-success.html?order_id=' + encodeURIComponent(orderId);
+          } else {
+            window.location.href = '/';
           }
-          remaining--;
-          setTimeout(tick, 1000);
+          return;
         }
-        tick();
-      } else {
-        countdown.textContent = 'Bu sekmeyi kapatıp siteye dönebilirsiniz.';
+        remaining--;
+        setTimeout(tick, 1000);
       }
+      tick();
     })();
   </script>
 </body>
