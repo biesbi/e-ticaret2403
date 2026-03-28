@@ -568,10 +568,26 @@
 			.checkout-form-section,
 			.checkout-summary-section,
 			.cart-body,
-			.app-search-overlay {
+			.app-search-overlay,
+			.checkout-body-wrapper {
 				min-height: 0 !important;
 				-webkit-overflow-scrolling: touch !important;
 				overflow-y: auto !important;
+			}
+
+			.checkout-body-wrapper {
+				flex: 1 1 auto !important;
+			}
+
+			.paytr-iframe-container {
+				padding: 16px !important;
+				width: 100% !important;
+				box-sizing: border-box !important;
+			}
+
+			.paytr-iframe {
+				min-height: 500px !important;
+				width: 100% !important;
 			}
 
 			.checkout-scroll-area,
@@ -7155,6 +7171,34 @@
 			padding: 18px 28px !important;
 			background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%) !important;
 			border-bottom: 1px solid var(--checkout-border) !important;
+		}
+
+		/* checkout-body-wrapper PayTR iframe scroll fix */
+		.checkout-modal-container .checkout-body-wrapper,
+		.checkout-modal-container.wide .checkout-body-wrapper {
+			flex: 1 1 auto !important;
+			min-height: 0 !important;
+			overflow-y: auto !important;
+			overflow-x: hidden !important;
+		}
+
+		.checkout-modal-container .paytr-iframe-container,
+		.checkout-modal-container.wide .paytr-iframe-container {
+			padding: 24px 20px !important;
+			display: flex !important;
+			flex-direction: column !important;
+			align-items: center !important;
+			width: 100% !important;
+			box-sizing: border-box !important;
+		}
+
+		.checkout-modal-container .paytr-iframe,
+		.checkout-modal-container.wide .paytr-iframe {
+			width: 100% !important;
+			min-height: 550px !important;
+			border: none !important;
+			border-radius: 12px !important;
+			display: block !important;
 		}
 
 		.checkout-scroll-area {
