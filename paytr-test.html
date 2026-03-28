@@ -81,7 +81,16 @@
         failBtn.style.opacity = disabled ? '0.5' : '1';
       }
 
-      function notifyParent(status) {
+      function notifyMainTab(status) {
+        // BroadcastChannel ile ana sekmeye haber ver
+        if (orderId) {
+          try {
+            var channel = new BroadcastChannel('paytr_payment_' + orderId);
+            channel.postMessage({ status: status, orderId: orderId });
+            setTimeout(function () { channel.close(); }, 1000);
+          } catch (e) {}
+        }
+        // Eski iframe postMessage desteği (geriye dönük uyumluluk)
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ source: 'boomeritems-paytr', status: status, orderId: orderId }, parentOrigin);
         }
@@ -101,14 +110,19 @@
             return response.json();
           })
           .then(function () {
-            document.querySelector('.hint').textContent = status === 'success'
-              ? 'Odeme basariyla tamamlandi. Yonlendiriliyorsunuz...'
-              : 'Odeme basarisiz olarak kaydedildi.';
-            notifyParent(status);
+            var isSuccess = (status === 'success');
+            document.querySelector('.hint').textContent = isSuccess
+              ? 'Odeme basariyla tamamlandi. Bu sekme kapanacak...'
+              : 'Odeme basarisiz olarak kaydedildi. Bu sekmeyi kapatabilirsiniz.';
+            notifyMainTab(status);
+            // Başarılıysa 3 saniye sonra sekmeyi kapat
+            if (isSuccess) {
+              setTimeout(function () { window.close(); }, 3000);
+            }
           })
           .catch(function (err) {
             document.querySelector('.hint').textContent = 'Islem sirasinda bir hata olustu: ' + (err.message || 'Bilinmeyen hata') + '. Lutfen tekrar deneyin.';
-            notifyParent('failed');
+            notifyMainTab('failed');
             setButtonsDisabled(false);
           });
       }
