@@ -3,341 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Siparişiniz Alındı - BoomerItems</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
+  <title>Siparişiniz Alındı — BoomerItems</title>
+  <link rel="icon" type="image/png" href="/favicon_zoomed.png">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: #111827;
+      border-bottom: 1px solid rgba(255, 204, 0, 0.18);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-
-    .container {
-      background: white;
-      border-radius: 24px;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
-      max-width: 600px;
-      width: 100%;
-      padding: 48px 40px;
-      text-align: center;
-      animation: slideUp 0.5s ease;
+    .site-header a { text-decoration: none; }
+    .site-header img { height: 34px; display: block; }
+    .header-home-link {
+      font-size: 13px;
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      padding: 7px 14px;
+      transition: color .15s, border-color .15s;
     }
+    .header-home-link:hover { color: #ffcc00; border-color: rgba(255,204,0,.4); }
 
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .success-icon {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 24px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 50%;
+    /* ── Main ── */
+    main {
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: scaleIn 0.5s ease 0.2s both;
+      padding: 40px 16px;
     }
 
-    @keyframes scaleIn {
-      from {
-        transform: scale(0);
-      }
-      to {
-        transform: scale(1);
-      }
+    .card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: clamp(28px, 5vw, 48px) clamp(20px, 5vw, 44px);
+      width: min(100%, 560px);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
     }
 
-    .success-icon svg {
-      width: 40px;
-      height: 40px;
-      stroke: white;
-      stroke-width: 3;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    /* ── Icon ── */
+    .success-ring {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffcc00 0%, #f59e0b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 12px rgba(255, 204, 0, 0.10);
+      animation: popIn .45s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .success-ring svg {
+      width: 36px; height: 36px;
+      stroke: #0f172a; stroke-width: 3;
+      stroke-linecap: round; stroke-linejoin: round;
       fill: none;
-      animation: checkmark 0.5s ease 0.4s both;
+      stroke-dasharray: 50;
+      stroke-dashoffset: 50;
+      animation: drawCheck .4s ease .35s forwards;
+    }
+    @keyframes drawCheck {
+      to { stroke-dashoffset: 0; }
     }
 
-    @keyframes checkmark {
-      0% {
-        stroke-dasharray: 50;
-        stroke-dashoffset: 50;
-      }
-      100% {
-        stroke-dasharray: 50;
-        stroke-dashoffset: 0;
-      }
-    }
-
-    h1 {
-      color: #1a202c;
-      font-size: 32px;
+    /* ── Headings ── */
+    .card h1 {
+      text-align: center;
+      font-size: clamp(22px, 4vw, 28px);
       font-weight: 800;
-      margin-bottom: 12px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .card .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 15px;
+      margin-bottom: 28px;
+    }
+    .card .subtitle span {
+      color: #ffcc00;
+      font-weight: 700;
     }
 
-    .subtitle {
-      color: #718096;
-      font-size: 16px;
-      margin-bottom: 32px;
+    /* ── Order info table ── */
+    .order-table {
+      background: #0f172a;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255,255,255,0.06);
     }
-
-    .order-info {
-      background: #f7fafc;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 32px;
-      text-align: left;
-    }
-
-    .order-info-row {
+    .order-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 18px;
+      gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-
-    .order-info-row:last-child {
-      border-bottom: none;
-    }
-
-    .order-info-label {
-      color: #718096;
-      font-size: 14px;
+    .order-row:last-child { border-bottom: none; }
+    .row-label {
+      font-size: 13px;
+      color: #64748b;
       font-weight: 600;
+      white-space: nowrap;
     }
-
-    .order-info-value {
-      color: #1a202c;
-      font-size: 16px;
+    .row-value {
+      font-size: 15px;
       font-weight: 700;
+      color: #e2e8f0;
+      text-align: right;
     }
-
-    .order-number {
-      color: #667eea;
+    .row-value.order-id {
       font-family: 'Courier New', monospace;
+      color: #ffcc00;
+      letter-spacing: .03em;
+    }
+    .row-value.paid {
+      color: #4ade80;
     }
 
-    .buttons {
+    /* ── Info box ── */
+    .info-box {
+      background: rgba(255, 204, 0, 0.06);
+      border: 1px solid rgba(255, 204, 0, 0.18);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #cbd5e1;
+    }
+    .info-box strong { color: #ffcc00; }
+
+    /* ── Buttons ── */
+    .btn-row {
       display: flex;
-      gap: 12px;
-      margin-top: 32px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-
     .btn {
       flex: 1;
-      padding: 16px 24px;
+      min-width: 130px;
+      padding: 14px 18px;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-      transition: all 0.3s ease;
+      text-align: center;
       text-decoration: none;
       display: inline-block;
+      transition: transform .15s, box-shadow .15s;
     }
-
+    .btn:hover { transform: translateY(-2px); }
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: #ffcc00;
+      color: #0f172a;
+      box-shadow: 0 4px 14px rgba(255,204,0,.25);
     }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
+    .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,204,0,.4); }
     .btn-secondary {
-      background: #e2e8f0;
-      color: #1a202c;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #cbd5e1;
     }
+    .btn-secondary:hover { background: rgba(255,255,255,0.10); }
 
-    .btn-secondary:hover {
-      background: #cbd5e0;
-      transform: translateY(-2px);
-    }
-
-    .info-box {
-      background: #ebf4ff;
-      border-left: 4px solid #4299e1;
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 24px;
-      text-align: left;
-    }
-
-    .info-box p {
-      color: #2c5282;
-      font-size: 14px;
-      line-height: 1.6;
-      margin: 8px 0;
-    }
-
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid #e2e8f0;
-      border-top-color: #667eea;
+    /* ── Spinner ── */
+    .spin {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.15);
+      border-top-color: #ffcc00;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 640px) {
-      .container {
-        padding: 32px 24px;
-      }
-
-      h1 {
-        font-size: 24px;
-      }
-
-      .buttons {
-        flex-direction: column;
-      }
+    @media (max-width: 480px) {
+      .btn-row { flex-direction: column; }
+      .btn { min-width: unset; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="success-icon">
-      <svg viewBox="0 0 24 24">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    </div>
 
-    <h1>🎉 Siparişiniz Alındı!</h1>
-    <p class="subtitle">Ödemeniz başarıyla tamamlandı</p>
+  <header class="site-header">
+    <a href="/"><img src="/Boomer.svg" alt="BoomerItems"></a>
+    <a href="/" class="header-home-link">← Ana Sayfa</a>
+  </header>
 
-    <div class="order-info">
-      <div class="order-info-row">
-        <span class="order-info-label">Sipariş Numarası</span>
-        <span class="order-info-value order-number" id="order-number">
-          <span class="loading"></span>
-        </span>
-      </div>
-      <div class="order-info-row">
-        <span class="order-info-label">Ödeme Durumu</span>
-        <span class="order-info-value" style="color: #48bb78;">✓ Ödendi</span>
-      </div>
-      <div class="order-info-row">
-        <span class="order-info-label">Toplam Tutar</span>
-        <span class="order-info-value" id="order-total">
-          <span class="loading"></span>
-        </span>
-      </div>
-      <div class="order-info-row">
-        <span class="order-info-label">Sipariş Tarihi</span>
-        <span class="order-info-value" id="order-date">
-          <span class="loading"></span>
-        </span>
-      </div>
-    </div>
+  <main>
+    <div class="card">
 
-    <div class="info-box">
-      <p><strong>📧 Email Gönderildi</strong></p>
-      <p>Sipariş detaylarınız email adresinize gönderilmiştir.</p>
-      <p><strong>📦 Kargoya Verilince</strong></p>
-      <p>Kargo takip numaranız SMS ve email ile tarafınıza iletilecektir.</p>
-    </div>
+      <div class="success-ring">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
 
-    <div class="buttons">
-      <a href="/" class="btn btn-primary">Ana Sayfaya Dön</a>
-      <a href="/track-order.html" class="btn btn-secondary">Siparişimi Takip Et</a>
+      <h1>Siparişiniz Alındı!</h1>
+      <p class="subtitle">Ödemeniz başarıyla tamamlandı. <span>Teşekkürler 🎉</span></p>
+
+      <div class="order-table">
+        <div class="order-row">
+          <span class="row-label">Sipariş No</span>
+          <span class="row-value order-id" id="el-order-id"><span class="spin"></span></span>
+        </div>
+        <div class="order-row">
+          <span class="row-label">Ödeme Durumu</span>
+          <span class="row-value paid">✓ Ödendi</span>
+        </div>
+        <div class="order-row">
+          <span class="row-label">Toplam Tutar</span>
+          <span class="row-value" id="el-total"><span class="spin"></span></span>
+        </div>
+        <div class="order-row">
+          <span class="row-label">Sipariş Tarihi</span>
+          <span class="row-value" id="el-date"><span class="spin"></span></span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <strong>📧 Onay e-postası gönderildi</strong><br>
+        Sipariş detaylarınız kayıtlı e-posta adresinize iletildi.<br>
+        <strong>📦 Kargo bildirimi</strong><br>
+        Kargoya verildiğinde takip numaranız SMS ve e-posta ile gönderilecektir.
+      </div>
+
+      <div class="btn-row">
+        <a href="/" class="btn btn-primary">Alışverişe Devam Et</a>
+        <a href="/track-order.html" class="btn btn-secondary">Siparişimi Takip Et</a>
+      </div>
+
     </div>
-  </div>
+  </main>
 
   <script>
-    (function() {
-      // URL'den sipariş ID'sini al
-      const params = new URLSearchParams(window.location.search);
-      const orderId = params.get('order_id');
+    (function () {
+      var params  = new URLSearchParams(window.location.search);
+      var orderId = params.get('order_id');
+
+      var elId    = document.getElementById('el-order-id');
+      var elTotal = document.getElementById('el-total');
+      var elDate  = document.getElementById('el-date');
 
       if (!orderId) {
-        document.querySelector('h1').textContent = '❌ Sipariş Bulunamadı';
-        document.querySelector('.subtitle').textContent = 'Geçersiz sipariş numarası';
-        document.querySelector('.order-info').innerHTML = '<p style="text-align: center; color: #e53e3e;">Sipariş bilgisi alınamadı.</p>';
+        document.querySelector('h1').textContent = 'Sipariş Bulunamadı';
+        document.querySelector('.subtitle').textContent = 'Geçersiz sipariş numarası.';
+        elId.textContent = '-';
+        elTotal.textContent = '-';
+        elDate.textContent = '-';
         return;
       }
 
-      // Sipariş numarasını göster
-      document.getElementById('order-number').textContent = orderId;
+      elId.textContent = orderId;
 
-      // Sipariş detaylarını getir
-      fetch(`https://www.boomeritems.com/api/payments/paytr/status/${orderId}`, {
-        credentials: 'include'
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.order) {
-            const order = data.order;
-
-            // Toplam tutarı göster
-            const total = order.total || 0;
-            document.getElementById('order-total').textContent =
-              new Intl.NumberFormat('tr-TR', {
-                style: 'currency',
-                currency: 'TRY'
-              }).format(total);
-
-            // Tarihi göster
-            const date = order.created_at || order.createdAt;
-            if (date) {
-              const formattedDate = new Date(date).toLocaleString('tr-TR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              });
-              document.getElementById('order-date').textContent = formattedDate;
-            } else {
-              document.getElementById('order-date').textContent = 'Şimdi';
-            }
-
-          } else {
-            // Varsayılan değerler
-            document.getElementById('order-total').textContent = '-';
-            document.getElementById('order-date').textContent = 'Şimdi';
-          }
-        })
-        .catch(err => {
-          console.error('Sipariş detayları alınamadı:', err);
-          document.getElementById('order-total').textContent = '-';
-          document.getElementById('order-date').textContent = 'Şimdi';
-        });
-
-      // Sepeti temizle (localStorage)
+      // Sepeti temizle
       try {
         localStorage.removeItem('cart');
         localStorage.removeItem('cartItems');
-      } catch (e) {
-        console.error('localStorage temizlenemedi:', e);
-      }
+      } catch (e) {}
+
+      // Sipariş detaylarını çek
+      var headers = {};
+      try { var t = localStorage.getItem('token'); if (t) headers['Authorization'] = 'Bearer ' + t; } catch(e) {}
+
+      fetch('https://www.boomeritems.com/api/payments/paytr/status/' + orderId, {
+        credentials: 'include',
+        headers: headers
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.success && data.order) {
+            var order = data.order;
+
+            elTotal.textContent = new Intl.NumberFormat('tr-TR', {
+              style: 'currency', currency: 'TRY'
+            }).format(order.total || 0);
+
+            var raw = order.created_at || order.createdAt;
+            elDate.textContent = raw
+              ? new Date(raw).toLocaleString('tr-TR', {
+                  year: 'numeric', month: 'long', day: 'numeric',
+                  hour: '2-digit', minute: '2-digit'
+                })
+              : 'Şimdi';
+          } else {
+            elTotal.textContent = '-';
+            elDate.textContent  = 'Şimdi';
+          }
+        })
+        .catch(function () {
+          elTotal.textContent = '-';
+          elDate.textContent  = 'Şimdi';
+        });
     })();
   </script>
+
 </body>
 </html>
