@@ -222,12 +222,20 @@
     if (!paymentUrl || !orderId) return;
     activeOrderId = orderId;
     paymentHandled = false;
+    const isMobileViewport = window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : window.innerWidth <= 768;
 
     try {
       localStorage.setItem('lastOrderId', orderId);
       // Önceki sonuç varsa temizle
       localStorage.removeItem('paytr_result');
     } catch(e) {}
+
+    // Mobilde 3D doğrulama aynı sekmede daha güvenilir çalışır.
+    if (isMobileViewport) {
+      console.log('📲 Mobil PayTR akışı: aynı sekmede yönlendiriliyor...', paymentUrl);
+      window.location.href = paymentUrl;
+      return;
+    }
 
     // 1) Yeni sekme aç
     window.open(paymentUrl, '_blank');
@@ -310,11 +318,11 @@
     return response;
   };
 
-  console.log('✅ PayTR Helper Script hazır - Yeni Sekme modu aktif');
+  console.log('✅ PayTR Helper Script hazır - Mobil aynı sekme, masaüstü yeni sekme modu aktif');
 
   window.PayTRHelper = {
     startPayment: startPayment,
-    version: '2.1.0'
+    version: '2.2.0'
   };
 
 })();
