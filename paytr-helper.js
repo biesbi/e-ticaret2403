@@ -9,178 +9,49 @@
   'use strict';
 
   console.log('🚀 PayTR Helper Script yüklendi');
+  let activeIframeToken = '';
+  let activeOrderId = '';
+  let paymentPollInterval = null;
 
-  // PayTR iframe modal HTML
-  const MODAL_HTML = `
-    <div id="paytr-modal-overlay" style="
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 999999;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(4px);
-      animation: fadeIn 0.3s ease;
-    ">
-      <div id="paytr-modal-container" style="
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 95%;
-        max-width: 900px;
-        height: 90vh;
-        max-height: 800px;
-        background: white;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        animation: slideUp 0.3s ease;
-      ">
-        <div id="paytr-modal-header" style="
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 10;
-          padding: 16px 20px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        ">
-          <div style="color: white; font-weight: 700; font-size: 18px;">
-            🔒 Güvenli Ödeme - PayTR
-          </div>
-          <button id="paytr-close-btn" style="
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-          " onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-             onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-            ✕ Kapat
-          </button>
-        </div>
-        <div id="paytr-iframe-wrapper" style="
-          width: 100%;
-          height: 100%;
-          padding-top: 64px;
-        ">
-          <div id="paytr-loading" style="
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #666;
-          ">
-            <div style="
-              width: 50px;
-              height: 50px;
-              border: 4px solid #f3f3f3;
-              border-top: 4px solid #667eea;
-              border-radius: 50%;
-              animation: spin 1s linear infinite;
-            "></div>
-            <p style="margin-top: 20px; font-size: 16px; font-weight: 600;">
-              Ödeme sayfası yükleniyor...
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <style>
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideUp {
-        from {
-          opacity: 0;
-          transform: translate(-50%, -45%);
-        }
-        to {
-          opacity: 1;
-          transform: translate(-50%, -50%);
-        }
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    </style>
-  `;
-
-  // Modal'ı DOM'a ekle
-  function initModal() {
-    if (!document.getElementById('paytr-modal-overlay')) {
-      const div = document.createElement('div');
-      div.innerHTML = MODAL_HTML;
-      document.body.appendChild(div.firstElementChild);
-
-      // Kapat butonu
-      document.getElementById('paytr-close-btn').addEventListener('click', function() {
-        if (confirm('Ödemeyi iptal etmek istediğinizden emin misiniz?')) {
-          closePaytrModal();
-        }
-      });
-    }
-  }
-
-  // PayTR iframe'ini aç
+  // PayTR iframe akışını izle
   function openPaytrIframe(iframeToken, orderId) {
     console.log('📱 PayTR iframe açılıyor...', { iframeToken, orderId });
 
-    initModal();
+    if (iframeToken && activeIframeToken === iframeToken) {
+      console.log('ℹ️ Aynı PayTR token zaten açık, ikinci açma atlandı.');
+      return;
+    }
 
-    const overlay = document.getElementById('paytr-modal-overlay');
-    const wrapper = document.getElementById('paytr-iframe-wrapper');
-    const loading = document.getElementById('paytr-loading');
-
-    // Overlay'i göster
-    overlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-
-    // Iframe oluştur
-    const iframe = document.createElement('iframe');
-    iframe.id = 'paytriframe';
-    iframe.name = 'paytriframe';
-    iframe.src = `https://www.paytr.com/odeme/guvenli/${iframeToken}`;
-    iframe.frameBorder = '0';
-    iframe.scrolling = 'yes';
-    iframe.style.cssText = 'width: 100%; height: 100%; border: none;';
-
-    iframe.onload = function() {
-      console.log('✅ PayTR iframe yüklendi');
-      if (loading) loading.style.display = 'none';
-    };
-
-    // Loading'i kaldır ve iframe'i ekle
-    setTimeout(() => {
-      wrapper.innerHTML = '';
-      wrapper.appendChild(iframe);
-    }, 500);
+    activeIframeToken = iframeToken || '';
+    activeOrderId = orderId || activeOrderId || '';
 
     // Ödeme durumunu polling ile kontrol et
-    startPaymentPolling(orderId);
+    startPaymentPolling(activeOrderId);
   }
 
   // Ödeme durumu polling
   function startPaymentPolling(orderId) {
     console.log('🔄 Ödeme durumu kontrol ediliyor...', orderId);
 
+    if (!orderId) {
+      console.warn('⚠️ PayTR polling başlatılamadı: orderId yok.');
+      return;
+    }
+
+    if (paymentPollInterval) {
+      clearInterval(paymentPollInterval);
+      paymentPollInterval = null;
+    }
+
     let attempts = 0;
     const maxAttempts = 200; // 200 * 3s = 10 dakika
 
-    const pollInterval = setInterval(async function() {
+    paymentPollInterval = setInterval(async function() {
       attempts++;
 
       if (attempts > maxAttempts) {
-        clearInterval(pollInterval);
+        clearInterval(paymentPollInterval);
+        paymentPollInterval = null;
         console.warn('⏱️ Ödeme zaman aşımı');
         closePaytrModal();
         alert('Ödeme işlemi zaman aşımına uğradı. Lütfen tekrar deneyin.');
@@ -212,7 +83,8 @@
 
           if (paymentStatus === 'paid') {
             // ✅ ÖDEME BAŞARILI
-            clearInterval(pollInterval);
+            clearInterval(paymentPollInterval);
+            paymentPollInterval = null;
             closePaytrModal();
 
             console.log('✅ ÖDEME BAŞARILI!', orderId);
@@ -222,7 +94,8 @@
 
           } else if (paymentStatus === 'failed') {
             // ❌ ÖDEME BAŞARISIZ
-            clearInterval(pollInterval);
+            clearInterval(paymentPollInterval);
+            paymentPollInterval = null;
             closePaytrModal();
 
             console.error('❌ ÖDEME BAŞARISIZ!', orderId);
@@ -239,11 +112,12 @@
 
   // Modal'ı kapat
   function closePaytrModal() {
-    const overlay = document.getElementById('paytr-modal-overlay');
-    if (overlay) {
-      overlay.style.display = 'none';
-      document.body.style.overflow = '';
+    if (paymentPollInterval) {
+      clearInterval(paymentPollInterval);
+      paymentPollInterval = null;
     }
+    activeIframeToken = '';
+    activeOrderId = '';
   }
 
   // Fetch API'yi intercept et (sipariş oluşturma isteğini yakala)
@@ -274,6 +148,10 @@
           if (data.payment.iframe_token) {
             const { iframe_token, merchant_oid } = data.payment;
             const orderId = data.id || data.order_id || (data.order && data.order.id) || merchant_oid;
+
+            try {
+              if (orderId) localStorage.setItem('lastOrderId', orderId);
+            } catch (e) {}
 
             console.log('💳 PayTR iframe token bulundu, modal açılıyor...');
             console.log('Token:', iframe_token);

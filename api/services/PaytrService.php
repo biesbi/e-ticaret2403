@@ -252,7 +252,7 @@ final class PaytrService {
 
     private static function resolveUserIp(): string {
         $explicit = self::cleanEnv('PAYTR_TEST_USER_IP');
-        if ($explicit !== '') {
+        if ($explicit !== '' && filter_var($explicit, FILTER_VALIDATE_IP)) {
             return $explicit;
         }
 
@@ -263,16 +263,20 @@ final class PaytrService {
 
         foreach ($candidates as $candidate) {
             $ip = trim(explode(',', $candidate)[0] ?? '');
-            if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP) && self::isPublicIp($ip)) {
+            if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
                 return $ip;
             }
+        }
+
+        if (self::isTestMode()) {
+            return '1.2.3.4';
         }
 
         if (self::useMock()) {
             return '127.0.0.1';
         }
 
-        throw new RuntimeException('PAYTR icin public user_ip veya PAYTR_TEST_USER_IP gerekli.');
+        throw new RuntimeException('PAYTR icin gecerli user_ip veya PAYTR_TEST_USER_IP gerekli.');
     }
 
     private static function isPublicIp(string $ip): bool {
