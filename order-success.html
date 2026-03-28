@@ -10,109 +10,26 @@
 
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-      background: #0f172a;
-      color: #f1f5f9;
+      background: #fff;
+      color: #0f172a;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding-top: 42px; /* banner yüksekliği */
     }
 
-    /* ── Top Shipping Banner (birebir site ile aynı) ── */
-    .top-shipping-banner {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 18000;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
-      border-bottom: 1px solid rgba(255,204,0,.28);
-      background: linear-gradient(90deg,#0f172a 0%,#111827 52%,#1f2937 100%);
-      box-shadow: 0 10px 24px rgba(15,23,42,.24);
-    }
-    .top-shipping-banner::before,
-    .top-shipping-banner::after {
-      content:""; position:absolute; top:0; bottom:0; width:72px; z-index:1; pointer-events:none;
-    }
-    .top-shipping-banner::before { left:0;  background:linear-gradient(90deg,#0f172a,rgba(15,23,42,0)); }
-    .top-shipping-banner::after  { right:0; background:linear-gradient(270deg,#1f2937,rgba(31,41,55,0)); }
-    .top-shipping-banner-track {
-      display:flex; align-items:center; flex:0 0 auto; min-width:max-content;
-      animation: bannerMarquee 30s linear infinite;
-    }
-    @keyframes bannerMarquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-    .top-shipping-banner-text {
-      display:inline-flex; align-items:center; gap:24px; padding-right:24px;
-      font-size:.88rem; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
-      white-space:nowrap; color:#fff7cc; text-shadow:0 2px 10px rgba(0,0,0,.18);
-    }
-    .top-shipping-banner-text strong { color:#ffcc00; }
-    .top-shipping-banner-dot {
-      width:6px; height:6px; border-radius:999px; background:#ffcc00;
-      box-shadow:0 0 12px rgba(255,204,0,.72); flex:0 0 auto;
-    }
-
-    /* ── Desktop Header ── */
-    .site-nav {
-      background: rgba(17,24,39,.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,.1);
-      position: sticky; top: 0; z-index: 14000;
-      padding: 0 32px;
-      height: 72px;
-      display: flex; align-items: center; justify-content: space-between; gap: 24px;
-    }
-    .site-nav a { text-decoration: none; }
-    .nav-brand img {
-      height: 52px; display: block;
-      filter: drop-shadow(0 0 14px rgba(255,204,0,.35));
-    }
-    .nav-links {
-      display: flex; align-items: center; gap: 28px;
-      list-style: none;
-    }
-    .nav-links a {
-      color: #f8fafc; font-size: .88rem; font-weight: 900;
-      letter-spacing: .06em; text-transform: uppercase;
-      transition: color .15s;
-    }
-    .nav-links a:hover { color: #ffcc00; }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 9px 18px; border-radius: 10px; font-size: .88rem;
-      font-weight: 700; text-decoration: none; transition: all .15s;
-      border: 1px solid rgba(255,255,255,.12); color: #e2e8f0;
-      background: rgba(255,255,255,.05);
-    }
-    .nav-btn:hover { background: rgba(255,204,0,.12); border-color: rgba(255,204,0,.4); color: #ffcc00; }
-    .nav-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-
-    @media (max-width: 768px) {
-      body { padding-top: calc(42px + 56px); }
-      .top-shipping-banner { height: auto; min-height: 42px; }
-      .site-nav { height: 56px; padding: 0 16px; }
-      .nav-brand img { height: 38px; }
-      .nav-links { display: none; }
-      .nav-btn span { display: none; }
-      .nav-btn { padding: 8px 10px; }
-    }
-
-    /* ── Main Content ── */
+    /* ── Main ── */
     main {
       flex: 1;
       display: flex; align-items: center; justify-content: center;
       padding: 48px 16px;
     }
     .card {
-      background: #1e293b;
-      border: 1px solid rgba(255,255,255,.08);
+      background: #fff;
+      border: 1px solid #e2e8f0;
       border-radius: 24px;
       padding: clamp(28px,5vw,52px) clamp(20px,5vw,48px);
       width: min(100%, 580px);
-      box-shadow: 0 24px 64px rgba(0,0,0,.45);
+      box-shadow: 0 8px 40px rgba(15,23,42,.08);
     }
 
     /* ── Success Icon ── */
@@ -136,36 +53,36 @@
 
     .card h1 {
       text-align: center; font-size: clamp(22px,4vw,30px); font-weight: 800;
-      color: #fff; margin-bottom: 8px;
+      color: #0f172a; margin-bottom: 8px;
     }
     .card .subtitle {
-      text-align: center; color: #94a3b8; font-size: 15px; margin-bottom: 32px;
+      text-align: center; color: #64748b; font-size: 15px; margin-bottom: 32px;
     }
-    .card .subtitle strong { color: #ffcc00; }
+    .card .subtitle strong { color: #d97706; }
 
     /* ── Order Table ── */
     .order-table {
-      background: #0f172a; border-radius: 14px; overflow: hidden;
-      margin-bottom: 24px; border: 1px solid rgba(255,255,255,.06);
+      background: #f8fafc; border-radius: 14px; overflow: hidden;
+      margin-bottom: 24px; border: 1px solid #e2e8f0;
     }
     .order-row {
       display: flex; justify-content: space-between; align-items: center;
       padding: 15px 20px; gap: 16px;
-      border-bottom: 1px solid rgba(255,255,255,.05);
+      border-bottom: 1px solid #e2e8f0;
     }
     .order-row:last-child { border-bottom: none; }
-    .row-label { font-size: 13px; color: #64748b; font-weight: 600; white-space: nowrap; }
-    .row-value { font-size: 15px; font-weight: 700; color: #e2e8f0; text-align: right; }
-    .row-value.order-id { font-family: 'Courier New', monospace; color: #ffcc00; letter-spacing: .04em; }
-    .row-value.paid { color: #4ade80; }
+    .row-label { font-size: 13px; color: #94a3b8; font-weight: 600; white-space: nowrap; }
+    .row-value { font-size: 15px; font-weight: 700; color: #0f172a; text-align: right; }
+    .row-value.order-id { font-family: 'Courier New', monospace; color: #d97706; letter-spacing: .04em; }
+    .row-value.paid { color: #16a34a; }
 
     /* ── Info Box ── */
     .info-box {
-      background: rgba(255,204,0,.06); border: 1px solid rgba(255,204,0,.18);
+      background: #fffbeb; border: 1px solid #fde68a;
       border-radius: 12px; padding: 16px 18px; margin-bottom: 28px;
-      font-size: 13px; line-height: 1.75; color: #cbd5e1;
+      font-size: 13px; line-height: 1.75; color: #78350f;
     }
-    .info-box strong { color: #ffcc00; }
+    .info-box strong { color: #92400e; }
 
     /* ── Buttons ── */
     .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -178,30 +95,30 @@
     .btn:hover { transform: translateY(-2px); }
     .btn-primary {
       background: #ffcc00; color: #0f172a;
-      box-shadow: 0 4px 16px rgba(255,204,0,.25);
+      box-shadow: 0 4px 16px rgba(255,204,0,.35);
     }
-    .btn-primary:hover { box-shadow: 0 6px 24px rgba(255,204,0,.45); }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(255,204,0,.55); }
     .btn-secondary {
-      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #cbd5e1;
+      background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569;
     }
-    .btn-secondary:hover { background: rgba(255,255,255,.10); }
+    .btn-secondary:hover { background: #e2e8f0; }
     @media (max-width: 480px) { .btn-row { flex-direction: column; } }
 
     /* ── Spinner ── */
     .spin {
       display: inline-block; width: 15px; height: 15px;
-      border: 2px solid rgba(255,255,255,.15); border-top-color: #ffcc00;
+      border: 2px solid #e2e8f0; border-top-color: #f59e0b;
       border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Footer (birebir site ile aynı) ── */
+    /* ── Footer ── */
     .modern-footer {
       background: #050505;
       color: #e2e8f0;
       padding: 72px 48px 32px;
       border-top: 1px solid rgba(255,255,255,.05);
-      font-family: 'Inter', system-ui, sans-serif;
+      font-family: system-ui, sans-serif;
       position: relative; overflow: hidden;
     }
     .modern-footer::before {
@@ -213,32 +130,21 @@
       display: grid; grid-template-columns: 3fr 4fr 3fr; gap: 56px;
     }
     .footer-brand { display:flex; flex-direction:column; align-items:flex-start; }
-    .footer-brand img {
-      max-height: 140px; margin-bottom: 18px;
-      filter: drop-shadow(0 0 10px rgba(255,204,0,.2));
-    }
-    .footer-brand h2 {
-      font-size: 1.9rem; letter-spacing: 2px; margin-bottom: 10px; color: #fff; font-weight: 900;
-    }
+    .footer-brand img { max-height: 140px; margin-bottom: 18px; filter: drop-shadow(0 0 10px rgba(255,204,0,.2)); }
+    .footer-brand h2 { font-size: 1.9rem; letter-spacing: 2px; margin-bottom: 10px; color: #fff; font-weight: 900; }
     .footer-brand p { color: #94a3b8; font-size: .92rem; line-height: 1.6; max-width: 90%; }
-    .footer-links {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start;
-    }
+    .footer-links { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
     .footer-links h5, .footer-contact h5 {
       color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 20px;
       text-transform: uppercase; letter-spacing: 1px;
       position: relative; padding-bottom: 10px;
     }
     .footer-links h5::after, .footer-contact h5::after {
-      content:''; position:absolute; left:0; bottom:0; width:28px; height:2px;
-      background:#ffcc00; border-radius:2px;
+      content:''; position:absolute; left:0; bottom:0; width:28px; height:2px; background:#ffcc00; border-radius:2px;
     }
     .footer-links ul { list-style:none; }
     .footer-links li { margin-bottom: 11px; }
-    .footer-links a {
-      color: #94a3b8; text-decoration: none; font-size: .92rem;
-      transition: color .2s, transform .2s; display: inline-block;
-    }
+    .footer-links a { color: #94a3b8; text-decoration: none; font-size: .92rem; transition: color .2s, transform .2s; display: inline-block; }
     .footer-links a:hover { color: #ffcc00; transform: translateX(4px); }
     .footer-contact { display:flex; flex-direction:column; }
     .footer-contact p { color: #94a3b8; font-size: .92rem; margin-bottom: 10px; }
@@ -251,17 +157,13 @@
       color: #e2e8f0; padding: 10px 16px; border-radius: 9px;
       text-decoration: none; font-weight: 700; font-size: .85rem; transition: all .2s;
     }
-    .etbis-badge a:hover {
-      background: rgba(255,204,0,.1); border-color: rgba(255,204,0,.4); color: #ffcc00;
-    }
+    .etbis-badge a:hover { background: rgba(255,204,0,.1); border-color: rgba(255,204,0,.4); color: #ffcc00; }
     .footer-bottom {
       max-width: 1200px; margin: 52px auto 0; padding-top: 22px;
       border-top: 1px solid rgba(255,255,255,.08);
       text-align: center; color: #64748b; font-size: .82rem; font-weight: 500;
     }
-    @media (max-width: 900px) {
-      .footer-content { grid-template-columns: 1fr 1fr; }
-    }
+    @media (max-width: 900px) { .footer-content { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 600px) {
       .modern-footer { padding: 52px 20px 24px; }
       .footer-content { grid-template-columns: 1fr; gap: 36px; }
@@ -274,58 +176,6 @@
 </head>
 <body>
 
-  <!-- Top Shipping Banner -->
-  <div class="top-shipping-banner" role="marquee" aria-label="Kargo bilgileri">
-    <div class="top-shipping-banner-track">
-      <span class="top-shipping-banner-text">
-        <span class="top-shipping-banner-dot"></span>
-        <strong>ÜCRETSİZ KARGO</strong> 500 TL ve üzeri siparişlerde
-        <span class="top-shipping-banner-dot"></span>
-        <strong>HIZLI TESLİMAT</strong> Aynı gün kargoya verilir
-        <span class="top-shipping-banner-dot"></span>
-        <strong>GÜVENLİ ÖDEME</strong> SSL korumalı ödeme altyapısı
-        <span class="top-shipping-banner-dot"></span>
-        LEGO · DİECAST · KOLEKSİYON FİGÜRLERİ
-      </span>
-      <!-- marquee sonsuz döngü için metin tekrarı -->
-      <span class="top-shipping-banner-text" aria-hidden="true">
-        <span class="top-shipping-banner-dot"></span>
-        <strong>ÜCRETSİZ KARGO</strong> 500 TL ve üzeri siparişlerde
-        <span class="top-shipping-banner-dot"></span>
-        <strong>HIZLI TESLİMAT</strong> Aynı gün kargoya verilir
-        <span class="top-shipping-banner-dot"></span>
-        <strong>GÜVENLİ ÖDEME</strong> SSL korumalı ödeme altyapısı
-        <span class="top-shipping-banner-dot"></span>
-        LEGO · DİECAST · KOLEKSİYON FİGÜRLERİ
-      </span>
-    </div>
-  </div>
-
-  <!-- Header -->
-  <header class="site-nav">
-    <a href="/" class="nav-brand">
-      <img src="/Boomer.svg" alt="BoomerItems">
-    </a>
-    <nav>
-      <ul class="nav-links">
-        <li><a href="/">Ana Sayfa</a></li>
-        <li><a href="/hakkimizda.html">Biz Kimiz</a></li>
-        <li><a href="/iletisim.html">İletişim</a></li>
-      </ul>
-    </nav>
-    <div class="nav-right">
-      <a href="/track-order.html" class="nav-btn">
-        <svg viewBox="0 0 24 24"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"/><path d="M5.5 7 12 10.6 18.5 7"/><path d="M12 10.6v9.9"/></svg>
-        <span>Sipariş Takibi</span>
-      </a>
-      <a href="/" class="nav-btn">
-        <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.2 10.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L22 8H7"/></svg>
-        <span>Alışverişe Dön</span>
-      </a>
-    </div>
-  </header>
-
-  <!-- Main -->
   <main>
     <div class="card">
 
@@ -370,7 +220,6 @@
     </div>
   </main>
 
-  <!-- Footer -->
   <footer class="modern-footer site-legal-footer">
     <div class="footer-content">
       <div class="footer-brand">
@@ -428,10 +277,8 @@
 
       elId.textContent = orderId;
 
-      // Sepeti temizle
       try { localStorage.removeItem('cart'); localStorage.removeItem('cartItems'); } catch(e) {}
 
-      // Sipariş detaylarını çek
       var headers = {};
       try { var t = localStorage.getItem('token'); if (t) headers['Authorization'] = 'Bearer ' + t; } catch(e) {}
 
