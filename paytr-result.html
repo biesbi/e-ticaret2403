@@ -3,22 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Odeme Sonucu</title>
+  <title>Ödeme Sonucu</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #0f172a; }
-    .box { padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); text-align: center; width: min(90vw, 420px); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Outfit, Segoe UI, Arial, sans-serif;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f8fafc;
+      color: #0f172a;
+    }
+    .box {
+      padding: clamp(20px, 5vw, 36px) clamp(16px, 5vw, 32px);
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 10px 40px rgba(15, 23, 42, 0.10);
+      text-align: center;
+      width: min(90vw, 400px);
+    }
+    .icon { font-size: 52px; margin-bottom: 16px; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+    .sub { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 20px; }
+    .countdown {
+      display: inline-block;
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #475569;
+    }
+    .success h1 { color: #15803d; }
+    .failed  h1 { color: #dc2626; }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1 id="title">Odeme Sonucu</h1>
-    <p id="message">Bu pencereyi kapatabilirsiniz.</p>
+  <div class="box" id="box">
+    <div class="icon" id="icon">⏳</div>
+    <h1 id="title">Sonuç Bekleniyor</h1>
+    <p class="sub" id="message">Lütfen bekleyin...</p>
+    <span class="countdown" id="countdown"></span>
   </div>
+
   <script>
     (function () {
-      var status = new URLSearchParams(window.location.search).get('status');
-      document.getElementById('title').textContent = status === 'success' ? 'Odeme Basarili' : 'Odeme Basarisiz';
-      document.getElementById('message').textContent = 'Bu pencereyi kapatip siteye donebilirsiniz.';
+      var params  = new URLSearchParams(window.location.search);
+      var status  = params.get('status');   // success | failed
+      var orderId = params.get('order_id') || '';
+      var isSuccess = (status === 'success');
+
+      var box      = document.getElementById('box');
+      var icon     = document.getElementById('icon');
+      var title    = document.getElementById('title');
+      var message  = document.getElementById('message');
+      var countdown = document.getElementById('countdown');
+
+      // Görsel güncelle
+      box.classList.add(isSuccess ? 'success' : 'failed');
+      icon.textContent  = isSuccess ? '✅' : '❌';
+      title.textContent = isSuccess ? 'Ödeme Başarılı' : 'Ödeme Başarısız';
+      message.textContent = isSuccess
+        ? 'Ödemeniz alındı. Bu sekme kapandıktan sonra siparişiniz hazırlanacaktır.'
+        : 'Ödeme işlemi tamamlanamadı. Bu sekmeyi kapatıp tekrar deneyebilirsiniz.';
+
+      // Ana sekmeye BroadcastChannel ile haber ver
+      if (orderId) {
+        try {
+          var channel = new BroadcastChannel('paytr_payment_' + orderId);
+          channel.postMessage({ status: isSuccess ? 'success' : 'failed', orderId: orderId });
+          setTimeout(function () { channel.close(); }, 1000);
+        } catch (e) {}
+      }
+
+      // Geri sayım ve otomatik kapanma (yalnızca başarılı ödemede)
+      var closeDelay = isSuccess ? 4 : 0; // başarısızda otomatik kapanma yok
+      if (closeDelay > 0) {
+        var remaining = closeDelay;
+        function tick() {
+          countdown.textContent = remaining + ' saniye içinde bu sekme kapanacak…';
+          if (remaining <= 0) {
+            countdown.textContent = 'Kapanıyor...';
+            window.close();
+            // window.close() bazı tarayıcılarda engellenir; fallback mesaj
+            setTimeout(function () {
+              countdown.textContent = 'Bu sekmeyi manuel olarak kapatabilirsiniz.';
+            }, 500);
+            return;
+          }
+          remaining--;
+          setTimeout(tick, 1000);
+        }
+        tick();
+      } else {
+        countdown.textContent = 'Bu sekmeyi kapatıp siteye dönebilirsiniz.';
+      }
     })();
   </script>
 </body>

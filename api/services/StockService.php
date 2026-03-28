@@ -207,9 +207,9 @@ final class StockService
 
     /**
      * Terk edilen siparişlerin stok rezervasyonlarını serbest bırakır.
-     * 24 saatten eski pending siparişler otomatik release edilir.
+     * Varsayılan eşik 2 saat — PayTR ödeme oturumu max 30 dk sürer.
      */
-    public static function releaseAbandonedReservations(int $hoursThreshold = 24): int
+    public static function releaseAbandonedReservations(int $hoursThreshold = 2): int
     {
         self::ensureSchema();
         $pdo = db();

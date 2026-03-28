@@ -7,7 +7,10 @@ if ($id === 'paytr' && $sub === 'callback') {
 
 if ($id === 'paytr' && $sub === 'mock-complete') {
     if ($method !== 'POST') error('Method not allowed.', 405);
-    if (!PaytrService::isTestMode()) error('Mock odeme sadece test modunda kullanilir.', 403);
+    // Mock endpoint sadece mock modu aktifken erişilebilir
+    // isTestMode() tek başına yetmez: gerçek PayTR akışı + test_mode=true kombinasyonu
+    // bu endpointi açık bırakıyordu
+    if (!PaytrService::useMock()) error('Mock odeme sadece mock modunda kullanilir.', 403);
 
     $orderId = trim((string) input('order_id', ''));
     $status = trim((string) input('status', ''));
