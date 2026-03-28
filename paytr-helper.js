@@ -272,6 +272,12 @@
         if (response.ok && data && data.payment) {
           const payment = data.payment;
           const orderId = data.id || data.order_id || (data.order && data.order.id) || payment.merchant_oid || '';
+          const orderTotal = data.total || (data.order && data.order.total) || 0;
+
+          // Sipariş tutarını order-success.html için sakla
+          try {
+            localStorage.setItem('lastOrderTotal', JSON.stringify({ orderId, total: orderTotal, ts: Date.now() }));
+          } catch(e) {}
 
           if (payment.iframe_token) {
             const paymentUrl = 'https://www.paytr.com/odeme/guvenli/' + payment.iframe_token;
@@ -283,7 +289,7 @@
             setTimeout(() => startPayment(payment.payment_url, orderId), 500);
 
           } else if (payment.mock) {
-            const amount = data.total || 0;
+            const amount = orderTotal;
             const mockUrl = '/paytr-test.html?order_id=' + orderId + '&amount=' + amount;
             console.log('🧪 Mock mode - yeni sekme açılıyor...');
             setTimeout(() => startPayment(mockUrl, orderId), 500);
