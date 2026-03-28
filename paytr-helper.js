@@ -26,7 +26,7 @@
       ">
         <div style="
           background:#1e293b;border:1px solid rgba(255,255,255,0.12);
-          border-radius:24px;padding:36px 32px;text-align:center;
+          border-radius:24px;padding:clamp(20px,5vw,36px) clamp(16px,5vw,32px);text-align:center;
           width:min(92vw,420px);box-shadow:0 24px 60px rgba(0,0,0,0.45);
           color:#f1f5f9;
         ">
@@ -50,12 +50,12 @@
           </div>
           <button id="paytr-reopen-btn" onclick="window.__paytrReopenTab && window.__paytrReopenTab()" style="
             background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.4);
-            color:#a5b4fc;border-radius:10px;padding:10px 18px;
+            color:#a5b4fc;border-radius:10px;padding:10px 18px;min-height:44px;
             font-size:14px;cursor:pointer;margin-bottom:10px;width:100%;
           ">Ödeme sekmesini tekrar aç</button>
           <button id="paytr-cancel-btn" onclick="window.__paytrCancelPayment && window.__paytrCancelPayment()" style="
             background:transparent;border:1px solid rgba(255,255,255,0.12);
-            color:#94a3b8;border-radius:10px;padding:8px 18px;
+            color:#94a3b8;border-radius:10px;padding:8px 18px;min-height:44px;
             font-size:13px;cursor:pointer;width:100%;
           ">İptal Et</button>
         </div>
