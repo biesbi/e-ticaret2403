@@ -15,209 +15,317 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      padding-top: 42px; /* banner yüksekliği */
     }
 
-    /* ── Header ── */
-    .site-header {
-      background: #111827;
-      border-bottom: 1px solid rgba(255, 204, 0, 0.18);
-      padding: 0 24px;
-      height: 60px;
+    /* ── Top Shipping Banner (birebir site ile aynı) ── */
+    .top-shipping-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 18000;
+      height: 42px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,204,0,.28);
+      background: linear-gradient(90deg,#0f172a 0%,#111827 52%,#1f2937 100%);
+      box-shadow: 0 10px 24px rgba(15,23,42,.24);
     }
-    .site-header a { text-decoration: none; }
-    .site-header img { height: 34px; display: block; }
-    .header-home-link {
-      font-size: 13px;
-      color: #94a3b8;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      padding: 7px 14px;
-      transition: color .15s, border-color .15s;
+    .top-shipping-banner::before,
+    .top-shipping-banner::after {
+      content:""; position:absolute; top:0; bottom:0; width:72px; z-index:1; pointer-events:none;
     }
-    .header-home-link:hover { color: #ffcc00; border-color: rgba(255,204,0,.4); }
+    .top-shipping-banner::before { left:0;  background:linear-gradient(90deg,#0f172a,rgba(15,23,42,0)); }
+    .top-shipping-banner::after  { right:0; background:linear-gradient(270deg,#1f2937,rgba(31,41,55,0)); }
+    .top-shipping-banner-track {
+      display:flex; align-items:center; flex:0 0 auto; min-width:max-content;
+      animation: bannerMarquee 30s linear infinite;
+    }
+    @keyframes bannerMarquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    .top-shipping-banner-text {
+      display:inline-flex; align-items:center; gap:24px; padding-right:24px;
+      font-size:.88rem; font-weight:900; letter-spacing:.16em; text-transform:uppercase;
+      white-space:nowrap; color:#fff7cc; text-shadow:0 2px 10px rgba(0,0,0,.18);
+    }
+    .top-shipping-banner-text strong { color:#ffcc00; }
+    .top-shipping-banner-dot {
+      width:6px; height:6px; border-radius:999px; background:#ffcc00;
+      box-shadow:0 0 12px rgba(255,204,0,.72); flex:0 0 auto;
+    }
 
-    /* ── Main ── */
+    /* ── Desktop Header ── */
+    .site-nav {
+      background: rgba(17,24,39,.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      position: sticky; top: 0; z-index: 14000;
+      padding: 0 32px;
+      height: 72px;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .site-nav a { text-decoration: none; }
+    .nav-brand img {
+      height: 52px; display: block;
+      filter: drop-shadow(0 0 14px rgba(255,204,0,.35));
+    }
+    .nav-links {
+      display: flex; align-items: center; gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: #f8fafc; font-size: .88rem; font-weight: 900;
+      letter-spacing: .06em; text-transform: uppercase;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: #ffcc00; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .nav-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: 10px; font-size: .88rem;
+      font-weight: 700; text-decoration: none; transition: all .15s;
+      border: 1px solid rgba(255,255,255,.12); color: #e2e8f0;
+      background: rgba(255,255,255,.05);
+    }
+    .nav-btn:hover { background: rgba(255,204,0,.12); border-color: rgba(255,204,0,.4); color: #ffcc00; }
+    .nav-btn svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+    @media (max-width: 768px) {
+      body { padding-top: calc(42px + 56px); }
+      .top-shipping-banner { height: auto; min-height: 42px; }
+      .site-nav { height: 56px; padding: 0 16px; }
+      .nav-brand img { height: 38px; }
+      .nav-links { display: none; }
+      .nav-btn span { display: none; }
+      .nav-btn { padding: 8px 10px; }
+    }
+
+    /* ── Main Content ── */
     main {
       flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 16px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 16px;
     }
-
     .card {
       background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,.08);
       border-radius: 24px;
-      padding: clamp(28px, 5vw, 48px) clamp(20px, 5vw, 44px);
-      width: min(100%, 560px);
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      padding: clamp(28px,5vw,52px) clamp(20px,5vw,48px);
+      width: min(100%, 580px);
+      box-shadow: 0 24px 64px rgba(0,0,0,.45);
     }
 
-    /* ── Icon ── */
+    /* ── Success Icon ── */
     .success-ring {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 24px;
+      width: 80px; height: 80px; margin: 0 auto 28px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #ffcc00 0%, #f59e0b 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 0 12px rgba(255, 204, 0, 0.10);
+      background: linear-gradient(135deg,#ffcc00 0%,#f59e0b 100%);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 14px rgba(255,204,0,.10), 0 8px 28px rgba(255,204,0,.3);
       animation: popIn .45s cubic-bezier(.22,1,.36,1) both;
     }
-    @keyframes popIn {
-      from { transform: scale(0); opacity: 0; }
-      to   { transform: scale(1); opacity: 1; }
-    }
+    @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
     .success-ring svg {
-      width: 36px; height: 36px;
+      width: 38px; height: 38px;
       stroke: #0f172a; stroke-width: 3;
-      stroke-linecap: round; stroke-linejoin: round;
-      fill: none;
-      stroke-dasharray: 50;
-      stroke-dashoffset: 50;
+      stroke-linecap: round; stroke-linejoin: round; fill: none;
+      stroke-dasharray: 50; stroke-dashoffset: 50;
       animation: drawCheck .4s ease .35s forwards;
     }
-    @keyframes drawCheck {
-      to { stroke-dashoffset: 0; }
-    }
+    @keyframes drawCheck { to { stroke-dashoffset: 0; } }
 
-    /* ── Headings ── */
     .card h1 {
-      text-align: center;
-      font-size: clamp(22px, 4vw, 28px);
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 6px;
+      text-align: center; font-size: clamp(22px,4vw,30px); font-weight: 800;
+      color: #fff; margin-bottom: 8px;
     }
     .card .subtitle {
-      text-align: center;
-      color: #94a3b8;
-      font-size: 15px;
-      margin-bottom: 28px;
+      text-align: center; color: #94a3b8; font-size: 15px; margin-bottom: 32px;
     }
-    .card .subtitle span {
-      color: #ffcc00;
-      font-weight: 700;
-    }
+    .card .subtitle strong { color: #ffcc00; }
 
-    /* ── Order info table ── */
+    /* ── Order Table ── */
     .order-table {
-      background: #0f172a;
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 24px;
-      border: 1px solid rgba(255,255,255,0.06);
+      background: #0f172a; border-radius: 14px; overflow: hidden;
+      margin-bottom: 24px; border: 1px solid rgba(255,255,255,.06);
     }
     .order-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 18px;
-      gap: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 20px; gap: 16px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
     }
     .order-row:last-child { border-bottom: none; }
-    .row-label {
-      font-size: 13px;
-      color: #64748b;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .row-value {
-      font-size: 15px;
-      font-weight: 700;
-      color: #e2e8f0;
-      text-align: right;
-    }
-    .row-value.order-id {
-      font-family: 'Courier New', monospace;
-      color: #ffcc00;
-      letter-spacing: .03em;
-    }
-    .row-value.paid {
-      color: #4ade80;
-    }
+    .row-label { font-size: 13px; color: #64748b; font-weight: 600; white-space: nowrap; }
+    .row-value { font-size: 15px; font-weight: 700; color: #e2e8f0; text-align: right; }
+    .row-value.order-id { font-family: 'Courier New', monospace; color: #ffcc00; letter-spacing: .04em; }
+    .row-value.paid { color: #4ade80; }
 
-    /* ── Info box ── */
+    /* ── Info Box ── */
     .info-box {
-      background: rgba(255, 204, 0, 0.06);
-      border: 1px solid rgba(255, 204, 0, 0.18);
-      border-radius: 12px;
-      padding: 14px 16px;
-      margin-bottom: 24px;
-      font-size: 13px;
-      line-height: 1.7;
-      color: #cbd5e1;
+      background: rgba(255,204,0,.06); border: 1px solid rgba(255,204,0,.18);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 28px;
+      font-size: 13px; line-height: 1.75; color: #cbd5e1;
     }
     .info-box strong { color: #ffcc00; }
 
     /* ── Buttons ── */
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn {
-      flex: 1;
-      min-width: 130px;
-      padding: 14px 18px;
-      border: none;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-      display: inline-block;
+      flex: 1; min-width: 140px; padding: 15px 20px;
+      border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+      cursor: pointer; text-align: center; text-decoration: none; display: inline-block;
       transition: transform .15s, box-shadow .15s;
     }
     .btn:hover { transform: translateY(-2px); }
     .btn-primary {
-      background: #ffcc00;
-      color: #0f172a;
-      box-shadow: 0 4px 14px rgba(255,204,0,.25);
+      background: #ffcc00; color: #0f172a;
+      box-shadow: 0 4px 16px rgba(255,204,0,.25);
     }
-    .btn-primary:hover { box-shadow: 0 6px 20px rgba(255,204,0,.4); }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(255,204,0,.45); }
     .btn-secondary {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: #cbd5e1;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #cbd5e1;
     }
-    .btn-secondary:hover { background: rgba(255,255,255,0.10); }
+    .btn-secondary:hover { background: rgba(255,255,255,.10); }
+    @media (max-width: 480px) { .btn-row { flex-direction: column; } }
 
     /* ── Spinner ── */
     .spin {
-      display: inline-block; width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,.15);
-      border-top-color: #ffcc00;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      vertical-align: middle;
+      display: inline-block; width: 15px; height: 15px;
+      border: 2px solid rgba(255,255,255,.15); border-top-color: #ffcc00;
+      border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (max-width: 480px) {
-      .btn-row { flex-direction: column; }
-      .btn { min-width: unset; }
+    /* ── Footer (birebir site ile aynı) ── */
+    .modern-footer {
+      background: #050505;
+      color: #e2e8f0;
+      padding: 72px 48px 32px;
+      border-top: 1px solid rgba(255,255,255,.05);
+      font-family: 'Inter', system-ui, sans-serif;
+      position: relative; overflow: hidden;
+    }
+    .modern-footer::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:1px;
+      background: linear-gradient(90deg,transparent,rgba(255,204,0,.5),transparent);
+    }
+    .footer-content {
+      max-width: 1200px; margin: 0 auto;
+      display: grid; grid-template-columns: 3fr 4fr 3fr; gap: 56px;
+    }
+    .footer-brand { display:flex; flex-direction:column; align-items:flex-start; }
+    .footer-brand img {
+      max-height: 140px; margin-bottom: 18px;
+      filter: drop-shadow(0 0 10px rgba(255,204,0,.2));
+    }
+    .footer-brand h2 {
+      font-size: 1.9rem; letter-spacing: 2px; margin-bottom: 10px; color: #fff; font-weight: 900;
+    }
+    .footer-brand p { color: #94a3b8; font-size: .92rem; line-height: 1.6; max-width: 90%; }
+    .footer-links {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start;
+    }
+    .footer-links h5, .footer-contact h5 {
+      color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 20px;
+      text-transform: uppercase; letter-spacing: 1px;
+      position: relative; padding-bottom: 10px;
+    }
+    .footer-links h5::after, .footer-contact h5::after {
+      content:''; position:absolute; left:0; bottom:0; width:28px; height:2px;
+      background:#ffcc00; border-radius:2px;
+    }
+    .footer-links ul { list-style:none; }
+    .footer-links li { margin-bottom: 11px; }
+    .footer-links a {
+      color: #94a3b8; text-decoration: none; font-size: .92rem;
+      transition: color .2s, transform .2s; display: inline-block;
+    }
+    .footer-links a:hover { color: #ffcc00; transform: translateX(4px); }
+    .footer-contact { display:flex; flex-direction:column; }
+    .footer-contact p { color: #94a3b8; font-size: .92rem; margin-bottom: 10px; }
+    .footer-phone { color: #ffcc00 !important; text-decoration: none; font-weight: 600; }
+    .footer-phone:hover { text-shadow: 0 0 10px rgba(255,204,0,.4); }
+    .etbis-badge { margin-top: 20px; }
+    .etbis-badge a {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+      color: #e2e8f0; padding: 10px 16px; border-radius: 9px;
+      text-decoration: none; font-weight: 700; font-size: .85rem; transition: all .2s;
+    }
+    .etbis-badge a:hover {
+      background: rgba(255,204,0,.1); border-color: rgba(255,204,0,.4); color: #ffcc00;
+    }
+    .footer-bottom {
+      max-width: 1200px; margin: 52px auto 0; padding-top: 22px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      text-align: center; color: #64748b; font-size: .82rem; font-weight: 500;
+    }
+    @media (max-width: 900px) {
+      .footer-content { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .modern-footer { padding: 52px 20px 24px; }
+      .footer-content { grid-template-columns: 1fr; gap: 36px; }
+      .footer-links { grid-template-columns: 1fr; gap: 28px; }
+      .footer-brand { align-items: center; text-align: center; }
+      .footer-brand p { max-width: 100%; }
+      .footer-links h5::after, .footer-contact h5::after { left:50%; transform:translateX(-50%); }
     }
   </style>
 </head>
 <body>
 
-  <header class="site-header">
-    <a href="/"><img src="/Boomer.svg" alt="BoomerItems"></a>
-    <a href="/" class="header-home-link">← Ana Sayfa</a>
+  <!-- Top Shipping Banner -->
+  <div class="top-shipping-banner" role="marquee" aria-label="Kargo bilgileri">
+    <div class="top-shipping-banner-track">
+      <span class="top-shipping-banner-text">
+        <span class="top-shipping-banner-dot"></span>
+        <strong>ÜCRETSİZ KARGO</strong> 500 TL ve üzeri siparişlerde
+        <span class="top-shipping-banner-dot"></span>
+        <strong>HIZLI TESLİMAT</strong> Aynı gün kargoya verilir
+        <span class="top-shipping-banner-dot"></span>
+        <strong>GÜVENLİ ÖDEME</strong> SSL korumalı ödeme altyapısı
+        <span class="top-shipping-banner-dot"></span>
+        LEGO · DİECAST · KOLEKSİYON FİGÜRLERİ
+      </span>
+      <!-- marquee sonsuz döngü için metin tekrarı -->
+      <span class="top-shipping-banner-text" aria-hidden="true">
+        <span class="top-shipping-banner-dot"></span>
+        <strong>ÜCRETSİZ KARGO</strong> 500 TL ve üzeri siparişlerde
+        <span class="top-shipping-banner-dot"></span>
+        <strong>HIZLI TESLİMAT</strong> Aynı gün kargoya verilir
+        <span class="top-shipping-banner-dot"></span>
+        <strong>GÜVENLİ ÖDEME</strong> SSL korumalı ödeme altyapısı
+        <span class="top-shipping-banner-dot"></span>
+        LEGO · DİECAST · KOLEKSİYON FİGÜRLERİ
+      </span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-nav">
+    <a href="/" class="nav-brand">
+      <img src="/Boomer.svg" alt="BoomerItems">
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="/">Ana Sayfa</a></li>
+        <li><a href="/hakkimizda.html">Biz Kimiz</a></li>
+        <li><a href="/iletisim.html">İletişim</a></li>
+      </ul>
+    </nav>
+    <div class="nav-right">
+      <a href="/track-order.html" class="nav-btn">
+        <svg viewBox="0 0 24 24"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"/><path d="M5.5 7 12 10.6 18.5 7"/><path d="M12 10.6v9.9"/></svg>
+        <span>Sipariş Takibi</span>
+      </a>
+      <a href="/" class="nav-btn">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M3 4h2l2.2 10.2a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.8L22 8H7"/></svg>
+        <span>Alışverişe Dön</span>
+      </a>
+    </div>
   </header>
 
+  <!-- Main -->
   <main>
     <div class="card">
 
@@ -225,8 +333,8 @@
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
 
-      <h1>Siparişiniz Alındı!</h1>
-      <p class="subtitle">Ödemeniz başarıyla tamamlandı. <span>Teşekkürler 🎉</span></p>
+      <h1>🎉 Siparişiniz Alındı!</h1>
+      <p class="subtitle">Ödemeniz başarıyla tamamlandı. <strong>Teşekkürler!</strong></p>
 
       <div class="order-table">
         <div class="order-row">
@@ -262,65 +370,88 @@
     </div>
   </main>
 
+  <!-- Footer -->
+  <footer class="modern-footer site-legal-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="/Boomer.svg" alt="Boomer Items">
+        <h2>BOOMER ITEMS</h2>
+        <p>Koleksiyon tutkunu büyütecek eşsiz parçalar BoomerItems'ta seni bekliyor.</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <h5>Kurumsal</h5>
+          <ul>
+            <li><a href="/hakkimizda.html">Hakkımızda</a></li>
+            <li><a href="/iletisim.html">İletişim</a></li>
+            <li><a href="/siparis-takip.html">Sipariş Takibi</a></li>
+            <li><a href="/collector.html">Koleksiyon</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5>Sözleşmeler</h5>
+          <ul>
+            <li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Satış Sözleşmesi</a></li>
+            <li><a href="/iade-cayma-kosullari.html">İade ve Cayma Koşulları</a></li>
+            <li><a href="/gizlilik-politikasi.html">Gizlilik Politikası</a></li>
+            <li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBİS Bilgisi (PDF)</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-contact">
+        <h5>İletişim &amp; Şirket</h5>
+        <p>boomeritems@gmail.com</p>
+        <p><a href="tel:+902626450000" class="footer-phone">0262 645 00 00</a></p>
+        <p>DARICA / KOCAELİ, TÜRKİYE</p>
+        <div class="etbis-badge">
+          <a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBİS'e Kayıtlı İşletme</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; 2026 Boomer Items. Tüm hakları saklıdır. Bu site ETBİS'e kayıtlıdır.</div>
+  </footer>
+
   <script>
     (function () {
       var params  = new URLSearchParams(window.location.search);
       var orderId = params.get('order_id');
-
       var elId    = document.getElementById('el-order-id');
       var elTotal = document.getElementById('el-total');
       var elDate  = document.getElementById('el-date');
 
       if (!orderId) {
         document.querySelector('h1').textContent = 'Sipariş Bulunamadı';
-        document.querySelector('.subtitle').textContent = 'Geçersiz sipariş numarası.';
-        elId.textContent = '-';
-        elTotal.textContent = '-';
-        elDate.textContent = '-';
+        document.querySelector('.subtitle').innerHTML = 'Geçersiz sipariş numarası.';
+        elId.textContent = '-'; elTotal.textContent = '-'; elDate.textContent = '-';
         return;
       }
 
       elId.textContent = orderId;
 
       // Sepeti temizle
-      try {
-        localStorage.removeItem('cart');
-        localStorage.removeItem('cartItems');
-      } catch (e) {}
+      try { localStorage.removeItem('cart'); localStorage.removeItem('cartItems'); } catch(e) {}
 
       // Sipariş detaylarını çek
       var headers = {};
       try { var t = localStorage.getItem('token'); if (t) headers['Authorization'] = 'Bearer ' + t; } catch(e) {}
 
       fetch('https://www.boomeritems.com/api/payments/paytr/status/' + orderId, {
-        credentials: 'include',
-        headers: headers
+        credentials: 'include', headers: headers
       })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
+        .then(function(r){ return r.json(); })
+        .then(function(data){
           if (data.success && data.order) {
-            var order = data.order;
-
-            elTotal.textContent = new Intl.NumberFormat('tr-TR', {
-              style: 'currency', currency: 'TRY'
-            }).format(order.total || 0);
-
-            var raw = order.created_at || order.createdAt;
+            var o = data.order;
+            elTotal.textContent = new Intl.NumberFormat('tr-TR', { style:'currency', currency:'TRY' }).format(o.total || 0);
+            var raw = o.created_at || o.createdAt;
             elDate.textContent = raw
-              ? new Date(raw).toLocaleString('tr-TR', {
-                  year: 'numeric', month: 'long', day: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                })
+              ? new Date(raw).toLocaleString('tr-TR', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' })
               : 'Şimdi';
           } else {
-            elTotal.textContent = '-';
-            elDate.textContent  = 'Şimdi';
+            elTotal.textContent = '-'; elDate.textContent = 'Şimdi';
           }
         })
-        .catch(function () {
-          elTotal.textContent = '-';
-          elDate.textContent  = 'Şimdi';
-        });
+        .catch(function(){ elTotal.textContent = '-'; elDate.textContent = 'Şimdi'; });
     })();
   </script>
 
