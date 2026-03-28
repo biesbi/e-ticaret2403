@@ -2,9 +2,10 @@
 
 StockService::ensureSchema();
 
-// Otomatik stok temizleme: %1 ihtimalle terk edilen siparişleri temizle
-if (random_int(1, 100) === 1) {
-    try { StockService::releaseAbandonedReservations(24); } catch (Throwable) {}
+// Otomatik stok temizleme: %5 ihtimalle terk edilen siparişleri temizle
+// PayTR ödeme oturumu max 30 dk; 2 saat sonra hâlâ pending olan stok rezervasyonları serbest bırakılır
+if (random_int(1, 20) === 1) {
+    try { StockService::releaseAbandonedReservations(2); } catch (Throwable) {}
 }
 
 function generateOrderId(): string {
