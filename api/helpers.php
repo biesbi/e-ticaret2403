@@ -222,6 +222,11 @@ function legacyOrder(array $order): array {
         }
     }
 
+    $items = [];
+    if (!empty($order['items']) && is_array($order['items'])) {
+        $items = array_map('legacyOrderItem', $order['items']);
+    }
+
     return [
         ...$order,
         'id' => (string) ($order['id'] ?? ''),
@@ -245,6 +250,32 @@ function legacyOrder(array $order): array {
         'total' => isset($order['total']) ? (float) $order['total'] : 0.0,
         'subtotal' => isset($order['subtotal']) ? (float) $order['subtotal'] : 0.0,
         'discount' => isset($order['discount']) ? (float) $order['discount'] : 0.0,
+        'items' => $items,
+    ];
+}
+
+function legacyOrderItem(array $item): array {
+    $name = (string) ($item['product_name'] ?? ($item['title'] ?? ($item['name'] ?? '')));
+    $image = (string) ($item['product_img'] ?? ($item['product_image'] ?? ($item['img'] ?? ($item['image'] ?? ''))));
+    $qty = (int) ($item['quantity'] ?? 1);
+    $price = isset($item['unit_price']) ? (float) $item['unit_price'] : (float) ($item['price'] ?? 0);
+    $lineTotal = isset($item['line_total']) ? (float) $item['line_total'] : ($price * max(1, $qty));
+
+    return [
+        ...$item,
+        'id' => (string) ($item['id'] ?? ''),
+        'product_name' => $name,
+        'title' => $name,
+        'name' => $name,
+        'product_img' => $image,
+        'product_image' => $image,
+        'img' => $image,
+        'image' => $image,
+        'quantity' => $qty,
+        'price' => $price,
+        'unit_price' => $price,
+        'line_total' => $lineTotal,
+        'lineTotal' => $lineTotal,
     ];
 }
 

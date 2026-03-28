@@ -1,6 +1,12 @@
 <?php
 
 final class PaytrService {
+    private static function cleanEnv(string $key, string $default = ''): string {
+        $value = (string) env($key, $default);
+        $value = trim($value);
+        return trim($value, "\"' \t\n\r\0\x0B");
+    }
+
     public static function isEnabled(): bool {
         return filter_var(env('PAYTR_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN);
     }
@@ -14,9 +20,9 @@ final class PaytrService {
     }
 
     public static function isConfigured(): bool {
-        return env('PAYTR_MERCHANT_ID', '') !== ''
-            && env('PAYTR_MERCHANT_KEY', '') !== ''
-            && env('PAYTR_MERCHANT_SALT', '') !== '';
+        return self::cleanEnv('PAYTR_MERCHANT_ID') !== ''
+            && self::cleanEnv('PAYTR_MERCHANT_KEY') !== ''
+            && self::cleanEnv('PAYTR_MERCHANT_SALT') !== '';
     }
 
     public static function createPayment(array $order, array $items, array $shippingAddress): array {
@@ -83,8 +89,8 @@ final class PaytrService {
             exit('FAILED');
         }
 
-        $merchantKey = (string) env('PAYTR_MERCHANT_KEY', '');
-        $merchantSalt = (string) env('PAYTR_MERCHANT_SALT', '');
+        $merchantKey = self::cleanEnv('PAYTR_MERCHANT_KEY');
+        $merchantSalt = self::cleanEnv('PAYTR_MERCHANT_SALT');
         $expected = base64_encode(hash_hmac('sha256', $merchantOid . $merchantSalt . $status . $totalAmount, $merchantKey, true));
 
         if (!hash_equals($expected, $hash)) {
@@ -129,8 +135,12 @@ final class PaytrService {
         exit('OK');
     }
 
-    private static function createMockPayment(array $order): array {
+    private static function createMockPayment(array $order, ?string $reason = null): array {
         $baseUrl = rtrim((string) env('APP_URL', 'http://localhost:5173'), '/');
+        $message = 'PAYTR test akisi mock modda hazirlandi.';
+        if ($reason !== null && $reason !== '') {
+            $message .= ' Neden: ' . $reason;
+        }
         return [
             'provider' => 'paytr',
             'enabled' => true,
@@ -139,16 +149,17 @@ final class PaytrService {
             'status' => 'mock_ready',
             'merchant_oid' => (string) $order['id'],
             'payment_url' => $baseUrl . '/paytr-test.html?order_id=' . urlencode((string) $order['id']) . '&amount=' . urlencode((string) $order['total']),
-            'message' => 'PAYTR test akisi mock modda hazirlandi.',
+            'message' => $message,
+            'reason' => $reason,
         ];
     }
 
     private static function createIframePayment(array $order, array $items, array $shippingAddress): array {
-        $merchantId = (string) env('PAYTR_MERCHANT_ID', '');
-        $merchantKey = (string) env('PAYTR_MERCHANT_KEY', '');
-        $merchantSalt = (string) env('PAYTR_MERCHANT_SALT', '');
-        $callbackUrl = (string) env('PAYTR_CALLBACK_URL', '');
-        $currency = (string) env('PAYTR_CURRENCY', 'TL');
+        $merchantId = self::cleanEnv('PAYTR_MERCHANT_ID');
+        $merchantKey = self::cleanEnv('PAYTR_MERCHANT_KEY');
+        $merchantSalt = self::cleanEnv('PAYTR_MERCHANT_SALT');
+        $callbackUrl = self::cleanEnv('PAYTR_CALLBACK_URL');
+        $currency = self::cleanEnv('PAYTR_CURRENCY', 'TL');
         $timeoutLimit = (int) env('PAYTR_TIMEOUT', 30);
         $noInstallment = (int) env('PAYTR_NO_INSTALLMENT', 0);
         $maxInstallment = (int) env('PAYTR_MAX_INSTALLMENT', 0);
@@ -210,7 +221,17 @@ final class PaytrService {
 
         $response = self::postForm('https://www.paytr.com/odeme/api/get-token', $payload);
         if (($response['status'] ?? '') !== 'success' || empty($response['token'])) {
-            return self::createMockPayment($order);
+            $reason = (string) ($response['reason'] ?? $response['raw'] ?? 'token_alinamadi');
+            return [
+                'provider' => 'paytr',
+                'enabled' => true,
+                'test_mode' => self::isTestMode(),
+                'mock' => false,
+                'status' => 'failed',
+                'merchant_oid' => $merchantOid,
+                'message' => 'PAYTR token alinamadi. Neden: ' . $reason,
+                'reason' => $reason,
+            ];
         }
 
         db()->prepare('UPDATE orders SET paytr_token = ?, paytr_merchant_oid = ? WHERE id = ?')
@@ -230,7 +251,7 @@ final class PaytrService {
     }
 
     private static function resolveUserIp(): string {
-        $explicit = trim((string) env('PAYTR_TEST_USER_IP', ''));
+        $explicit = self::cleanEnv('PAYTR_TEST_USER_IP');
         if ($explicit !== '') {
             return $explicit;
         }

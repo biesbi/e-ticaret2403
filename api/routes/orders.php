@@ -168,7 +168,41 @@ if ($id === 'track') {
 if ($id === null && $method === 'GET') {
     adminRequired();
     $stmt = db()->query('SELECT * FROM orders ORDER BY created_at DESC');
-    ok(array_map(fn(array $order) => legacyOrder($order), $stmt->fetchAll()));
+    $orders = $stmt->fetchAll();
+
+    if (!$orders) {
+        ok([]);
+    }
+
+    $orderIds = array_values(array_filter(array_map(
+        static fn(array $order): string => (string) ($order['id'] ?? ''),
+        $orders
+    )));
+
+    $itemsByOrderId = [];
+    if ($orderIds) {
+        $placeholders = implode(', ', array_fill(0, count($orderIds), '?'));
+        $itemsStmt = db()->prepare(
+            'SELECT * FROM order_items WHERE order_id IN (' . $placeholders . ') ORDER BY id ASC'
+        );
+        $itemsStmt->execute($orderIds);
+
+        foreach ($itemsStmt->fetchAll() as $item) {
+            $key = (string) ($item['order_id'] ?? '');
+            if ($key === '') {
+                continue;
+            }
+            if (!isset($itemsByOrderId[$key])) {
+                $itemsByOrderId[$key] = [];
+            }
+            $itemsByOrderId[$key][] = $item;
+        }
+    }
+
+    ok(array_map(static function (array $order) use ($itemsByOrderId): array {
+        $order['items'] = $itemsByOrderId[(string) ($order['id'] ?? '')] ?? [];
+        return legacyOrder($order);
+    }, $orders));
 }
 
 // POST /orders/retry-payment — başarısız ödeme yeniden deneme

@@ -88,6 +88,86 @@
             to { transform: translateX(-50%); }
         }
 
+        .top-banner {
+            display: none !important;
+        }
+
+        .top-shipping-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 18000;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255, 204, 0, 0.28);
+            background: linear-gradient(90deg, #0f172a 0%, #111827 52%, #1f2937 100%);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+        }
+
+        .top-shipping-banner::before,
+        .top-shipping-banner::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 72px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .top-shipping-banner::before {
+            left: 0;
+            background: linear-gradient(90deg, #0f172a 0%, rgba(15, 23, 42, 0) 100%);
+        }
+
+        .top-shipping-banner::after {
+            right: 0;
+            background: linear-gradient(270deg, #1f2937 0%, rgba(31, 41, 55, 0) 100%);
+        }
+
+        .top-shipping-banner-track {
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            min-width: max-content;
+            animation: shippingBannerMarquee 30s linear infinite;
+        }
+
+        .top-shipping-banner-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 24px;
+            padding-right: 24px;
+            font-size: 0.88rem;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            color: #fff7cc;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+        }
+
+        .top-shipping-banner-text strong {
+            color: var(--accent);
+        }
+
+        .top-shipping-banner-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: #ffcc00;
+            box-shadow: 0 0 12px rgba(255, 204, 0, 0.72);
+            flex: 0 0 auto;
+        }
+
+        @keyframes shippingBannerMarquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
         .site-header {
             position: sticky;
             top: 42px;
@@ -317,6 +397,182 @@
             font-size: 0.92rem;
         }
 
+        .site-footer {
+            display: none !important;
+        }
+
+        .modern-footer {
+            background: #050505;
+            color: #e2e8f0;
+            padding: 80px 48px 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-footer::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 204, 0, 0.5), transparent);
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 3fr 4fr 3fr;
+            gap: 60px;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .footer-brand img {
+            max-height: 200px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.2));
+        }
+
+        .footer-brand h2 {
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            margin: 0 0 12px;
+            color: #ffffff;
+            font-weight: 900;
+        }
+
+        .footer-brand p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 90%;
+            margin: 0;
+        }
+
+        .footer-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .footer-links h5,
+        .footer-contact h5 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .footer-links h5::after,
+        .footer-contact h5::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 30px;
+            height: 2px;
+            background: #ffcc00;
+            border-radius: 2px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .footer-links a:hover {
+            color: #ffcc00;
+            transform: translateX(5px);
+        }
+
+        .footer-contact {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .footer-contact p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+            margin: 0 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .footer-phone {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .footer-phone:hover {
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+        }
+
+        .etbis-badge {
+            margin-top: 25px;
+        }
+
+        .etbis-badge a {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .etbis-badge a:hover {
+            background: rgba(255, 204, 0, 0.1);
+            border-color: rgba(255, 204, 0, 0.5);
+            color: #ffcc00;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.1);
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 60px auto 0;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
         @media (max-width: 920px) {
             .hero,
             .content-grid,
@@ -339,13 +595,29 @@
         }
 
         @media (max-width: 640px) {
+            body {
+                padding-top: 42px !important;
+            }
+
+            .site-header {
+                top: 42px !important;
+            }
+
             .page {
                 width: calc(100% - 18px);
-                margin-top: 18px;
+                margin-top: 28px;
             }
 
             .site-header-inner {
                 width: calc(100% - 18px);
+                padding-top: 10px;
+                padding-bottom: 12px;
+                gap: 12px;
+            }
+
+            .brand img {
+                width: 112px;
+                margin: 0 auto;
             }
 
             .hero-card,
@@ -356,6 +628,57 @@
 
             .nav-links {
                 gap: 18px;
+            }
+
+            .modern-footer {
+                padding: 60px 24px 24px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .footer-links {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                justify-items: center;
+            }
+
+            .footer-links div {
+                width: 100%;
+                text-align: center;
+            }
+
+            .footer-brand {
+                align-items: center;
+                text-align: center;
+            }
+
+            .footer-brand p {
+                max-width: 100%;
+            }
+
+            .footer-links h5::after,
+            .footer-contact h5::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+
+            .footer-links h5,
+            .footer-contact h5,
+            .footer-contact p {
+                text-align: center;
+                justify-content: center;
+            }
+
+            .footer-links ul {
+                text-align: center;
+            }
+
+            .etbis-badge {
+                display: flex;
+                justify-content: center;
             }
         }
 
@@ -419,6 +742,38 @@
 </head>
 
 <body>
+    <div class="top-shipping-banner" aria-label="Kargo kampanyasi duyuru bandi">
+        <div class="top-shipping-banner-track">
+            <div class="top-shipping-banner-text">
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+            </div>
+            <div class="top-shipping-banner-text">
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <span class="top-shipping-banner-dot"></span>
+                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span class="top-shipping-banner-dot"></span>
+            </div>
+        </div>
+    </div>
     <div class="top-banner">
         <div class="top-banner-track">
             <div class="top-banner-text"><strong>2500 TL UZERI KARGO BEDAVA</strong> • 2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO • </div>
@@ -526,6 +881,46 @@
             </div>
         </section>
     </main>
+
+    <footer class="modern-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="/Boomer.svg" alt="Boomer Items">
+                <h2>BOOMER ITEMS</h2>
+                <p>Koleksiyon tutkunu buyutecek essiz parcalar BoomerItems'ta seni bekliyor.</p>
+            </div>
+            <div class="footer-links">
+                <div>
+                    <h5>Kurumsal</h5>
+                    <ul>
+                        <li><a href="/hakkimizda.html">Hakkimizda</a></li>
+                        <li><a href="/iletisim.html">Iletisim</a></li>
+                        <li><a href="/siparis-takip.html">Siparis Takibi</a></li>
+                        <li><a href="/collector.html">Koleksiyon</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5>Sozlesmeler</h5>
+                    <ul>
+                        <li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Satis Sozlesmesi</a></li>
+                        <li><a href="/iade-cayma-kosullari.html">Iade ve Cayma Kosullari</a></li>
+                        <li><a href="/gizlilik-politikasi.html">Gizlilik Politikasi</a></li>
+                        <li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBIS Bilgisi (PDF)</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-contact">
+                <h5>Iletisim &amp; Sirket</h5>
+                <p>boomeritems@gmail.com</p>
+                <p><a href="tel:+905551234567" class="footer-phone">0262 645 00 00</a></p>
+                <p>DARICA / KOCAELI, TURKIYE</p>
+                <div class="etbis-badge">
+                    <a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBIS'e Kayitli Isletme</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">&copy; 2026 Boomer Items. Tum haklari saklidir. Bu site ETBIS'e kayitlidir.</div>
+    </footer>
 
     <footer class="site-footer">
         <div class="site-footer-inner">

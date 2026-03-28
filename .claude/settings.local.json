@@ -1,19 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build)",
-      "Bash(\"c:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE boomeritems; SELECT id, name, LEFT(img, 50) as img_preview FROM products WHERE img IS NULL OR img = '''' OR img LIKE ''data:image%'' LIMIT 10;\")",
-      "Bash(\"c:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE boomeritems; SELECT COUNT(*) as total, SUM(CASE WHEN img LIKE ''data:image%'' THEN 1 ELSE 0 END) as base64_count, SUM(CASE WHEN img IS NULL OR img = '''' THEN 1 ELSE 0 END) as null_count FROM products;\")",
-      "Bash(\"c:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE boomeritems; SELECT id, name, img FROM products WHERE name LIKE ''%TEST4%'' OR name LIKE ''%PORSCHE%'' OR name LIKE ''%CITROEN%'' LIMIT 5;\")",
-      "Bash(\"c:/xampp/mysql/bin/mysql.exe\" -u root -e \"USE boomeritems; SELECT name, img FROM products WHERE name LIKE ''%CITROEN%'' OR name LIKE ''%TEST4%'';\")",
-      "Bash(curl -I \"https://www.boomeritems.com/uploads/products/medium_20260319_f167e9475d7d2a64ea6ec2a1.jpg?v=20260320\")",
-      "Read(//c/xampp/**)",
-      "Bash(./mysql/bin/mysql.exe -u root -e \":*)",
-      "Bash(./mysql/bin/mysql.exe -u root -e \"USE boomeritems; DESCRIBE users;\")",
-      "Bash(php:*)",
-      "Bash(/c/xampp/php/php.exe -r \"echo password_hash\\('@BoomerItemsBaran!', PASSWORD_BCRYPT, ['cost' => 12]\\);\")",
-      "Bash(/c/xampp/php/php.exe -r \"\n\\\\$hash = '\\\\$2y\\\\$12\\\\$NlpvjRBpXmnFD4WWa8Bx5.I5BvVo2437fFgzyd43Yuz9XLUjHaZ66';\n\\\\$result = password_verify\\('@BoomerItemsBaran!', \\\\$hash\\);\necho \\\\$result ? 'DOGRULAMA BASARILI' : 'HATA';\n\")",
-      "Bash(/c/xampp/php/php.exe C:/xampp/htdocs/fix_admin_pass.php)"
+      "Bash(curl -s \"https://www.boomeritems.com/test-paytr-config.php\")",
+      "Bash(cat \"c:\\xampp\\htdocs\\api\\.env\")"
     ],
     "deny": [],
     "ask": []

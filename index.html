@@ -15,6 +15,11 @@
 		content="Hayal Et, Ke&#351;fet, Koleksiyonunu B&#252;y&#252;t! LEGO setleri, diecast ara&#231;lar ve koleksiyon fig&#252;rleri BoomerItems'ta seni bekliyor.">
 	<meta name="theme-color" content="#ffcc00">
 	<meta name='robots' content='index, follow' />
+	<script>
+		try {
+			localStorage.setItem('newsletter_closed', '1');
+		} catch (e) { }
+	</script>
 	<style>
 		/* UTILITY: Hide legacy sections */
 		.category-blocks-section {
@@ -483,7 +488,17 @@
 			}
 
 			body {
-				padding-top: 42px;
+				padding-top: 96px !important;
+			}
+
+			.app-header.mobile-only,
+			.modern-header.mobile-only,
+			header.mobile-only {
+				position: fixed !important;
+				top: 42px !important;
+				left: 0 !important;
+				right: 0 !important;
+				z-index: 14010 !important;
 			}
 
 			.app-styled-mobile {
@@ -1366,16 +1381,18 @@
 		.app-storefront-filters {
 			position: sticky !important;
 			top: 42px !important;
-			z-index: 1000 !important;
+			z-index: 60 !important;
 			background: rgba(255, 255, 255, 0.95) !important;
 			backdrop-filter: blur(10px);
 			border-bottom: 1px solid #f1f5f9;
 			padding: 10px 0 !important;
+			margin-top: 18px !important;
 		}
 
 		body.desktop-polished .app-storefront-filters {
 			top: 142px !important;
-			z-index: 10002 !important;
+			z-index: 70 !important;
+			margin-top: 22px !important;
 		}
 
 		@media (max-width: 768px) {
@@ -1384,11 +1401,25 @@
 			}
 
 			.app-storefront-filters {
-				top: 116px !important;
-				z-index: 10001 !important;
+				top: 96px !important;
+				z-index: 65 !important;
 				background: rgba(255, 255, 255, 0.98) !important;
 				padding: 12px 10px !important;
+				margin-top: 12px !important;
 			}
+		}
+
+		.cart-drawer-backdrop,
+		.checkout-modal-backdrop,
+		.mobile-menu-overlay {
+			z-index: 20050 !important;
+		}
+
+		.cart-drawer,
+		.checkout-modal-container,
+		.checkout-modal-container.wide,
+		.auth-modal-white {
+			z-index: 20060 !important;
 		}
 
 
@@ -1656,6 +1687,40 @@
 				box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
 				margin: 0 !important;
 				flex-shrink: 0 !important;
+			}
+
+			.top-shipping-banner {
+				padding-right: 46px !important;
+			}
+
+			.top-shipping-banner .order-track-fab {
+				position: absolute !important;
+				top: 7px !important;
+				right: 10px !important;
+				left: auto !important;
+				bottom: auto !important;
+				z-index: 2 !important;
+				width: 28px !important;
+				height: 28px !important;
+				min-width: 28px !important;
+				min-height: 28px !important;
+				border-radius: 999px !important;
+				background: rgba(255, 255, 255, 0.12) !important;
+				color: #fff7cc !important;
+				box-shadow: none !important;
+				backdrop-filter: blur(8px) !important;
+				-webkit-backdrop-filter: blur(8px) !important;
+				border: 1px solid rgba(255, 204, 0, 0.26) !important;
+			}
+
+			.top-shipping-banner .order-track-fab::before {
+				display: none !important;
+			}
+
+			.top-shipping-banner .order-track-fab svg {
+				width: 14px !important;
+				height: 14px !important;
+				stroke-width: 2.1 !important;
 			}
 		}
 
@@ -2298,7 +2363,8 @@
 				fab.setAttribute('aria-label', 'Siparis Takibi');
 				fab.setAttribute('title', 'Siparis Takibi');
 				fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"></path><path d="M5.5 7 12 10.6 18.5 7"></path><path d="M12 10.6v9.9"></path></svg>';
-				document.body.appendChild(fab);
+				var mobileBanner = window.innerWidth <= 900 ? document.querySelector('.top-shipping-banner') : null;
+				(mobileBanner || document.body).appendChild(fab);
 			} catch (error) { }
 		});
 	</script>
@@ -6132,8 +6198,13 @@
 				if (!orderId) return Promise.resolve(null);
 				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
 				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				var headers = { 'Accept': 'application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
 				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
-					headers: { 'Accept': 'application/json' }
+					headers: headers
 				})
 					.then(function (response) {
 						if (!response.ok) throw new Error('order detail failed');
@@ -6337,8 +6408,13 @@
 				if (!orderId) return Promise.resolve(null);
 				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
 				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				var headers = { 'Accept': 'application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
 				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
-					headers: { 'Accept': 'application/json' }
+					headers: headers
 				})
 					.then(function (response) { return response.ok ? response.json() : null; })
 					.then(function (payload) {
@@ -6459,8 +6535,13 @@
 				if (!orderId) return Promise.resolve(null);
 				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
 				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				var headers = { 'Accept': 'application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
 				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
-					headers: { 'Accept': 'application/json' }
+					headers: headers
 				})
 					.then(function (response) { return response.ok ? response.json() : null; })
 					.then(function (payload) {
@@ -6505,11 +6586,14 @@
 					var name = String(item.product_name || item.title || item.name || 'Ürün');
 					var variant = String(item.variant_color || item.variant_name || '').trim();
 					var image = String(item.product_img || item.img || item.image || '/fallback.png');
+					var total = parseFloat(item.line_total || (item.unit_price || item.price || 0) * qty || 0);
+					var totalText = total > 0 ? total.toLocaleString('tr-TR') + ' ₺' : '';
 					return ''
 						+ '<div class="admin-order-item-line">'
 						+ '<img class="admin-order-item-thumb" src="' + image.replace(/"/g, '&quot;') + '" alt="">'
 						+ '<div class="admin-order-item-meta"><strong>' + qty + 'x</strong> ' + name
 						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ (totalText ? ' <span style="display:block;color:#0f172a;font-weight:700;margin-top:4px;">' + totalText + '</span>' : '')
 						+ '</div>'
 						+ '</div>';
 				}).join('');
@@ -7708,6 +7792,295 @@
 		<div class="footer-bottom">&copy; 2026 Boomer Items. T&#252;m haklar&#305; sakl&#305;d&#305;r. Bu site
 			ETB&#304;S'e kay&#305;tl&#305;d&#305;r.</div>
 	</footer>
+
+	<!-- PayTR Ödeme Entegrasyonu -->
+	<script src="/paytr-helper.js"></script>
+	<script>
+		(function () {
+			var handledToken = '';
+			var queued = false;
+
+			var readOrderId = function () {
+				try {
+					return localStorage.getItem('lastOrderId') || '';
+				} catch (e) {
+					return '';
+				}
+			};
+
+			var closeCheckoutModal = function () {
+				var backdrop = document.querySelector('.checkout-modal-backdrop');
+				if (backdrop) {
+					backdrop.style.display = 'none';
+				}
+				document.body.style.removeProperty('overflow');
+			};
+
+			var syncPaytrOverlay = function () {
+				var iframe = document.querySelector('.paytr-iframe-container iframe#paytriframe, iframe#paytriframe');
+				if (!iframe || !iframe.src) return;
+
+				var match = iframe.src.match(/\/odeme\/guvenli\/([^/?#]+)/i);
+				var token = match ? match[1] : '';
+				if (!token || token === handledToken) return;
+				if (!window.PayTRHelper || typeof window.PayTRHelper.openIframe !== 'function') return;
+
+				handledToken = token;
+				closeCheckoutModal();
+				window.PayTRHelper.openIframe(token, readOrderId());
+			};
+
+			var queueSyncPaytrOverlay = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					syncPaytrOverlay();
+				});
+			};
+
+			document.addEventListener('DOMContentLoaded', function () {
+				queueSyncPaytrOverlay();
+				if (window.MutationObserver) {
+					new MutationObserver(queueSyncPaytrOverlay).observe(document.body, { childList: true, subtree: true });
+				}
+				setTimeout(queueSyncPaytrOverlay, 800);
+				setTimeout(queueSyncPaytrOverlay, 1800);
+			});
+		})();
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var detailCache = {};
+			var detailPromiseCache = {};
+			var queued = false;
+
+			var getAuthHeaders = function () {
+				var headers = { 'Accept': 'application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
+				return headers;
+			};
+
+			var getOrderDetail = function (orderId) {
+				if (!orderId) return Promise.resolve(null);
+				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
+				if (detailPromiseCache[orderId]) return detailPromiseCache[orderId];
+				detailPromiseCache[orderId] = fetch('/api/orders/' + encodeURIComponent(orderId), {
+					headers: getAuthHeaders()
+				})
+					.then(function (response) { return response.ok ? response.json() : null; })
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () {
+						detailCache[orderId] = null;
+						return null;
+					});
+				return detailPromiseCache[orderId];
+			};
+
+			var ensureOrderItemsBlock = function (contentColumn) {
+				if (!contentColumn) return null;
+				var shell = contentColumn.querySelector('.admin-order-items');
+				if (!shell) {
+					shell = document.createElement('div');
+					shell.className = 'admin-order-items';
+					shell.style.marginBottom = '16px';
+					shell.innerHTML = '<div class="admin-order-items-label">Ürünler</div><div class="admin-order-items-list"><div class="admin-order-items-empty">Yükleniyor...</div></div>';
+					contentColumn.insertBefore(shell, contentColumn.firstChild);
+				}
+				return shell.querySelector('.admin-order-items-list');
+			};
+
+			var renderOrderItems = function (contentColumn, detail) {
+				var list = ensureOrderItemsBlock(contentColumn);
+				if (!list) return;
+
+				var items = Array.isArray(detail && detail.items) ? detail.items : [];
+				if (!items.length) {
+					list.innerHTML = '<div class="admin-order-items-empty">Ürün bulunamadı</div>';
+					return;
+				}
+
+				list.innerHTML = items.map(function (item) {
+					var qty = Math.max(1, parseInt(item.quantity || 1, 10) || 1);
+					var name = String(item.product_name || item.title || item.name || 'Ürün');
+					var variant = String(item.variant_color || item.variant_name || '').trim();
+					var image = String(item.product_img || item.img || item.image || '/fallback.png');
+					var total = parseFloat(item.line_total || (item.unit_price || item.price || 0) * qty || 0);
+					var totalText = total > 0 ? total.toLocaleString('tr-TR') + ' ₺' : '';
+					return ''
+						+ '<div class="admin-order-item-line">'
+						+ '<img class="admin-order-item-thumb" src="' + image.replace(/"/g, '&quot;') + '" alt="">'
+						+ '<div class="admin-order-item-meta">'
+						+ '<strong>' + qty + 'x</strong> ' + name
+						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ (totalText ? ' <span style="display:block;color:#0f172a;font-weight:700;margin-top:4px;">' + totalText + '</span>' : '')
+						+ '</div>'
+						+ '</div>';
+				}).join('');
+			};
+
+			var enhanceAdminOrderCards = function () {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				if (!title || String(title.textContent || '').toLowerCase().indexOf('sip') === -1) return;
+
+				var cards = document.querySelectorAll('.admin-view .admin-order-card');
+				Array.prototype.slice.call(cards).forEach(function (card) {
+					var orderIdMatch = String(card.textContent || '').match(/\bBM[A-Z0-9]{10}\b/i);
+					var orderId = orderIdMatch ? orderIdMatch[0].toUpperCase() : '';
+					if (!orderId) return;
+
+					var grid = card.querySelector('.admin-order-grid');
+					var contentColumn = grid && grid.children && grid.children[1] ? grid.children[1] : null;
+					if (!contentColumn) return;
+
+					ensureOrderItemsBlock(contentColumn);
+					if (card.dataset.orderItemsBound === '1') return;
+					card.dataset.orderItemsBound = '1';
+
+					getOrderDetail(orderId).then(function (detail) {
+						renderOrderItems(contentColumn, detail);
+					});
+				});
+			};
+
+			var queueEnhanceAdminOrderCards = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceAdminOrderCards();
+				});
+			};
+
+			queueEnhanceAdminOrderCards();
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceAdminOrderCards).observe(document.body, { childList: true, subtree: true });
+			}
+			setTimeout(queueEnhanceAdminOrderCards, 700);
+			setTimeout(queueEnhanceAdminOrderCards, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var queued = false;
+			var detailCache = {};
+
+			var authHeaders = function () {
+				var headers = { Accept: 'application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
+				return headers;
+			};
+
+			var fetchOrderDetail = function (orderId) {
+				if (!orderId) return Promise.resolve(null);
+				if (detailCache[orderId]) return Promise.resolve(detailCache[orderId]);
+				return fetch('/api/orders/' + encodeURIComponent(orderId), { headers: authHeaders() })
+					.then(function (response) { return response.ok ? response.json() : null; })
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () { return null; });
+			};
+
+			var ensureBlock = function (host) {
+				if (!host) return null;
+				var shell = host.querySelector('.admin-order-items-force');
+				if (!shell) {
+					shell = document.createElement('div');
+					shell.className = 'admin-order-items admin-order-items-force';
+					shell.style.marginBottom = '16px';
+					shell.innerHTML = '<div class="admin-order-items-label">Ürünler</div><div class="admin-order-items-list"><div class="admin-order-items-empty">Yükleniyor...</div></div>';
+					host.insertBefore(shell, host.firstChild);
+				}
+				return shell.querySelector('.admin-order-items-list');
+			};
+
+			var renderItems = function (host, detail) {
+				var list = ensureBlock(host);
+				if (!list) return;
+
+				var items = Array.isArray(detail && detail.items) ? detail.items : [];
+				if (!items.length) {
+					list.innerHTML = '<div class="admin-order-items-empty">Ürün bulunamadı</div>';
+					return;
+				}
+
+				list.innerHTML = items.map(function (item) {
+					var qty = Math.max(1, parseInt(item.quantity || 1, 10) || 1);
+					var name = String(item.product_name || item.title || item.name || 'Ürün');
+					var variant = String(item.variant_color || item.variant_name || '').trim();
+					var image = String(item.product_img || item.img || item.image || '/fallback.png');
+					var total = parseFloat(item.line_total || ((item.unit_price || item.price || 0) * qty) || 0);
+					var totalText = total > 0 ? total.toLocaleString('tr-TR') + ' ₺' : '';
+					return ''
+						+ '<div class="admin-order-item-line">'
+						+ '<img class="admin-order-item-thumb" src="' + image.replace(/"/g, '&quot;') + '" alt="">'
+						+ '<div class="admin-order-item-meta">'
+						+ '<strong>' + qty + 'x</strong> ' + name
+						+ (variant ? ' <span style="color:#64748b;">(' + variant + ')</span>' : '')
+						+ (totalText ? ' <span style="display:block;color:#0f172a;font-weight:700;margin-top:4px;">' + totalText + '</span>' : '')
+						+ '</div>'
+						+ '</div>';
+				}).join('');
+			};
+
+			var enhanceOrdersForce = function () {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				if (!title || String(title.textContent || '').toLowerCase().indexOf('sip') === -1) return;
+
+				var cards = document.querySelectorAll('.admin-view .admin-order-card');
+				Array.prototype.slice.call(cards).forEach(function (card) {
+					var match = String(card.textContent || '').match(/\bBM[A-Z0-9]{10}\b/i);
+					var orderId = match ? match[0].toUpperCase() : '';
+					if (!orderId) return;
+
+					var controlBox = Array.prototype.slice.call(card.querySelectorAll('div')).find(function (node) {
+						return !!node.querySelector('select, input');
+					});
+					if (!controlBox) return;
+
+					var host = controlBox.parentElement || controlBox;
+					var list = ensureBlock(host);
+					if (card.dataset.orderItemsForceBound === '1') return;
+					card.dataset.orderItemsForceBound = '1';
+
+					fetchOrderDetail(orderId).then(function (detail) {
+						if (!detail) {
+							if (list) list.innerHTML = '<div class="admin-order-items-empty">Sipariş detayı alınamadı</div>';
+							return;
+						}
+						renderItems(host, detail);
+					});
+				});
+			};
+
+			var queueEnhanceOrdersForce = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceOrdersForce();
+				});
+			};
+
+			queueEnhanceOrdersForce();
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceOrdersForce).observe(document.body, { childList: true, subtree: true });
+			}
+			setTimeout(queueEnhanceOrdersForce, 700);
+			setTimeout(queueEnhanceOrdersForce, 1600);
+		});
+	</script>
 </body>
 
 </html>
