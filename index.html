@@ -519,7 +519,7 @@
 		/* MOBILE: Bottom Padding Fix for Drawers */
 		@media (max-width: 768px) {
 			:root {
-				--mobile-banner-height: calc(56px + env(safe-area-inset-top, 0px));
+				--mobile-banner-height: calc(42px + env(safe-area-inset-top, 0px));
 				--mobile-header-height: 62px;
 				--mobile-sticky-offset: calc(var(--mobile-banner-height) + var(--mobile-header-height));
 			}
@@ -1494,11 +1494,13 @@
 
 			.hero-section {
 				min-height: calc(100svh - var(--mobile-sticky-offset)) !important;
+				margin-top: -10px !important;
+				padding-top: 0 !important;
 			}
 
 			.hero-content {
 				margin-top: 0 !important;
-				padding-top: 24px !important;
+				padding-top: 8px !important;
 			}
 		}
 
@@ -1786,6 +1788,10 @@
 				padding-right: 46px !important;
 			}
 
+			.top-shipping-banner .banner-track-btn {
+				display: none !important;
+			}
+
 			.top-shipping-banner .order-track-fab {
 				position: absolute !important;
 				top: 7px !important;
@@ -1824,8 +1830,8 @@
 
 			.top-shipping-banner {
 				height: auto !important;
-				min-height: calc(56px + env(safe-area-inset-top, 0px)) !important;
-				padding: calc(8px + env(safe-area-inset-top, 0px)) 132px 8px 0 !important;
+				min-height: var(--mobile-banner-height) !important;
+				padding: env(safe-area-inset-top, 0px) 0 0 0 !important;
 				align-items: center !important;
 			}
 
@@ -1951,29 +1957,39 @@
 				flex: 1 1 0 !important;
 			}
 
-			.top-shipping-banner .order-track-fab {
-				position: absolute !important;
-				top: 50% !important;
-				right: 10px !important;
-				transform: translateY(-50%) !important;
-				width: auto !important;
-				height: 30px !important;
-				min-width: 0 !important;
-				min-height: 30px !important;
-				padding: 0 10px !important;
-				border-radius: 999px !important;
-				font-size: 0.64rem !important;
-				font-weight: 900 !important;
-				letter-spacing: 0.03em !important;
-				text-transform: uppercase !important;
-				gap: 6px !important;
+			.app-header .header-right .order-track-fab,
+			.app-header.mobile-only .header-right .order-track-fab,
+			header.mobile-only .header-right .order-track-fab {
+				position: static !important;
+				transform: none !important;
+				width: 44px !important;
+				height: 44px !important;
+				min-width: 44px !important;
+				min-height: 44px !important;
+				padding: 0 !important;
+				border-radius: 14px !important;
+				font-size: 0 !important;
+				gap: 0 !important;
 				display: inline-flex !important;
 				align-items: center !important;
 				justify-content: center !important;
-				white-space: nowrap !important;
+				background: rgba(255, 255, 255, 0.96) !important;
+				color: #111827 !important;
+				box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14) !important;
+				border: 1px solid rgba(226, 232, 240, 0.95) !important;
 			}
 
-			.top-shipping-banner .order-track-fab .track-label {
+			.app-header .header-right .order-track-fab svg,
+			.app-header.mobile-only .header-right .order-track-fab svg,
+			header.mobile-only .header-right .order-track-fab svg {
+				width: 18px !important;
+				height: 18px !important;
+				stroke-width: 1.9 !important;
+			}
+
+			.app-header .header-right .order-track-fab .track-label,
+			.app-header.mobile-only .header-right .order-track-fab .track-label,
+			header.mobile-only .header-right .order-track-fab .track-label {
 				display: inline !important;
 			}
 
@@ -2559,29 +2575,27 @@
 				fab.href = '/siparis-takip.html';
 				fab.setAttribute('aria-label', 'Siparisim Nerede');
 				fab.setAttribute('title', 'Siparisim Nerede');
-				fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"></path><path d="M5.5 7 12 10.6 18.5 7"></path><path d="M12 10.6v9.9"></path></svg><span class="track-label">Siparisim Nerede</span>';
-				var mobileBanner = window.innerWidth <= 900 ? document.querySelector('.top-shipping-banner') : null;
-				(mobileBanner || document.body).appendChild(fab);
+				fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"></path><path d="M5.5 7 12 10.6 18.5 7"></path><path d="M12 10.6v9.9"></path></svg>';
+				document.body.appendChild(fab);
 			} catch (error) { }
 		});
 	</script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
-			var moveFabToBanner = function () {
-				if (window.innerWidth > 768) return;
+			var moveFabToHeader = function () {
 				var fab = document.querySelector('.order-track-fab');
-				var banner = document.querySelector('.top-shipping-banner');
-				if (!fab || !banner) return;
-				if (fab.parentElement !== banner) {
-					banner.appendChild(fab);
+				var headerRight = document.querySelector('.app-header .header-right, .app-header.mobile-only .header-right, header.mobile-only .header-right');
+				if (!fab || !headerRight) return;
+				if (fab.parentElement !== headerRight) {
+					headerRight.appendChild(fab);
 				}
 			};
 
-			moveFabToBanner();
-			window.addEventListener('resize', moveFabToBanner);
-			setTimeout(moveFabToBanner, 200);
-			setTimeout(moveFabToBanner, 800);
-			setTimeout(moveFabToBanner, 1600);
+			moveFabToHeader();
+			window.addEventListener('resize', moveFabToHeader);
+			setTimeout(moveFabToHeader, 200);
+			setTimeout(moveFabToHeader, 800);
+			setTimeout(moveFabToHeader, 1600);
 		});
 	</script>
 
@@ -4654,6 +4668,20 @@
 				box-shadow: 0 4px 16px rgba(15, 23, 42, 0.18) !important;
 			}
 
+			.header-right .order-track-fab {
+				position: static !important;
+				top: auto !important;
+				right: auto !important;
+				bottom: auto !important;
+				left: auto !important;
+				width: auto !important;
+				height: 34px !important;
+				min-width: 0 !important;
+				padding: 0 10px !important;
+				border-radius: 999px !important;
+				box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14) !important;
+			}
+
 			.products-grid {
 				gap: 12px !important;
 				padding: 10px 12px 18px !important;
@@ -4726,10 +4754,11 @@
 					button.style.display = 'none';
 				});
 
-				/* Siparis takip FAB - mobilde body'de kalsin, header-right gizli */
+				/* Siparis takip butonu mobilde beyaz header icinde kalsin */
 				var fab = document.querySelector('.order-track-fab');
-				if (fab && fab.parentElement !== document.body) {
-					document.body.appendChild(fab);
+				var headerRight = document.querySelector('.app-header .header-right, .app-header.mobile-only .header-right, header.mobile-only .header-right');
+				if (fab && headerRight && fab.parentElement !== headerRight) {
+					headerRight.appendChild(fab);
 				}
 
 				var mobileNavItems = document.querySelectorAll('.mobile-bottom-nav .nav-item');
