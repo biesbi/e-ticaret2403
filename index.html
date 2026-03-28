@@ -101,6 +101,42 @@
 			flex: 0 0 auto;
 		}
 
+		.banner-track-btn {
+			position: absolute;
+			right: 12px;
+			top: 50%;
+			transform: translateY(-50%);
+			z-index: 3;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 5px 11px;
+			background: rgba(255, 204, 0, 0.12);
+			border: 1px solid rgba(255, 204, 0, 0.55);
+			border-radius: 999px;
+			color: #ffcc00;
+			font-size: 0.75rem;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-decoration: none;
+			white-space: nowrap;
+			transition: background 0.18s, border-color 0.18s;
+		}
+		.banner-track-btn:hover {
+			background: rgba(255, 204, 0, 0.22);
+			border-color: rgba(255, 204, 0, 0.8);
+		}
+		.banner-track-btn svg {
+			width: 14px;
+			height: 14px;
+			stroke: #ffcc00;
+			stroke-width: 1.8;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+			fill: none;
+			flex: 0 0 auto;
+		}
+
 		.admin-zero-stock-filter {
 			display: inline-flex;
 			align-items: center;
@@ -7995,6 +8031,10 @@
 				<span class="top-shipping-banner-dot"></span>
 			</div>
 		</div>
+		<a href="/siparis-takip.html" class="banner-track-btn" aria-label="Sipariş Takibi">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"/><path d="M5.5 7 12 10.6 18.5 7"/><path d="M12 10.6v9.9"/></svg>
+			<span>Takip Et</span>
+		</a>
 	</div>
 	<noscript>
 		<div class="noscript-warning">
