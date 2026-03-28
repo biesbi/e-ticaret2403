@@ -1,9 +1,6 @@
 /**
  * PayTR Ödeme Helper Script
  * BoomerItems için PayTR yeni sekme entegrasyonu
- *
- * Ödeme yeni bir sekmede açılır; orijinal sekme polling + BroadcastChannel
- * ile sonucu takip eder ve ödeme tamamlanınca yönlendirme yapar.
  */
 
 (function() {
@@ -13,6 +10,7 @@
   let activeOrderId = '';
   let paymentPollInterval = null;
   let paymentChannel = null;
+  let paymentHandled = false; // overlay olmasa bile çift çalışmayı engeller
 
   // ─── Bekleme Overlay ────────────────────────────────────────────────────────
 
@@ -71,7 +69,6 @@
     div.innerHTML = createOverlayHTML();
     document.body.appendChild(div.firstElementChild);
 
-    // "Tekrar aç" butonu için URL sakla
     window.__paytrReopenTab = function() {
       window.open(paymentUrl, '_blank');
     };
@@ -106,7 +103,6 @@
         }
       };
     } catch(e) {
-      // BroadcastChannel desteklenmiyor (IE) - polling yeterli
       console.warn('BroadcastChannel desteklenmiyor, sadece polling kullanılıyor.');
     }
   }
@@ -118,10 +114,30 @@
     }
   }
 
+  // ─── localStorage fallback (sayfa yenilenmiş/overlay kapatılmış olsa da çalışır) ─
+
+  function listenLocalStorageResult() {
+    window.addEventListener('storage', function(e) {
+      if (e.key !== 'paytr_result') return;
+      try {
+        var data = JSON.parse(e.newValue || '{}');
+        // Yalnızca bu sekmenin aktif siparişine ait sonuçları işle
+        if (data.orderId && data.orderId === activeOrderId) {
+          if (data.status === 'success') {
+            handlePaymentSuccess(data.orderId);
+          } else if (data.status === 'failed') {
+            handlePaymentFailed(data.orderId);
+          }
+        }
+      } catch(err) {}
+    });
+  }
+
   // ─── Ödeme Sonucu İşleyiciler ───────────────────────────────────────────────
 
   function handlePaymentSuccess(orderId) {
-    if (!document.getElementById('paytr-waiting-overlay')) return; // zaten işlendi
+    if (paymentHandled) return;
+    paymentHandled = true;
     clearPolling();
     closePaymentChannel();
     setOverlayStatus('Ödeme onaylandı! Yönlendiriliyorsunuz...');
@@ -132,7 +148,8 @@
   }
 
   function handlePaymentFailed(orderId) {
-    if (!document.getElementById('paytr-waiting-overlay')) return;
+    if (paymentHandled) return;
+    paymentHandled = true;
     clearPolling();
     closePaymentChannel();
     hideWaitingOverlay();
@@ -204,8 +221,13 @@
   function startPayment(paymentUrl, orderId) {
     if (!paymentUrl || !orderId) return;
     activeOrderId = orderId;
+    paymentHandled = false;
 
-    try { localStorage.setItem('lastOrderId', orderId); } catch(e) {}
+    try {
+      localStorage.setItem('lastOrderId', orderId);
+      // Önceki sonuç varsa temizle
+      localStorage.removeItem('paytr_result');
+    } catch(e) {}
 
     // 1) Yeni sekme aç
     window.open(paymentUrl, '_blank');
@@ -220,10 +242,13 @@
     // 3) Orijinal sekmede bekleme ekranı göster
     showWaitingOverlay(paymentUrl);
 
-    // 4) BroadcastChannel dinle (yeni sekme haber verir)
+    // 4) BroadcastChannel dinle
     openPaymentChannel(orderId);
 
-    // 5) Polling başlat
+    // 5) localStorage storage event dinle (fallback)
+    listenLocalStorageResult();
+
+    // 6) Polling başlat
     startPaymentPolling(orderId);
   }
 
@@ -249,18 +274,15 @@
           const orderId = data.id || data.order_id || (data.order && data.order.id) || payment.merchant_oid || '';
 
           if (payment.iframe_token) {
-            // Gerçek PayTR iframe → yeni sekme
             const paymentUrl = 'https://www.paytr.com/odeme/guvenli/' + payment.iframe_token;
             console.log('💳 PayTR iframe token bulundu, yeni sekme açılıyor...');
             setTimeout(() => startPayment(paymentUrl, orderId), 500);
 
           } else if (payment.payment_url) {
-            // Alternatif URL → yeni sekme
             console.log('🔗 Payment URL bulundu:', payment.payment_url);
             setTimeout(() => startPayment(payment.payment_url, orderId), 500);
 
           } else if (payment.mock) {
-            // Mock/test modu → yeni sekme
             const amount = data.total || 0;
             const mockUrl = '/paytr-test.html?order_id=' + orderId + '&amount=' + amount;
             console.log('🧪 Mock mode - yeni sekme açılıyor...');
@@ -286,7 +308,7 @@
 
   window.PayTRHelper = {
     startPayment: startPayment,
-    version: '2.0.0'
+    version: '2.1.0'
   };
 
 })();

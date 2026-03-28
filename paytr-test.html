@@ -112,13 +112,17 @@
           .then(function () {
             var isSuccess = (status === 'success');
             document.querySelector('.hint').textContent = isSuccess
-              ? 'Odeme basariyla tamamlandi. Bu sekme kapanacak...'
-              : 'Odeme basarisiz olarak kaydedildi. Bu sekmeyi kapatabilirsiniz.';
+              ? 'Odeme basariyla tamamlandi. Yonlendiriliyorsunuz...'
+              : 'Odeme basarisiz olarak kaydedildi. Ana sayfaya donuyorsunuz...';
             notifyMainTab(status);
-            // Başarılıysa 3 saniye sonra sekmeyi kapat
-            if (isSuccess) {
-              setTimeout(function () { window.close(); }, 3000);
-            }
+            // 2 saniye sonra yönlendir (başarılıysa order-success, değilse ana sayfa)
+            setTimeout(function () {
+              if (isSuccess) {
+                window.location.href = '/order-success.html?order_id=' + encodeURIComponent(orderId);
+              } else {
+                window.location.href = '/';
+              }
+            }, 2000);
           })
           .catch(function (err) {
             document.querySelector('.hint').textContent = 'Islem sirasinda bir hata olustu: ' + (err.message || 'Bilinmeyen hata') + '. Lutfen tekrar deneyin.';
