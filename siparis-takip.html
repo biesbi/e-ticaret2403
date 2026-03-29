@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Siparis Takibi | BoomerItems</title>
+  <title>Sipari&#351; Takibi | BoomerItems</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -392,35 +392,35 @@
   <div class="shell">
     <div class="topbar">
       <a class="brand" href="/"><img src="/Boomer.svg" alt="BoomerItems"></a>
-      <a class="back-link" href="/">Ana sayfaya don</a>
+      <a class="back-link" href="/">Ana sayfaya d&#246;n</a>
     </div>
     <div class="card hero">
       <section class="panel-main">
-        <div class="eyebrow">Siparis Takibi</div>
-        <h1 class="title">Siparisinizin nerede oldugunu aninda gorun</h1>
-        <p class="lead">Siparis numaranizi veya kargo takip numaranizi girin. Durum, tarih, toplam ve teslimat
-          bilgilerini tek ekranda gorebilirsiniz.</p>
+        <div class="eyebrow">Sipari&#351; Takibi</div>
+        <h1 class="title">Sipari&#351;inizin nerede oldu&#287;unu an&#305;nda g&#246;r&#252;n</h1>
+        <p class="lead">Sipari&#351; numaran&#305;z&#305; veya kargo takip numaran&#305;z&#305; girin. Durum, tarih, toplam ve teslimat
+          bilgilerini tek ekranda g&#246;rebilirsiniz.</p>
         <form class="tracker-form" id="trackerForm">
           <div>
-            <label class="label" for="trackingInput">Siparis No veya Kargo No</label>
-            <input id="trackingInput" class="input" type="text" placeholder="Orn: BM1234567890 veya kargo numarasi"
+            <label class="label" for="trackingInput">Sipari&#351; No veya Kargo No</label>
+            <input id="trackingInput" class="input" type="text" placeholder="&#214;rn: BM1234567890 veya kargo numaras&#305;"
               required>
           </div>
-          <button class="submit" type="submit">Siparisimi Sorgula</button>
+          <button class="submit" type="submit">Sipari&#351;imi Sorgula</button>
         </form>
         <div class="hint-grid">
-          <div class="hint"><strong>Siparis numarasi</strong><span>Satin alma sonrasinda ekranda ve e-postada gorunen
-              siparis kodunu kullanabilirsiniz.</span></div>
-          <div class="hint"><strong>Kargo takibi</strong><span>Kargoya verildiyse kargo takip numarasi ile de ayni
+          <div class="hint"><strong>Sipari&#351; numaras&#305;</strong><span>Sat&#305;n alma sonras&#305;nda ekranda ve e-postada g&#246;r&#252;nen
+              sipari&#351; kodunu kullanabilirsiniz.</span></div>
+          <div class="hint"><strong>Kargo takibi</strong><span>Kargoya verildiyse kargo takip numaras&#305; ile de ayn&#305;
               ekrandan sorgulama yapabilirsiniz.</span></div>
-          <div class="hint"><strong>Hizli sonuc</strong><span>Sorgu dogrudan sisteminizin aktif siparis takip API
-              endpointine baglanir.</span></div>
+          <div class="hint"><strong>H&#305;zl&#305; sonu&#231;</strong><span>Sorgu do&#287;rudan sisteminizin aktif sipari&#351; takip API
+              endpointine ba&#287;lan&#305;r.</span></div>
         </div>
       </section>
       <aside class="panel-side">
         <h2 class="side-title">Takip Sonucu</h2>
-        <div id="resultRoot" class="empty-state">Siparis durumunu gormek icin soldaki alana siparis numaranizi veya
-          kargo takip numaranizi yazin.</div>
+        <div id="resultRoot" class="empty-state">Sipari&#351; durumunu g&#246;rmek i&#231;in soldaki alana sipari&#351; numaran&#305;z&#305; veya
+          kargo takip numaran&#305;z&#305; yaz&#305;n.</div>
       </aside>
     </div>
   </div>
@@ -496,6 +496,73 @@
       const preset = params.get('q');
       if (preset) { input.value = preset; fetchOrder(preset); }
     })();
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var replacements = [
+        ['Siparis Alindi', 'Sipariş Alındı'],
+        ['Hazirlaniyor', 'Hazırlanıyor'],
+        ['Iptal Edildi', 'İptal Edildi'],
+        ['Henuz kargoya verilmedi', 'Henüz kargoya verilmedi'],
+        ['Sorun yasarsaniz iletisim sayfasindan bizimle baglantiya gecebilirsiniz.', 'Sorun yaşarsanız iletişim sayfasından bizimle bağlantıya geçebilirsiniz.'],
+        ['Siparisiniz sorgulaniyor...', 'Siparişiniz sorgulanıyor...'],
+        ['Siparis bulunamadi. Lutfen siparis numaranizi veya kargo takip numaranizi kontrol edip tekrar deneyin.', 'Sipariş bulunamadı. Lütfen sipariş numaranızı veya kargo takip numaranızı kontrol edip tekrar deneyin.'],
+        ['Cok fazla sorgu yaptiniz. Lutfen birkas dakika bekleyip tekrar deneyin.', 'Çok fazla sorgu yaptınız. Lütfen birkaç dakika bekleyip tekrar deneyin.'],
+        ['Sunucuda bir sorun olustu. Lutfen birkas dakika sonra tekrar deneyin.', 'Sunucuda bir sorun oluştu. Lütfen birkaç dakika sonra tekrar deneyin.'],
+        ['Beklenmeyen bir hata olustu. Lutfen tekrar deneyin.', 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.'],
+        ['Sunucuya baglanirken bir hata olustu. Internet baglantinizi kontrol edip tekrar deneyin.', 'Sunucuya bağlanırken bir hata oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin.'],
+        ['YurtiÃ§i Kargo', 'Yurtiçi Kargo'],
+        ['SÃ¼rat Kargo', 'Sürat Kargo'],
+        ['â‚º', '₺']
+      ];
+
+      var normalizeText = function (value) {
+        var output = String(value || '');
+        replacements.forEach(function (pair) {
+          if (output.indexOf(pair[0]) !== -1) {
+            output = output.split(pair[0]).join(pair[1]);
+          }
+        });
+        return output;
+      };
+
+      var normalizeTextNode = function (node) {
+        if (!node || node.nodeType !== 3) return;
+        var normalized = normalizeText(node.nodeValue);
+        if (normalized !== node.nodeValue) node.nodeValue = normalized;
+      };
+
+      var normalizeTree = function (root) {
+        if (!root) return;
+        if (root.nodeType === 3) {
+          normalizeTextNode(root);
+          return;
+        }
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+        var node = walker.nextNode();
+        while (node) {
+          normalizeTextNode(node);
+          node = walker.nextNode();
+        }
+      };
+
+      document.title = 'Sipariş Takibi | BoomerItems';
+      normalizeTree(document.body);
+
+      if (window.MutationObserver) {
+        new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            if (mutation.type === 'characterData') {
+              normalizeTextNode(mutation.target);
+              return;
+            }
+            Array.prototype.forEach.call(mutation.addedNodes || [], function (node) {
+              normalizeTree(node);
+            });
+          });
+        }).observe(document.body, { subtree: true, childList: true, characterData: true });
+      }
+    });
   </script>
 </body>
 

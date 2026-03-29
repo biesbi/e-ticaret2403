@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hakkimizda | BoomerItems</title>
+    <title>Hakk&#305;m&#305;zda | BoomerItems</title>
     <meta name="description"
         content="BoomerItems hakkinda bilgi edinin. LEGO setleri, diecast urunler ve koleksiyon figurlari icin guvenilir koleksiyon magazaniz.">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon_zoomed.png">
@@ -313,6 +313,11 @@
             gap: 22px;
         }
 
+        .focus-grid {
+            grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+            align-items: stretch;
+        }
+
         .panel h2 {
             margin: 0 0 12px;
             font-size: 1.4rem;
@@ -342,6 +347,10 @@
             min-height: 100%;
             background: linear-gradient(135deg, #fff9e3 0%, #ffffff 100%);
             border: 1px solid #f5e6a7;
+        }
+
+        .focus-card {
+            min-height: 100%;
         }
 
         .quote-text {
@@ -553,6 +562,7 @@
 
             .hero,
             .content-grid,
+            .focus-grid,
             .site-footer-inner {
                 grid-template-columns: 1fr;
                 display: grid;
@@ -719,55 +729,55 @@
 </head>
 
 <body>
-    <div class="top-shipping-banner" aria-label="Kargo kampanyasi duyuru bandi">
+    <div class="top-shipping-banner" aria-label="Kargo kampanyası duyuru bandı">
         <div class="top-shipping-banner-track">
             <div class="top-shipping-banner-text">
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
             </div>
             <div class="top-shipping-banner-text">
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
-                <strong>2500 TL UZERI KARGO BEDAVA</strong>
+                <strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong>
                 <span class="top-shipping-banner-dot"></span>
-                <span>2500 TL VE UZERI SIPARISLERDE UCRETSIZ KARGO</span>
+                <span>2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE &#220;CRETS&#304;Z KARGO</span>
                 <span class="top-shipping-banner-dot"></span>
             </div>
         </div>
     </div>
     <div class="top-banner">
         <div class="top-banner-track">
-            <div class="top-banner-text"><strong>2500 TL UZERI KARGO BEDAVA</strong> • 2500 TL VE UZERI SIPARISLERDE
-                UCRETSIZ KARGO • </div>
-            <div class="top-banner-text"><strong>2500 TL UZERI KARGO BEDAVA</strong> • 2500 TL VE UZERI SIPARISLERDE
-                UCRETSIZ KARGO • </div>
+            <div class="top-banner-text"><strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong> • 2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE
+                &#220;CRETS&#304;Z KARGO • </div>
+            <div class="top-banner-text"><strong>2500 TL &#220;ZER&#304; KARGO BEDAVA</strong> • 2500 TL VE &#220;ZER&#304; S&#304;PAR&#304;&#350;LERDE
+                &#220;CRETS&#304;Z KARGO • </div>
         </div>
     </div>
 
     <header class="site-header">
         <div class="site-header-inner">
             <a class="brand" href="/"><img src="/Boomer.svg" alt="Boomer Items"></a>
-            <nav class="nav-links" aria-label="Ana menu">
+            <nav class="nav-links" aria-label="Ana menü">
                 <a class="nav-link" href="/">ANA SAYFA</a>
-                <a class="nav-link" href="/#categories">URUNLER</a>
-                <a class="nav-link active" href="/hakkimizda.html">BIZ KIMIZ</a>
-                <a class="nav-link" href="/iletisim.html">ILETISIM</a>
+                <a class="nav-link" href="/#categories">&#220;R&#220;NLER</a>
+                <a class="nav-link active" href="/hakkimizda.html">B&#304;Z K&#304;M&#304;Z</a>
+                <a class="nav-link" href="/iletisim.html">&#304;LET&#304;&#350;&#304;M</a>
             </nav>
 
         </div>
@@ -777,22 +787,22 @@
         <section class="hero">
             <div class="hero-card">
                 <div class="eyebrow">BoomerItems Hikayesi</div>
-                <h1>Koleksiyon tutkusunu duzgun bir yapida sunuyoruz.</h1>
-                <p>BoomerItems, LEGO setleri, diecast urunler ve figur koleksiyonlarini daha secili, daha guvenilir ve
-                    daha temiz bir deneyimle sunmak icin kuruldu.</p>
+                <h1>Koleksiyon tutkusunu doğru bir yapıda sunuyoruz.</h1>
+                <p>Boomer Items, LEGO setleri, diecast modeller ve figür koleksiyonlarını daha seçili, daha güvenilir ve
+                    daha temiz bir deneyimle sunmak için kuruldu. Koleksiyon dünyasını sadece ürün değil, bir sistem olarak ele alıyoruz.</p>
             </div>
             <div class="hero-grid">
                 <div class="hero-card mini-card">
-                    <strong>Secili urun yapisi</strong>
-                    <span>Kalite, sunum ve koleksiyon degeri on planda tutulur.</span>
+                    <strong>Seçili ürün yapısı</strong>
+                    <span>Kalite, özgünlük ve koleksiyon değeri taşıyan ürünler ön planda tutulur.</span>
                 </div>
                 <div class="hero-card mini-card">
-                    <strong>Guven odakli ilerleme</strong>
-                    <span>Odeme, destek ve urun bilgisinde netlik hedeflenir.</span>
+                    <strong>Güven odaklı ilerleme</strong>
+                    <span>Ödeme, teslimat ve ürün bilgisi süreçlerinde şeffaflık ve netlik esas alınır.</span>
                 </div>
                 <div class="hero-card mini-card">
                     <strong>Uzun vadeli marka dili</strong>
-                    <span>Sadece vitrin degil, tutarli bir koleksiyon markasi insa edilir.</span>
+                    <span>Sadece satış değil, sürdürülebilir ve güven veren bir koleksiyon markası inşa edilir.</span>
                 </div>
             </div>
         </section>
@@ -802,39 +812,35 @@
                 <h2>Biz Kimiz</h2>
                 <div class="story-list">
                     <div class="story-card">
-                        <strong>Koleksiyon merkezli dusunce</strong>
-                        <p>BoomerItems sadece urun satan bir alan degil; secim mantigi, sunum dili ve urun hissiyle
-                            koleksiyon dunyasina odaklanan bir yapidir.</p>
+                        <strong>Koleksiyon merkezli düşünce</strong>
+                        <p>Boomer Items sadece ürün satan bir platform değil; seçim mantığı, sunum dili ve ürün hissiyle
+                            koleksiyon dünyasına odaklanan bir yapıdır.</p>
                     </div>
                     <div class="story-card">
-                        <strong>LEGO, diecast ve figur ekseni</strong>
-                        <p>Yapim tutkusu, detay sevgisi ve karakter odakli koleksiyon anlayisi ayni cizgide
-                            bulusturulur.</p>
+                        <strong>LEGO, diecast ve figür ekseni</strong>
+                        <p>Detay tutkusu, karakter odaklı yaklaşım ve koleksiyon bilinci aynı çizgide buluşur.</p>
                     </div>
                     <div class="story-card">
-                        <strong>Dijital guc + hobi kulturu</strong>
-                        <p>Birvit Danismanlik bunyesinde gelisen marka, dijital pazarlama gucunu hobi urunleriyle
-                            birlestirir.</p>
+                        <strong>Dijital güç + hobi kültürü</strong>
+                        <p>Birvit Danışmanlık bünyesinde gelişen marka, dijital gücü koleksiyon kültürüyle birleştirir.</p>
                     </div>
                 </div>
             </div>
 
             <div class="panel quote-card">
-                <div class="quote-text">“Hayal gucu, insa edilebilen en buyuk yapidir. <span>Biz sadece dogru parcalari
-                        sunuyoruz.</span>”</div>
+                <div class="quote-text">Hayal gücü, inşa edilebilen en büyük yapıdır. <span>Biz sadece doğru parçaları
+                        sunuyoruz.</span></div>
             </div>
         </section>
 
-        <section class="content-grid" style="margin-top: 22px;">
-            <div class="panel">
-                <h2>Nasil Calisiyoruz</h2>
-                <p>Urun seciminde orijinallik, durum kalitesi ve koleksiyon degeri temel kriterlerdir. Sunulan her urun,
-                    markanin cizgisine uygun bir secimden gecer.</p>
+        <section class="content-grid focus-grid" style="margin-top: 22px;">
+            <div class="panel focus-card">
+                <h2>Nasıl Çalışıyoruz</h2>
+                <p>Ürün seçiminde özgünlük, kalite ve koleksiyon değeri temel kriterlerdir. Sunulan her ürün, markanın çizgisine uygun olarak özenle seçilir ve kullanıcıya doğru şekilde sunulur.</p>
             </div>
-            <div class="panel">
+            <div class="panel focus-card">
                 <h2>Nereye Gidiyoruz</h2>
-                <p>BoomerItems, secili urun anlayisi ve guven veren marka diliyle koleksiyon dunyasinda daha guclu, daha
-                    taninir ve daha tutarli bir yer edinmeyi hedefler.</p>
+                <p>Boomer Items, seçili ürün anlayışı ve güven odaklı marka diliyle koleksiyon dünyasında daha güçlü, daha bilinir ve daha sürdürülebilir bir yapı oluşturmayı hedefler.</p>
             </div>
         </section>
     </main>
@@ -844,49 +850,59 @@
             <div class="footer-brand">
                 <img src="/Boomer.svg" alt="Boomer Items">
                 <h2>BOOMER ITEMS</h2>
-                <p>Koleksiyon tutkunu buyutecek essiz parcalar BoomerItems'ta seni bekliyor.</p>
+                <p>Koleksiyon tutkusunu b&#252;y&#252;tecek e&#351;siz par&#231;alar Boomer Items'ta seni bekliyor.</p>
             </div>
             <div class="footer-links">
                 <div>
                     <h5>Kurumsal</h5>
                     <ul>
-                        <li><a href="/hakkimizda.html">Hakkimizda</a></li>
-                        <li><a href="/iletisim.html">Iletisim</a></li>
-                        <li><a href="/siparis-takip.html">Siparis Takibi</a></li>
+                        <li><a href="/hakkimizda.html">Hakk&#305;m&#305;zda</a></li>
+                        <li><a href="/iletisim.html">&#304;leti&#351;im</a></li>
+                        <li><a href="/siparis-takip.html">Sipari&#351; Takibi</a></li>
                         <li><a href="/collector.html">Koleksiyon</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h5>Sozlesmeler</h5>
+                    <h5>S&#246;zle&#351;meler</h5>
                     <ul>
-                        <li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Satis Sozlesmesi</a></li>
-                        <li><a href="/iade-cayma-kosullari.html">Iade ve Cayma Kosullari</a></li>
-                        <li><a href="/gizlilik-politikasi.html">Gizlilik Politikasi</a></li>
-                        <li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBIS Bilgisi (PDF)</a>
+                        <li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Sat&#305;&#351; S&#246;zle&#351;mesi</a></li>
+                        <li><a href="/iade-cayma-kosullari.html">&#304;ade ve Cayma Ko&#351;ullar&#305;</a></li>
+                        <li><a href="/gizlilik-politikasi.html">Gizlilik Politikas&#305;</a></li>
+                        <li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETB&#304;S Bilgisi (PDF)</a>
                         </li>
                     </ul>
                 </div>
             </div>
             <div class="footer-contact">
-                <h5>Iletisim &amp; Sirket</h5>
+                <h5>&#304;leti&#351;im &amp; &#350;irket</h5>
                 <p>boomeritems@gmail.com</p>
                 <p><a href="tel:+905551234567" class="footer-phone">0262 645 00 00</a></p>
-                <p>DARICA / KOCAELI, TURKIYE</p>
+                <p>Dar&#305;ca / Kocaeli, T&#252;rkiye</p>
                 <div class="etbis-badge">
-                    <a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETBIS'e Kayitli Isletme</a>
+                    <a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETB&#304;S'e Kay&#305;tl&#305; &#304;&#351;letme</a>
                 </div>
             </div>
         </div>
-        <div class="footer-bottom">&copy; 2026 Boomer Items. Tum haklari saklidir. Bu site ETBIS'e kayitlidir.</div>
+        <div class="footer-bottom">&copy; 2026 Boomer Items. T&#252;m haklar&#305; sakl&#305;d&#305;r. Bu site ETB&#304;S'e kay&#305;tl&#305;d&#305;r.</div>
     </footer>
 
     <footer class="site-footer">
         <div class="site-footer-inner">
             <div>Boomer Items</div>
             <div>boomeritems@gmail.com</div>
-            <div>© 2026 Tum haklari saklidir.</div>
+            <div>&copy; 2026 T&#252;m haklar&#305; sakl&#305;d&#305;r.</div>
         </div>
     </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.title = 'Hakkımızda | BoomerItems';
+
+            var siteFooterCopy = document.querySelector('.site-footer-inner div:last-child');
+            if (siteFooterCopy) {
+                siteFooterCopy.textContent = '© 2026 Tüm hakları saklıdır.';
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -1,6 +1,10 @@
 <?php
 
 final class PaytrService {
+    private static function generateMerchantOid(string $orderId): string {
+        return $orderId . time() . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+    }
+
     private static function cleanEnv(string $key, string $default = ''): string {
         $value = (string) env($key, $default);
         $value = trim($value);
@@ -99,13 +103,14 @@ final class PaytrService {
         }
 
         // İdempotency kontrolü: zaten işlenmiş callback'i tekrar işleme
-        $orderCheck = db()->prepare('SELECT id, payment_status, stock_state FROM orders WHERE id = ? LIMIT 1');
+        $orderCheck = db()->prepare('SELECT id, payment_status, stock_state FROM orders WHERE paytr_merchant_oid = ? LIMIT 1');
         $orderCheck->execute([$merchantOid]);
         $existingOrder = $orderCheck->fetch();
         if (!$existingOrder) {
             http_response_code(404);
             exit('FAILED');
         }
+        $orderId = (string) ($existingOrder['id'] ?? '');
         // Ödeme zaten işlenmişse tekrar işleme
         if (in_array($existingOrder['payment_status'] ?? '', ['paid', 'failed'], true)
             && ($existingOrder['stock_state'] ?? 'none') !== 'reserved') {
@@ -123,12 +128,12 @@ final class PaytrService {
              SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
              WHERE id = ?'
         );
-        $stmt->execute([$paymentStatus, $orderStatus, $merchantOid]);
+        $stmt->execute([$paymentStatus, $orderStatus, $orderId]);
 
         if ($status === 'success') {
-            StockService::finalizeReservedStock($merchantOid);
+            StockService::finalizeReservedStock($orderId);
         } else {
-            StockService::releaseReservedStock($merchantOid);
+            StockService::releaseReservedStock($orderId);
         }
 
         http_response_code(200);
@@ -181,7 +186,12 @@ final class PaytrService {
             ];
         }
 
-        $merchantOid = (string) $order['id'];
+        $orderId = (string) ($order['id'] ?? '');
+        if ($orderId === '') {
+            throw new RuntimeException('PAYTR icin siparis ID gerekli.');
+        }
+
+        $merchantOid = self::generateMerchantOid($orderId);
         $paymentAmount = (int) round(((float) ($order['total'] ?? 0)) * 100);
         $userName = (string) ($shippingAddress['fullname'] ?? '');
         $userAddress = implode(', ', array_filter([
@@ -210,8 +220,8 @@ final class PaytrService {
             'user_name' => $userName,
             'user_address' => $userAddress,
             'user_phone' => $userPhone,
-            'merchant_ok_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=success&order_id=' . urlencode($merchantOid),
-            'merchant_fail_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=failed&order_id=' . urlencode($merchantOid),
+            'merchant_ok_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=success&order_id=' . urlencode($orderId),
+            'merchant_fail_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=failed&order_id=' . urlencode($orderId),
             'timeout_limit' => $timeoutLimit,
             'currency' => $currency,
             'test_mode' => self::isTestMode() ? 1 : 0,
@@ -252,7 +262,7 @@ final class PaytrService {
 
     private static function resolveUserIp(): string {
         $explicit = self::cleanEnv('PAYTR_TEST_USER_IP');
-        if ($explicit !== '' && filter_var($explicit, FILTER_VALIDATE_IP)) {
+        if (self::isTestMode() && $explicit !== '' && filter_var($explicit, FILTER_VALIDATE_IP)) {
             return $explicit;
         }
 

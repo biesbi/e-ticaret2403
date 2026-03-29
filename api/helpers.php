@@ -202,6 +202,9 @@ function legacyProduct(array $product): array {
         'categoryId' => $product['category_id'] ?? ($product['categoryId'] ?? null),
         'brandId' => $product['brand_id'] ?? ($product['brandId'] ?? null),
         'desi' => isset($product['desi']) ? (float) $product['desi'] : 1.0,
+        'fixed_shipping_fee' => array_key_exists('fixed_shipping_fee', $product) && $product['fixed_shipping_fee'] !== null
+            ? (float) $product['fixed_shipping_fee']
+            : null,
         'pieces' => $pieces,
         'price' => isset($product['price']) ? (float) $product['price'] : 0.0,
         'oldPrice' => isset($product['old_price']) ? (float) $product['old_price'] : (isset($product['oldPrice']) ? (float) $product['oldPrice'] : 0.0),

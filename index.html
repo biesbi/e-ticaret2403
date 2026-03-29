@@ -122,10 +122,12 @@
 			white-space: nowrap;
 			transition: background 0.18s, border-color 0.18s;
 		}
+
 		.banner-track-btn:hover {
 			background: rgba(255, 204, 0, 0.22);
 			border-color: rgba(255, 204, 0, 0.8);
 		}
+
 		.banner-track-btn svg {
 			width: 14px;
 			height: 14px;
@@ -680,13 +682,14 @@
 			}
 
 			.product-detail-backdrop {
-				z-index: 16000 !important;
+				z-index: 19050 !important;
 			}
 
 			.product-detail-modal {
 				position: relative !important;
 				overflow-x: hidden !important;
 				overflow-y: auto !important;
+				z-index: 19060 !important;
 			}
 
 			.detail-images-section {
@@ -4746,6 +4749,27 @@
 		}
 	</style>
 	<script>
+		(function () {
+			if ('scrollRestoration' in history) {
+				try { history.scrollRestoration = 'manual'; } catch (e) { }
+			}
+
+			var resetInitialMobileScroll = function () {
+				if (window.innerWidth > 768) return;
+				if (window.location.hash) return;
+				window.scrollTo(0, 0);
+				document.documentElement.scrollTop = 0;
+				document.body.scrollTop = 0;
+			};
+
+			document.addEventListener('DOMContentLoaded', resetInitialMobileScroll);
+			window.addEventListener('load', resetInitialMobileScroll);
+			window.addEventListener('pageshow', function (event) {
+				if (event.persisted) resetInitialMobileScroll();
+			});
+		})();
+	</script>
+	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			var applyFinalMobileFixes = function () {
 				if (window.innerWidth > 768) return;
@@ -5014,15 +5038,18 @@
 					? '<strong>Stok Durumu:</strong> Bu \u00fcr\u00fcn t\u00fckenmi\u015ftir.'
 					: '<strong>Toplam Stok:</strong> ' + stock + ' adet';
 
-				Array.prototype.slice.call(host.querySelectorAll('div, p, span, small')).forEach(function (node) {
-					var text = String(node.textContent || '').replace(/\s+/g, ' ').trim();
-					if (!text || text.indexOf('Eklenebilir:') === -1 || text.indexOf('Sepette:') === -1) return;
+				var walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, null);
+				var textNode;
+				while ((textNode = walker.nextNode())) {
+					var rawText = String(textNode.nodeValue || '');
+					var text = rawText.replace(/\s+/g, ' ').trim();
+					if (!text || text.indexOf('Eklenebilir:') === -1 || text.indexOf('Sepette:') === -1) continue;
 
 					var cartMatch = text.match(/Sepette:\s*(\d+)/i);
 					var cartQty = Math.max(0, parseInt(cartMatch && cartMatch[1] || 0, 10) || 0);
 					var availableToAdd = Math.max(0, stock - cartQty);
-					node.textContent = text.replace(/Eklenebilir:\s*\d+/i, 'Eklenebilir: ' + availableToAdd);
-				});
+					textNode.nodeValue = rawText.replace(/Eklenebilir:\s*\d+/i, 'Eklenebilir: ' + availableToAdd);
+				}
 			};
 
 			var resolveDetailStocks = function () {
@@ -8118,7 +8145,7 @@
 	</footer>
 
 	<!-- PayTR Ödeme Entegrasyonu -->
-	<script src="/paytr-helper.js?v=20260329a"></script>
+	<script src="/paytr-helper.js?v=20260330a"></script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			var detailCache = {};
@@ -8349,6 +8376,160 @@
 			}
 			setTimeout(queueEnhanceOrdersForce, 700);
 			setTimeout(queueEnhanceOrdersForce, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var replacements = [
+				['GiriÅŸ Yap / Ãœye Ol', 'Giriş Yap / Üye Ol'],
+				['Tekrar HoÅŸ Geldin!', 'Tekrar Hoş Geldin!'],
+				['LEGO dÃ¼nyasÄ±na geri dÃ¶nmeye hazÄ±r mÄ±sÄ±n?', 'Koleksiyon dünyasına geri dönmeye hazır mısın?'],
+				['Åifre', 'Şifre'],
+				['HatalÄ± ÅŸifre veya e-posta. LÃ¼tfen kontrol edin.', 'Hatalı şifre veya e-posta. Lütfen kontrol edin.'],
+				['HesabÄ±n yok mu?', 'Hesabın yok mu?'],
+				['KayÄ±t Ol', 'Kayıt Ol'],
+				['SIPARIÅIM NEREDE?', 'SİPARİŞİM NEREDE?'],
+				['Koleksiyona KatÄ±l!', 'Koleksiyona Katıl!'],
+				['Ã–zel indirimler ve yeni setlerden ilk sen haberdar ol.', 'Özel indirimler ve yeni setlerden ilk sen haberdar ol.'],
+				['LEGO UstasÄ±', 'LEGO Ustası'],
+				['Zaten Ã¼ye misin?', 'Zaten üye misin?'],
+				['GiriÅŸ Yap', 'Giriş Yap'],
+				['SipariÅŸini takip etmek iÃ§in e-posta adresini veya sipariÅŸ numaranÄ± gir.', 'Siparişini takip etmek için e-posta adresini veya sipariş numaranı gir.'],
+				['SipariÅŸ No (Ã–rn: BM-XXXX) veya Kargo No', 'Sipariş No (Örn: BM-XXXX) veya Kargo No'],
+				['SipariÅŸ bulunamadÄ±.', 'Sipariş bulunamadı.'],
+				['SipariÅŸ AlÄ±ndÄ±', 'Sipariş Alındı'],
+				['Ä°ptal Edildi', 'İptal Edildi'],
+				['Geri DÃ¶n', 'Geri Dön'],
+				['Y?netim Paneline Git', 'Yönetim Paneline Git'],
+				['Ã‡Ä±kÄ±ÅŸ Yap', 'Çıkış Yap'],
+				['SÄ°PARÄ°ÅLERÄ°M', 'SİPARİŞLERİM'],
+				['HenÃ¼z bir sipariÅŸin bulunmuyor.', 'Henüz bir siparişin bulunmuyor.'],
+				['AlÄ±ndÄ±', 'Alındı'],
+				['AlÄ±ÅŸveriÅŸ Sepeti', 'Alışveriş Sepeti'],
+				['Sepetiniz ÅŸu an boÅŸ.', 'Sepetiniz şu an boş.'],
+				['AlÄ±ÅŸveriÅŸe BaÅŸla', 'Alışverişe Başla'],
+				['SatÄ±n Al', 'Satın Al'],
+				['GÃœVENLÄ° Ã–DEME', 'GÜVENLİ ÖDEME'],
+				['GÃ¼venli Ã–deme Paneli', 'Güvenli Ödeme Paneli'],
+				['LÃ¼tfen iÅŸlem tamamlanana kadar bu ekranÄ± kapatmayÄ±n.', 'Lütfen işlem tamamlanana kadar bu ekranı kapatmayın.'],
+				['Tebrikler, SipariÅŸiniz AlÄ±ndÄ±!', 'Tebrikler, Siparişiniz Alındı!'],
+				['MaceranÄ±z yakÄ±nda kapÄ±nÄ±zda olacak. DetaylarÄ± e-posta kutunuzda bulabilirsiniz.', 'Maceranız yakında kapınızda olacak. Detayları e-posta kutunuzda bulabilirsiniz.'],
+				['SÄ°PARÄ°Å NUMARASI', 'SİPARİŞ NUMARASI'],
+				['Teslimat & Ä°letiÅŸim', 'Teslimat & İletişim'],
+				['Ä°l (Åehir)', 'İl (Şehir)'],
+				['Ä°lÃ§e', 'İlçe'],
+				['SeÃ§iniz', 'Seçiniz'],
+				['Ã–rn: Cumhuriyet Mah.', 'Örn: Cumhuriyet Mah.'],
+				['Adres DetayÄ±', 'Adres Detayı'],
+				['Bina, KapÄ± No, Kat vb...', 'Bina, Kapı No, Kat vb...'],
+				['Hediye Paketi Ä°stiyorum', 'Hediye Paketi İstiyorum'],
+				['Ã–deme YÃ¶ntemi', 'Ödeme Yöntemi'],
+				['Kredi / Banka KartÄ±', 'Kredi / Banka Kartı'],
+				['Ã–demenizi', 'Ödemenizi'],
+				['Ã¼zerinden gÃ¼venli bir ÅŸekilde gerÃ§ekleÅŸtirebilirsiniz.', 'üzerinden güvenli bir şekilde gerçekleştirebilirsiniz.'],
+				['AlÄ±cÄ±:', 'Alıcı:'],
+				['SipariÅŸ numaranÄ±zÄ± aÃ§Ä±klamaya yazmayÄ± unutmayÄ±n.', 'Sipariş numaranızı açıklamaya yazmayı unutmayın.'],
+				['SipariÅŸ Ã–zeti', 'Sipariş Özeti'],
+				['Kargo Ãœcreti', 'Kargo Ücreti'],
+				['ÃœCRETSÄ°Z', 'ÜCRETSİZ'],
+				['Ä°ndirim', 'İndirim'],
+				['Ã–DEME ADIMINA GEÃ‡', 'ÖDEME ADIMINA GEÇ'],
+				['Ä°ÅLENÄ°YOR...', 'İŞLENİYOR...'],
+				['Ã–DEMEYÄ° TAMAMLA', 'ÖDEMEYİ TAMAMLA'],
+				['SSL KorumalÄ± GÃ¼venli Ã–deme', 'SSL Korumalı Güvenli Ödeme'],
+				['ÃœrÃ¼nler', 'Ürünler'],
+				['YÃ¼kleniyor...', 'Yükleniyor...'],
+				['ÃœrÃ¼n bulunamadÄ±', 'Ürün bulunamadı'],
+				['SipariÅŸ detayÄ± alÄ±namadÄ±', 'Sipariş detayı alınamadı']
+			];
+
+			var normalizeText = function (value) {
+				var output = String(value || '');
+				replacements.forEach(function (pair) {
+					if (output.indexOf(pair[0]) !== -1) {
+						output = output.split(pair[0]).join(pair[1]);
+					}
+				});
+				return output;
+			};
+
+			var normalizeElement = function (element) {
+				if (!element || element.nodeType !== 1) return;
+				['placeholder', 'title', 'aria-label', 'value'].forEach(function (attr) {
+					if (!element.hasAttribute || !element.hasAttribute(attr)) return;
+					var current = element.getAttribute(attr);
+					var normalized = normalizeText(current);
+					if (normalized !== current) {
+						element.setAttribute(attr, normalized);
+						if (attr in element) element[attr] = normalized;
+					}
+				});
+			};
+
+			var normalizeTextNode = function (node) {
+				if (!node || node.nodeType !== 3) return;
+				var current = node.nodeValue;
+				var normalized = normalizeText(current);
+				if (normalized !== current) {
+					node.nodeValue = normalized;
+				}
+			};
+
+			var normalizeTree = function (root) {
+				if (!root) return;
+				if (root.nodeType === 3) {
+					normalizeTextNode(root);
+					return;
+				}
+				normalizeElement(root);
+				var walker = document.createTreeWalker(root, NodeFilter.SHOW_ALL, null);
+				var node = walker.currentNode;
+				while (node) {
+					if (node.nodeType === 1) normalizeElement(node);
+					if (node.nodeType === 3) normalizeTextNode(node);
+					node = walker.nextNode();
+				}
+			};
+
+			var queued = false;
+			var runNormalize = function () {
+				queued = false;
+				document.title = normalizeText(document.title);
+				normalizeTree(document.body);
+			};
+
+			var queueNormalize = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(runNormalize);
+			};
+
+			queueNormalize();
+			if (window.MutationObserver) {
+				new MutationObserver(function (mutations) {
+					mutations.forEach(function (mutation) {
+						if (mutation.type === 'characterData') {
+							normalizeTextNode(mutation.target);
+							return;
+						}
+						if (mutation.type === 'attributes') {
+							normalizeElement(mutation.target);
+							return;
+						}
+						Array.prototype.forEach.call(mutation.addedNodes || [], function (node) {
+							normalizeTree(node);
+						});
+					});
+				}).observe(document.body, {
+					subtree: true,
+					childList: true,
+					characterData: true,
+					attributes: true,
+					attributeFilter: ['placeholder', 'title', 'aria-label', 'value']
+				});
+			}
+			setTimeout(queueNormalize, 700);
+			setTimeout(queueNormalize, 1600);
 		});
 	</script>
 </body>

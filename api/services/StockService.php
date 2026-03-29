@@ -126,6 +126,9 @@ final class StockService
                 'unit_price' => (float) ($product['price'] ?? 0),
                 'line_total' => 0.0,
                 'desi' => (int) ($product['desi'] ?? $item['desi'] ?? 1),
+                'fixed_shipping_fee' => array_key_exists('fixed_shipping_fee', $product) && $product['fixed_shipping_fee'] !== null
+                    ? (float) $product['fixed_shipping_fee']
+                    : null,
             ];
 
             if ($variantId !== null && $variantId !== '' && $supportsVariants) {

@@ -275,6 +275,68 @@ if ($id === 'retry-payment' && $method === 'POST') {
     ]);
 }
 
+// POST /orders/cancel-payment — bekleyen ödeme iptali ve stok iadesi
+if ($id === 'cancel-payment' && $method === 'POST') {
+    $data = body();
+    $orderId = trim((string) ($data['order_id'] ?? ''));
+    if ($orderId === '') error('Siparis ID gerekli.');
+
+    if (!preg_match('/^BM[0-9A-Fa-f]{10}$/', $orderId)) {
+        error('Gecersiz siparis ID formati.');
+    }
+
+    $authPayload = Auth::optional();
+
+    $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+    $stmt->execute([$orderId]);
+    $order = $stmt->fetch();
+    if (!$order) error('Siparis bulunamadi.', 404);
+
+    if ($order['user_id'] !== null) {
+        if ($authPayload === null) {
+            error('Bu siparis icin giris yapmaniz gerekli.', 401);
+        }
+        $isAdmin = ($authPayload['role'] ?? '') === 'admin';
+        $isOwner = (string) $order['user_id'] === (string) ($authPayload['sub'] ?? '');
+        if (!$isAdmin && !$isOwner) {
+            error('Bu siparise erisim yetkiniz yok.', 403);
+        }
+    }
+
+    if (!in_array($order['payment_status'] ?? '', ['pending', 'failed'], true)) {
+        ok([
+            'success' => true,
+            'order_id' => $orderId,
+            'message' => 'Siparis odeme iptaline uygun degil.',
+        ]);
+    }
+
+    $fields = [
+        'payment_status = ?',
+        'status = ?',
+        'updated_at = CURRENT_TIMESTAMP',
+    ];
+    $values = ['failed', 'cancelled'];
+
+    if (tableHasColumn('orders', 'paytr_token')) {
+        $fields[] = 'paytr_token = NULL';
+    }
+    if (tableHasColumn('orders', 'paytr_merchant_oid')) {
+        $fields[] = 'paytr_merchant_oid = NULL';
+    }
+
+    $values[] = $orderId;
+    db()->prepare('UPDATE orders SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($values);
+
+    orderApplyStockTransition($orderId, 'cancelled', 'failed');
+
+    ok([
+        'success' => true,
+        'order_id' => $orderId,
+        'message' => 'Odeme iptal edildi ve stok iade edildi.',
+    ]);
+}
+
 if ($id === null && $method === 'POST') {
     // Sipariş oluşturma rate limit: IP başına 5 dakikada max 10 sipariş
     RateLimit::check('order_create_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 10, 300);
@@ -394,16 +456,37 @@ if ($id === null && $method === 'POST') {
         }
 
         $totalDesi = 0.0;
+        $fixedShippingFee = 0.0;
         foreach ($items as $line) {
-            $totalDesi += max(1, (float) ($line['desi'] ?? 1)) * (int) ($line['quantity'] ?? 1);
+            $quantity = max(1, (int) ($line['quantity'] ?? 1));
+            $lineFixedShippingFee = $line['fixed_shipping_fee'] ?? null;
+
+            if ($lineFixedShippingFee !== null) {
+                $fixedShippingFee += max(0.0, (float) $lineFixedShippingFee) * $quantity;
+                continue;
+            }
+
+            $totalDesi += max(1, (float) ($line['desi'] ?? 1)) * $quantity;
         }
         // Kargo grubu otomatik hesaplanır, kullanıcı girdisi kabul edilmez
-        $shippingCalculation = calculateShippingFeeByDesi(
-            $totalDesi,
-            max(0.0, $subtotal - $discount),
-            null
-        );
-        $shippingFee = (float) ($shippingCalculation['fee'] ?? 0);
+        $shippingCalculation = $totalDesi > 0
+            ? calculateShippingFeeByDesi(
+                $totalDesi,
+                max(0.0, $subtotal - $discount),
+                null
+            )
+            : [
+                'cost' => 0.0,
+                'fee' => 0.0,
+                'shipping_fee' => 0.0,
+                'subtotal' => max(0.0, $subtotal - $discount),
+                'total' => max(0.0, $subtotal - $discount),
+                'carrier' => null,
+                'group_name' => null,
+                'group_id' => null,
+                'group' => null,
+            ];
+        $shippingFee = $fixedShippingFee + (float) ($shippingCalculation['fee'] ?? 0);
 
         $shippingAddress = [
             'fullname' => $customerName,

@@ -62,6 +62,7 @@ CREATE TABLE products (
   img LONGTEXT NULL,
   dimensions LONGTEXT NULL,
   desi INT NOT NULL DEFAULT 1,
+  fixed_shipping_fee DECIMAL(10,2) NULL DEFAULT NULL,
   stock INT NOT NULL DEFAULT 0,
   pieces INT NOT NULL DEFAULT 0,
   is_active TINYINT(1) NOT NULL DEFAULT 1,

@@ -11,6 +11,168 @@
   let paymentPollInterval = null;
   let paymentChannel = null;
   let paymentHandled = false; // overlay olmasa bile çift çalışmayı engeller
+  let inlinePaytrWasVisible = false;
+  let resetInProgress = false;
+  let storageListenerBound = false;
+  const CHECKOUT_SNAPSHOT_KEY = 'paytr_checkout_snapshot';
+  const INLINE_PAYTR_SELECTOR = '.paytr-iframe-container, .paytr-iframe, iframe#paytriframe';
+  const INLINE_PAYTR_CLOSE_SELECTOR = '.detail-close-btn, .checkout-close-btn, .modal-close-btn, .mfp-close, button[aria-label="Kapat"], button[aria-label="Close"], button[title="Kapat"]';
+
+  function getRememberedOrderId() {
+    if (activeOrderId) return activeOrderId;
+
+    try {
+      return localStorage.getItem('lastOrderId') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function clearCheckoutSessionStorage(orderId, keepSnapshot) {
+    try {
+      localStorage.removeItem('lastOrderId');
+      localStorage.removeItem('lastOrderTotal');
+      localStorage.removeItem('paytr_result');
+
+      if (keepSnapshot) {
+        return;
+      }
+
+      const raw = localStorage.getItem(CHECKOUT_SNAPSHOT_KEY);
+      if (!raw) return;
+
+      const snapshot = JSON.parse(raw);
+      if (!orderId || !snapshot.orderId || snapshot.orderId === orderId) {
+        localStorage.removeItem(CHECKOUT_SNAPSHOT_KEY);
+      }
+    } catch (e) {}
+  }
+
+  function hasInlinePaytrOpen() {
+    return !!document.querySelector(INLINE_PAYTR_SELECTOR);
+  }
+
+  function syncInlinePaytrState() {
+    if (paymentHandled) {
+      inlinePaytrWasVisible = false;
+      return;
+    }
+
+    if (document.querySelector('.order-success-page, .order-success')) {
+      inlinePaytrWasVisible = false;
+      return;
+    }
+
+    if (hasInlinePaytrOpen()) {
+      inlinePaytrWasVisible = true;
+      return;
+    }
+
+    if (!inlinePaytrWasVisible || resetInProgress) {
+      return;
+    }
+
+    const orderId = getRememberedOrderId();
+    inlinePaytrWasVisible = false;
+
+    if (!orderId) {
+      clearCheckoutSessionStorage('', false);
+      return;
+    }
+
+    resetCancelledCheckout(orderId);
+  }
+
+  function saveCheckoutSnapshot(orderId, options) {
+    try {
+      const snapshot = {
+        orderId: orderId || '',
+        savedAt: Date.now(),
+        cartItems: JSON.parse(localStorage.getItem('cartItems') || '[]')
+      };
+
+      if (options && typeof options.body === 'string') {
+        try {
+          snapshot.orderRequest = JSON.parse(options.body);
+        } catch (e) {}
+      }
+
+      localStorage.setItem(CHECKOUT_SNAPSHOT_KEY, JSON.stringify(snapshot));
+    } catch (e) {}
+  }
+
+  function restoreCheckoutSnapshot(orderId) {
+    let restored = false;
+
+    try {
+      const raw = localStorage.getItem(CHECKOUT_SNAPSHOT_KEY);
+      if (!raw) {
+        clearCheckoutSessionStorage(orderId, false);
+        return false;
+      }
+
+      const snapshot = JSON.parse(raw);
+      if (orderId && snapshot.orderId && snapshot.orderId !== orderId) {
+        clearCheckoutSessionStorage(orderId, false);
+        return false;
+      }
+
+      if (Array.isArray(snapshot.cartItems)) {
+        localStorage.setItem('cartItems', JSON.stringify(snapshot.cartItems));
+        restored = true;
+      }
+    } catch (e) {
+      restored = false;
+    }
+
+    clearCheckoutSessionStorage(orderId, false);
+    return restored;
+  }
+
+  async function cancelPendingPayment(orderId) {
+    if (!orderId) return;
+
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      try {
+        const token = localStorage.getItem('token');
+        if (token) headers.Authorization = 'Bearer ' + token;
+      } catch (e) {}
+
+      await fetch('https://www.boomeritems.com/api/orders/cancel-payment', {
+        method: 'POST',
+        keepalive: true,
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ order_id: orderId })
+      });
+    } catch (e) {
+      console.warn('Ödeme iptali backend tarafında tamamlanamadı.', e);
+    }
+  }
+
+  async function resetCancelledCheckout(orderId) {
+    if (resetInProgress) return;
+    resetInProgress = true;
+
+    clearPolling();
+    closePaymentChannel();
+    hideWaitingOverlay();
+    closeInlineCheckoutUi();
+    inlinePaytrWasVisible = false;
+    restoreCheckoutSnapshot(orderId);
+    activeOrderId = '';
+    paymentHandled = false;
+
+    if (orderId) {
+      cancelPendingPayment(orderId);
+    } else {
+      clearCheckoutSessionStorage('', false);
+    }
+
+    window.location.reload();
+
+  }
 
   // ─── Bekleme Overlay ────────────────────────────────────────────────────────
 
@@ -86,6 +248,26 @@
     window.__paytrCancelPayment = null;
   }
 
+  function closeInlineCheckoutUi() {
+    try {
+      document.querySelectorAll('.checkout-modal-backdrop').forEach(function(backdrop) {
+        backdrop.style.display = 'none';
+        backdrop.remove();
+      });
+      document.querySelectorAll('.checkout-modal-container, .checkout-modal-container.wide').forEach(function(modal) {
+        modal.style.display = 'none';
+      });
+      document.querySelectorAll('.paytr-iframe-container, .paytr-iframe, iframe#paytriframe').forEach(function(node) {
+        if (node && node.parentNode) node.parentNode.removeChild(node);
+      });
+      document.body.classList.remove('mobile-overlay-open');
+      document.body.style.removeProperty('overflow');
+      document.documentElement.style.removeProperty('overflow');
+    } catch (e) {}
+
+    inlinePaytrWasVisible = false;
+  }
+
   // ─── BroadcastChannel ───────────────────────────────────────────────────────
 
   function openPaymentChannel(orderId) {
@@ -117,6 +299,9 @@
   // ─── localStorage fallback (sayfa yenilenmiş/overlay kapatılmış olsa da çalışır) ─
 
   function listenLocalStorageResult() {
+    if (storageListenerBound) return;
+    storageListenerBound = true;
+
     window.addEventListener('storage', function(e) {
       if (e.key !== 'paytr_result') return;
       try {
@@ -138,8 +323,13 @@
   function handlePaymentSuccess(orderId) {
     if (paymentHandled) return;
     paymentHandled = true;
+    inlinePaytrWasVisible = false;
     clearPolling();
     closePaymentChannel();
+    try {
+      localStorage.removeItem(CHECKOUT_SNAPSHOT_KEY);
+      localStorage.removeItem('paytr_result');
+    } catch (e) {}
     setOverlayStatus('Ödeme onaylandı! Yönlendiriliyorsunuz...');
     setTimeout(function() {
       hideWaitingOverlay();
@@ -150,11 +340,18 @@
   function handlePaymentFailed(orderId) {
     if (paymentHandled) return;
     paymentHandled = true;
+    inlinePaytrWasVisible = false;
     clearPolling();
     closePaymentChannel();
     hideWaitingOverlay();
     console.error('❌ ÖDEME BAŞARISIZ!', orderId);
-    alert('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.');
+    restoreCheckoutSnapshot(orderId);
+    try {
+      localStorage.removeItem('lastOrderId');
+      localStorage.removeItem('lastOrderTotal');
+    } catch (e) {}
+    alert('Ödeme işlemi başarısız oldu. Sepetiniz geri yüklendi. Lütfen bilgileri yeniden girip tekrar deneyin.');
+    window.location.reload();
   }
 
   // ─── Polling ────────────────────────────────────────────────────────────────
@@ -222,6 +419,7 @@
     if (!paymentUrl || !orderId) return;
     activeOrderId = orderId;
     paymentHandled = false;
+    inlinePaytrWasVisible = false;
     const isMobileViewport = window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : window.innerWidth <= 768;
 
     try {
@@ -242,9 +440,7 @@
 
     // 2) İptal butonuna bağla
     window.__paytrCancelPayment = function() {
-      clearPolling();
-      closePaymentChannel();
-      hideWaitingOverlay();
+      resetCancelledCheckout(orderId);
     };
 
     // 3) Orijinal sekmede bekleme ekranı göster
@@ -281,15 +477,29 @@
           const payment = data.payment;
           const orderId = data.id || data.order_id || (data.order && data.order.id) || payment.merchant_oid || '';
           const orderTotal = data.total || (data.order && data.order.total) || 0;
+          const isMobileViewport = window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : window.innerWidth <= 768;
+          activeOrderId = orderId;
+          paymentHandled = false;
+          inlinePaytrWasVisible = false;
+          saveCheckoutSnapshot(orderId, options);
 
           // Sipariş tutarını order-success.html için sakla
           try {
             localStorage.setItem('lastOrderTotal', JSON.stringify({ orderId, total: orderTotal, ts: Date.now() }));
           } catch(e) {}
 
+          // Masaüstünde mevcut inline checkout akışı zaten paneli açıyor.
+          // Burada tekrar yeni sekme açarsak aynı token ikinci kez tüketiliyor.
+          if (!isMobileViewport) {
+            console.log('🖥️ Masaüstü PayTR akışı ana uygulamaya bırakıldı.');
+            setTimeout(syncInlinePaytrState, 250);
+            setTimeout(syncInlinePaytrState, 1000);
+            return response;
+          }
+
           if (payment.iframe_token) {
             const paymentUrl = 'https://www.paytr.com/odeme/guvenli/' + payment.iframe_token;
-            console.log('💳 PayTR iframe token bulundu, yeni sekme açılıyor...');
+            console.log('💳 PayTR iframe token bulundu, mobil akış başlatılıyor...');
             setTimeout(() => startPayment(paymentUrl, orderId), 500);
 
           } else if (payment.payment_url) {
@@ -318,11 +528,44 @@
     return response;
   };
 
-  console.log('✅ PayTR Helper Script hazır - Mobil aynı sekme, masaüstü yeni sekme modu aktif');
+  console.log('✅ PayTR Helper Script hazır - Mobil takeover aktif, masaüstü inline akış korunuyor');
 
   window.PayTRHelper = {
     startPayment: startPayment,
-    version: '2.2.0'
+    resetCancelledCheckout: resetCancelledCheckout,
+    version: '2.4.1'
   };
+
+  // Masaüstünde inline PayTR kapatılırsa eski oturumu bırakma.
+  function handleInlinePaytrDismiss(event) {
+    const target = event.target;
+    if (!target || !target.closest) return;
+
+    const hasInlinePaytr = document.querySelector(INLINE_PAYTR_SELECTOR);
+    if (!hasInlinePaytr) return;
+
+    const isBackdrop = target.classList && target.classList.contains('checkout-modal-backdrop');
+    const closeButton = target.closest(INLINE_PAYTR_CLOSE_SELECTOR);
+    if (!isBackdrop && !closeButton) return;
+
+    const orderId = getRememberedOrderId();
+
+    event.preventDefault();
+    event.stopPropagation();
+    resetCancelledCheckout(orderId);
+  }
+
+  document.addEventListener('pointerdown', handleInlinePaytrDismiss, true);
+  document.addEventListener('click', handleInlinePaytrDismiss, true);
+
+  if (window.MutationObserver && document.body) {
+    new MutationObserver(function() {
+      syncInlinePaytrState();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true });
+  }
+
+  window.addEventListener('pageshow', function() {
+    syncInlinePaytrState();
+  });
 
 })();
