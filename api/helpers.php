@@ -1,10 +1,12 @@
 <?php
 
-function env(string $key, mixed $default = null): mixed {
+function env(string $key, mixed $default = null): mixed
+{
     return defined($key) ? constant($key) : $default;
 }
 
-function db(): PDO {
+function db(): PDO
+{
     static $pdo = null;
 
     if ($pdo === null) {
@@ -19,13 +21,15 @@ function db(): PDO {
     return $pdo;
 }
 
-function json(mixed $data, int $status = 200): never {
+function json(mixed $data, int $status = 200): never
+{
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-function ok(mixed $data = null, string $message = 'success'): never {
+function ok(mixed $data = null, string $message = 'success'): never
+{
     if ($data === null) {
         json(['success' => true, 'message' => $message]);
     }
@@ -33,11 +37,13 @@ function ok(mixed $data = null, string $message = 'success'): never {
     json($data);
 }
 
-function error(string $message, int $status = 400): never {
+function error(string $message, int $status = 400): never
+{
     json(['success' => false, 'message' => $message], $status);
 }
 
-function body(): array {
+function body(): array
+{
     static $cache = null;
     if ($cache === null) {
         $raw = file_get_contents('php://input');
@@ -46,12 +52,14 @@ function body(): array {
     return $cache;
 }
 
-function input(string $key, mixed $default = null): mixed {
+function input(string $key, mixed $default = null): mixed
+{
     $data = body();
     return $data[$key] ?? $default;
 }
 
-function jwtEncode(array $payload): string {
+function jwtEncode(array $payload): string
+{
     $header = base64url(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
     $payload['iat'] = time();
     $payload['exp'] = time() + JWT_EXPIRE;
@@ -60,7 +68,8 @@ function jwtEncode(array $payload): string {
     return "$header.$body.$sig";
 }
 
-function jwtDecode(string $token): ?array {
+function jwtDecode(string $token): ?array
+{
     $parts = explode('.', $token);
     if (count($parts) !== 3) {
         return null;
@@ -80,11 +89,13 @@ function jwtDecode(string $token): ?array {
     return $payload;
 }
 
-function base64url(string $data): string {
+function base64url(string $data): string
+{
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 
-function authRequired(): array {
+function authRequired(): array
+{
     $header = $_SERVER['HTTP_AUTHORIZATION']
         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? (function_exists('getallheaders') ? (getallheaders()['Authorization'] ?? '') : '')
@@ -101,7 +112,8 @@ function authRequired(): array {
     return $payload;
 }
 
-function adminRequired(): array {
+function adminRequired(): array
+{
     $payload = authRequired();
     if (($payload['role'] ?? '') !== 'admin') {
         error('Yetkiniz yok.', 403);
@@ -110,14 +122,21 @@ function adminRequired(): array {
     return $payload;
 }
 
-function slugify(string $value): string {
+function slugify(string $value): string
+{
     $map = [
-        'ş' => 's', 'Ş' => 'S',
-        'ı' => 'i', 'İ' => 'I',
-        'ğ' => 'g', 'Ğ' => 'G',
-        'ü' => 'u', 'Ü' => 'U',
-        'ö' => 'o', 'Ö' => 'O',
-        'ç' => 'c', 'Ç' => 'C',
+        'ş' => 's',
+        'Ş' => 'S',
+        'ı' => 'i',
+        'İ' => 'I',
+        'ğ' => 'g',
+        'Ğ' => 'G',
+        'ü' => 'u',
+        'Ü' => 'U',
+        'ö' => 'o',
+        'Ö' => 'O',
+        'ç' => 'c',
+        'Ç' => 'C',
     ];
 
     $value = strtr($value, $map);
@@ -126,7 +145,8 @@ function slugify(string $value): string {
     return trim($value, '-');
 }
 
-function normalizeImages(mixed $images): array {
+function normalizeImages(mixed $images): array
+{
     if (is_string($images)) {
         $decoded = json_decode($images, true);
         $images = json_last_error() === JSON_ERROR_NONE ? $decoded : [$images];
@@ -156,7 +176,8 @@ function normalizeImages(mixed $images): array {
     return array_values(array_unique($normalized));
 }
 
-function inferPiecesFromProduct(array $product): int {
+function inferPiecesFromProduct(array $product): int
+{
     $rawPieces = $product['pieces'] ?? null;
     $pieces = is_numeric($rawPieces) ? (int) $rawPieces : 0;
     if ($pieces > 0) {
@@ -168,15 +189,18 @@ function inferPiecesFromProduct(array $product): int {
         return 0;
     }
 
-    if (preg_match('/\(([\d.]+)\s*Par[çc]a\)/iu', $title, $match) !== 1
-        && preg_match('/([\d.]+)\s*Par[çc]a/iu', $title, $match) !== 1) {
+    if (
+        preg_match('/\(([\d.]+)\s*Par[çc]a\)/iu', $title, $match) !== 1
+        && preg_match('/([\d.]+)\s*Par[çc]a/iu', $title, $match) !== 1
+    ) {
         return 0;
     }
 
     return (int) str_replace('.', '', $match[1]);
 }
 
-function normalizeProductConditionTag(mixed $value, string $default = 'used'): string {
+function normalizeProductConditionTag(mixed $value, string $default = 'used'): string
+{
     $fallback = in_array($default, ['new', 'used'], true) ? $default : 'used';
     if ($value === null) {
         return $fallback;
@@ -213,11 +237,13 @@ function normalizeProductConditionTag(mixed $value, string $default = 'used'): s
     return $map[$normalized] ?? $fallback;
 }
 
-function productConditionLabel(string $conditionTag): string {
-    return normalizeProductConditionTag($conditionTag) === 'new' ? '0' : '2. el';
+function productConditionLabel(string $conditionTag): string
+{
+    return normalizeProductConditionTag($conditionTag) === 'new' ? '2.el' : '2. el sıfır';
 }
 
-function legacyProduct(array $product): array {
+function legacyProduct(array $product): array
+{
     $images = normalizeImages($product['images'] ?? []);
     if ($images === [] && !empty($product['img']) && is_string($product['img'])) {
         $images = [$product['img']];
@@ -234,7 +260,7 @@ function legacyProduct(array $product): array {
     $pieces = inferPiecesFromProduct($product);
     $conditionTag = normalizeProductConditionTag(
         $product['product_condition']
-            ?? ($product['condition_tag'] ?? ($product['conditionTag'] ?? null)),
+        ?? ($product['condition_tag'] ?? ($product['conditionTag'] ?? null)),
         'used'
     );
     $conditionLabel = productConditionLabel($conditionTag);
@@ -268,7 +294,8 @@ function legacyProduct(array $product): array {
     ];
 }
 
-function legacyOrder(array $order): array {
+function legacyOrder(array $order): array
+{
     $shipping = [];
     if (!empty($order['shipping_address']) && is_string($order['shipping_address'])) {
         $decoded = json_decode($order['shipping_address'], true);
@@ -309,7 +336,8 @@ function legacyOrder(array $order): array {
     ];
 }
 
-function legacyOrderItem(array $item): array {
+function legacyOrderItem(array $item): array
+{
     $name = (string) ($item['product_name'] ?? ($item['title'] ?? ($item['name'] ?? '')));
     $image = (string) ($item['product_img'] ?? ($item['product_image'] ?? ($item['img'] ?? ($item['image'] ?? ''))));
     $qty = (int) ($item['quantity'] ?? 1);
@@ -334,7 +362,8 @@ function legacyOrderItem(array $item): array {
     ];
 }
 
-function legacyUser(array $user): array {
+function legacyUser(array $user): array
+{
     return [
         ...$user,
         'name' => $user['display_name'] ?? ($user['name'] ?? ($user['username'] ?? '')),
@@ -343,7 +372,8 @@ function legacyUser(array $user): array {
     ];
 }
 
-function tableHasColumn(string $table, string $column): bool {
+function tableHasColumn(string $table, string $column): bool
+{
     static $cache = [];
     $key = $table . '.' . $column;
 
@@ -364,7 +394,8 @@ function tableHasColumn(string $table, string $column): bool {
     return $cache[$key];
 }
 
-function tableColumnType(string $table, string $column): ?string {
+function tableColumnType(string $table, string $column): ?string
+{
     static $cache = [];
     $key = $table . '.' . $column;
 
@@ -387,11 +418,13 @@ function tableColumnType(string $table, string $column): ?string {
     return $cache[$key];
 }
 
-function generatePublicId(int $bytes = 16): string {
+function generatePublicId(int $bytes = 16): string
+{
     return strtolower(bin2hex(random_bytes($bytes)));
 }
 
-function tableExists(string $table): bool {
+function tableExists(string $table): bool
+{
     static $cache = [];
 
     if (array_key_exists($table, $cache)) {
@@ -410,7 +443,8 @@ function tableExists(string $table): bool {
     return $cache[$table];
 }
 
-function ensureShippingGroupsSchema(): void {
+function ensureShippingGroupsSchema(): void
+{
     if (!tableExists('shipping_groups')) {
         return;
     }
@@ -498,7 +532,8 @@ function ensureShippingGroupsSchema(): void {
     dedupeShippingGroups();
 }
 
-function dedupeShippingGroups(): void {
+function dedupeShippingGroups(): void
+{
     if (!tableExists('shipping_groups')) {
         return;
     }
@@ -534,12 +569,14 @@ function dedupeShippingGroups(): void {
     db()->prepare("DELETE FROM shipping_groups WHERE id IN ($placeholders)")->execute($deleteIds);
 }
 
-function freeShippingThreshold(): float {
+function freeShippingThreshold(): float
+{
     $value = (float) env('FREE_SHIPPING_THRESHOLD', 2500);
     return $value > 0 ? round($value, 2) : 2500.0;
 }
 
-function defaultShippingGroups(): array {
+function defaultShippingGroups(): array
+{
     $freeAbove = freeShippingThreshold();
 
     return [
@@ -551,7 +588,8 @@ function defaultShippingGroups(): array {
     ];
 }
 
-function normalizeShippingGroup(array $row): array {
+function normalizeShippingGroup(array $row): array
+{
     $price = isset($row['price']) ? (float) $row['price'] : (float) ($row['base_fee'] ?? 0);
 
     return [
@@ -565,7 +603,8 @@ function normalizeShippingGroup(array $row): array {
     ];
 }
 
-function calculateShippingFeeByDesi(float $totalDesi, float $orderTotal = 0, ?int $groupId = null): array {
+function calculateShippingFeeByDesi(float $totalDesi, float $orderTotal = 0, ?int $groupId = null): array
+{
     ensureShippingGroupsSchema();
     // Desi ve tutar validasyonu
     $totalDesi = max(0.0, min($totalDesi, 9999.0));
@@ -658,7 +697,8 @@ function calculateShippingFeeByDesi(float $totalDesi, float $orderTotal = 0, ?in
     ];
 }
 
-function cors(): void {
+function cors(): void
+{
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $hostOrigin = isset($_SERVER['HTTP_HOST']) ? $scheme . '://' . $_SERVER['HTTP_HOST'] : '';
