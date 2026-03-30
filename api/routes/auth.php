@@ -245,6 +245,101 @@ switch ($id) {
         ]);
         break;
 
+    case 'forgot-password':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        RateLimit::check('auth_forgot_password', 5, 900);
+
+        $email = strtolower(trim((string) input('email', '')));
+        if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            error('Gecerli bir e-posta adresi gerekli.', 422);
+        }
+
+        $stmt = db()->prepare(
+            'SELECT id, email, '
+            . ($hasUsername ? 'username, ' : '')
+            . $nameColumn . ' AS display_name
+             FROM users
+             WHERE email = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+
+        if ($user) {
+            MailService::issuePasswordResetToken(
+                $user['id'],
+                (string) $user['email'],
+                (string) ($user['display_name'] ?? $user['email'])
+            );
+        }
+
+        ok([
+            'success' => true,
+            'message' => 'Bu e-posta adresi sistemde varsa sifre sifirlama baglantisi gonderilecektir.',
+        ]);
+        break;
+
+    case 'reset-password':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        RateLimit::check('auth_reset_password', 10, 3600);
+
+        $token = trim((string) input('token', ''));
+        $password = (string) input('password', '');
+        $passwordConfirmation = (string) input('password_confirmation', input('passwordConfirmation', ''));
+
+        if ($token === '') {
+            error('Sifre sifirlama baglantisi gecersiz.', 422);
+        }
+        if ($password === '') {
+            error('Yeni sifre gerekli.', 422);
+        }
+        if (strlen($password) < 8) {
+            error('Sifre en az 8 karakter olmali.', 422);
+        }
+        if (strlen($password) > 128) {
+            error('Sifre en fazla 128 karakter olabilir.', 422);
+        }
+        if ($passwordConfirmation !== '' && !hash_equals($password, $passwordConfirmation)) {
+            error('Sifre tekrar alani eslesmiyor.', 422);
+        }
+
+        $stmt = db()->prepare(
+            'SELECT id, email, password_reset_expires_at
+             FROM users
+             WHERE password_reset_token = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$token]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            error('Sifre sifirlama baglantisi gecersiz veya daha once kullanilmis.', 404);
+        }
+
+        if (
+            !empty($user['password_reset_expires_at'])
+            && strtotime((string) $user['password_reset_expires_at']) < time()
+        ) {
+            error('Sifre sifirlama baglantisinin suresi dolmus. Lutfen yeni bir talep olusturun.', 410);
+        }
+
+        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+
+        db()->prepare(
+            'UPDATE users
+             SET ' . $passwordColumn . ' = ?,
+                 password_reset_token = NULL,
+                 password_reset_sent_at = NULL,
+                 password_reset_expires_at = NULL
+             WHERE id = ?'
+        )->execute([$hash, $user['id']]);
+
+        ok([
+            'success' => true,
+            'message' => 'Sifreniz basariyla guncellendi. Artik yeni sifrenizle giris yapabilirsiniz.',
+        ]);
+        break;
+
     case 'verify-email':
         if ($method !== 'GET') error('Method not allowed.', 405);
 

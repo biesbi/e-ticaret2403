@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Şifremi Unuttum | BoomerItems</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --brand: #f4b400;
+      --success: #027a48;
+      --error: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(244, 180, 0, 0.18), transparent 34%),
+        linear-gradient(180deg, #fffef8 0%, var(--bg) 100%);
+    }
+    .shell { width: min(100%, 720px); }
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 18px;
+      padding: 0 12px;
+    }
+    .logo-wrap img {
+      display: block;
+      width: min(100%, 270px);
+      height: auto;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(17, 24, 39, 0.06);
+      border-radius: 28px;
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+    .hero {
+      padding: 34px 32px 24px;
+      background: linear-gradient(135deg, #111827 0%, #202938 60%, #2b3545 100%);
+      color: #fff;
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8d34d;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 18px 0 10px; font-size: 34px; line-height: 1.1; }
+    .lead { margin: 0; color: rgba(255,255,255,0.76); line-height: 1.7; }
+    .body { padding: 28px 32px 32px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); }
+    .message {
+      margin: 20px 0 0;
+      color: #334155;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .form-shell {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fafafa;
+    }
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .field {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 16px;
+      border: 1px solid #d0d5dd;
+      border-radius: 14px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+    .field:focus { border-color: #111827; }
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .btn-primary { background: var(--brand); color: #111827; }
+    .btn-secondary { background: #fff; color: #111827; border: 1px solid var(--line); }
+    .hint {
+      margin: 16px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .success .dot { background: var(--success); }
+    .success .status { color: var(--success); background: #ecfdf3; border-color: #abefc6; }
+    .error .dot { background: var(--error); }
+    .error .status { color: var(--error); background: #fef3f2; border-color: #fecdca; }
+    .hidden { display: none; }
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .footer a { color: #111827; }
+    @media (max-width: 640px) {
+      body {
+        align-items: flex-start;
+        padding: 16px;
+      }
+      .shell {
+        width: 100%;
+      }
+      .logo-wrap {
+        margin-bottom: 14px;
+        padding: 4px 8px 0;
+      }
+      .logo-wrap img {
+        width: min(100%, 220px);
+      }
+      .card {
+        border-radius: 24px;
+      }
+      .hero, .body { padding: 24px 20px; }
+      h1 { font-size: 28px; }
+      .message {
+        font-size: 14px;
+      }
+      .form-shell {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .field {
+        min-height: 50px;
+      }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="logo-wrap" aria-hidden="true">
+      <img src="/Boomer.svg" alt="Boomer Items">
+    </div>
+    <div class="card" id="card">
+      <div class="hero">
+        <div class="eyebrow">Şifre Sıfırlama</div>
+        <h1>Yeni şifre bağlantısı alın</h1>
+        <p class="lead">Hesabınıza ait e-posta adresini girin. Sıfırlama bağlantısını doğrudan mail kutunuza gönderelim.</p>
+      </div>
+      <div class="body">
+        <div class="status" id="status"><span class="dot"></span><span id="statusText">Hazır</span></div>
+        <p class="message" id="message">E-posta adresinizi yazdığınızda sistem güvenli bir şifre yenileme bağlantısı oluşturur.</p>
+
+        <form class="form-shell" id="forgotForm">
+          <label class="field-label" for="emailInput">E-posta adresiniz</label>
+          <input class="field" id="emailInput" type="email" name="email" placeholder="ornek@eposta.com" autocomplete="email" required>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit" id="submitBtn">Şifre Sıfırlama Bağlantısı Gönder</button>
+            <a class="btn btn-secondary" href="/?auth=login">Girişe Dön</a>
+          </div>
+          <p class="hint">Güvenlik nedeniyle hesap kayıtlı olmasa bile sonuç mesajı aynı gösterilir.</p>
+        </form>
+      </div>
+    </div>
+    <div class="footer">
+      <div>BoomerItems</div>
+      <div><a href="https://www.boomeritems.com">www.boomeritems.com</a></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var emailParam = (params.get('email') || '').trim();
+      var card = document.getElementById('card');
+      var statusText = document.getElementById('statusText');
+      var message = document.getElementById('message');
+      var forgotForm = document.getElementById('forgotForm');
+      var emailInput = document.getElementById('emailInput');
+      var submitBtn = document.getElementById('submitBtn');
+
+      function setState(kind, statusLabel, detail) {
+        card.classList.remove('success', 'error');
+        if (kind) {
+          card.classList.add(kind);
+        }
+        statusText.textContent = statusLabel;
+        message.textContent = detail;
+      }
+
+      if (emailParam) {
+        emailInput.value = emailParam;
+      }
+
+      forgotForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        submitBtn.disabled = true;
+        setState('', 'Gönderiliyor', 'Şifre sıfırlama talebiniz hazırlanıyor.');
+
+        fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailInput.value.trim() })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) {
+                throw new Error(data.message || 'İstek tamamlanamadı.');
+              }
+              return data;
+            });
+          })
+          .then(function () {
+            setState(
+              'success',
+              'Bağlantı gönderildi',
+              'Bu e-posta adresi sistemde varsa şifre yenileme bağlantısı gönderildi. Lütfen mail kutunuzu ve spam klasörünü kontrol edin.'
+            );
+            submitBtn.textContent = 'Gönderildi';
+          })
+          .catch(function (error) {
+            setState('error', 'İşlem tamamlanamadı', error.message || 'Lütfen tekrar deneyin.');
+            submitBtn.disabled = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

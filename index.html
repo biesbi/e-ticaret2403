@@ -2458,8 +2458,8 @@
 						+ '<nav class="nav-links" aria-label="Desktop">'
 						+ '<a class="nav-link active" href="/">Ana Sayfa</a>'
 						+ '<button class="nav-link products-link" type="button">&#220;r&#252;nler</button>'
-						+ '<a class="nav-link" href="/hakkimizda.html">Biz Kimiz</a>'
-						+ '<a class="nav-link" href="/iletisim.html">&#304;leti&#351;im</a>'
+						+ '<a class="nav-link" href="/hakkimizda">Biz Kimiz</a>'
+						+ '<a class="nav-link" href="/iletisim">&#304;leti&#351;im</a>'
 						+ '</nav>'
 						+ '<div class="actions">'
 						+ '<button class="icon-btn search-btn" type="button" aria-label="Ara">' + svgSearch + '</button>'
@@ -2505,7 +2505,7 @@
 						if (openCart) openCart.click();
 					});
 					trackingBtn.addEventListener('click', function () {
-						window.location.href = '/siparis-takip.html';
+						window.location.href = '/siparis-takip';
 					});
 					accountBtn.addEventListener('click', function () {
 						if (openAccount) openAccount.click();
@@ -2584,7 +2584,7 @@
 
 			event.preventDefault();
 			event.stopPropagation();
-			window.location.href = '/siparis-takip.html';
+			window.location.href = '/siparis-takip';
 		}, true);
 	</script>
 	<script>
@@ -2594,7 +2594,7 @@
 
 				var fab = document.createElement('a');
 				fab.className = 'order-track-fab';
-				fab.href = '/siparis-takip.html';
+				fab.href = '/siparis-takip';
 				fab.setAttribute('aria-label', 'Siparisim Nerede');
 				fab.setAttribute('title', 'Siparisim Nerede');
 				fab.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 18.5 7v10L12 20.5 5.5 17V7L12 3.5Z"></path><path d="M5.5 7 12 10.6 18.5 7"></path><path d="M12 10.6v9.9"></path></svg>';
@@ -8545,6 +8545,37 @@
 			}
 		}
 	</style>
+	<style id="cart-clear-button-styles">
+		.cart-clear-btn {
+			width: 100%;
+			margin-top: 12px;
+			padding: 14px 16px;
+			border: 1px solid #e2e8f0;
+			border-radius: 16px;
+			background: #fff;
+			color: #475569;
+			font-size: 0.96rem;
+			font-weight: 800;
+			line-height: 1.2;
+			cursor: pointer;
+			transition: background-color .2s ease, border-color .2s ease, color .2s ease, opacity .2s ease;
+		}
+
+		.cart-clear-btn:hover {
+			background: #fff7f7;
+			border-color: #fecaca;
+			color: #b91c1c;
+		}
+
+		.cart-clear-btn.is-busy {
+			opacity: .72;
+			cursor: wait;
+		}
+
+		.cart-footer.has-clear-cart {
+			display: block !important;
+		}
+	</style>
 </head>
 
 <body
@@ -8716,19 +8747,19 @@
 				<div>
 					<h5>Kurumsal</h5>
 					<ul>
-						<li><a href="/hakkimizda.html">Hakk&#305;m&#305;zda</a></li>
-						<li><a href="/iletisim.html">&#304;leti&#351;im</a></li>
-						<li><a href="/siparis-takip.html">Sipari&#351; Takibi</a></li>
-						<li><a href="/collector.html">Koleksiyon</a></li>
+						<li><a href="/hakkimizda">Hakk&#305;m&#305;zda</a></li>
+						<li><a href="/iletisim">&#304;leti&#351;im</a></li>
+						<li><a href="/siparis-takip">Sipari&#351; Takibi</a></li>
+						<li><a href="/collector">Koleksiyon</a></li>
 					</ul>
 				</div>
 				<div>
 					<h5>S&#246;zle&#351;meler</h5>
 					<ul>
-						<li><a href="/mesafeli-satis-sozlesmesi.html">Mesafeli Sat&#305;&#351; S&#246;zle&#351;mesi</a>
+						<li><a href="/mesafeli-satis-sozlesmesi">Mesafeli Sat&#305;&#351; S&#246;zle&#351;mesi</a>
 						</li>
-						<li><a href="/iade-cayma-kosullari.html">&#304;ade ve Cayma Ko&#351;ullar&#305;</a></li>
-						<li><a href="/gizlilik-politikasi.html">Gizlilik Politikas&#305;</a></li>
+						<li><a href="/iade-cayma-kosullari">&#304;ade ve Cayma Ko&#351;ullar&#305;</a></li>
+						<li><a href="/gizlilik-politikasi">Gizlilik Politikas&#305;</a></li>
 						<li><a href="/etbis-belge.pdf" target="_blank" rel="noopener noreferrer">ETB&#304;S Bilgisi
 								(PDF)</a>
 						</li>
@@ -8987,6 +9018,296 @@
 	</script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
+			var clearCartBusy = false;
+
+			var isVisibleElement = function (element) {
+				return !!(element && (element.offsetWidth || element.offsetHeight || (element.getClientRects && element.getClientRects().length)));
+			};
+
+			var getCartDrawer = function () {
+				return document.querySelector('.cart-drawer');
+			};
+
+			var getCartFooter = function () {
+				var drawer = getCartDrawer();
+				return drawer ? drawer.querySelector('.cart-footer') : null;
+			};
+
+			var getVisibleRemoveButtons = function () {
+				var drawer = getCartDrawer();
+				if (!drawer) return [];
+				return Array.prototype.slice.call(drawer.querySelectorAll('.cart-item-remove')).filter(isVisibleElement);
+			};
+
+			var setClearCartBusyState = function (button, isBusy) {
+				if (!button) return;
+				button.disabled = !!isBusy;
+				button.classList.toggle('is-busy', !!isBusy);
+				button.textContent = isBusy ? 'Sepet Temizleniyor...' : 'Sepeti Temizle';
+			};
+
+			var removeCartItemsSequentially = function (maxAttempts) {
+				return new Promise(function (resolve, reject) {
+					var step = function (remainingAttempts) {
+						var buttons = getVisibleRemoveButtons();
+						if (!buttons.length) {
+							resolve(true);
+							return;
+						}
+						if (remainingAttempts <= 0) {
+							reject(new Error('Cart items could not be removed sequentially.'));
+							return;
+						}
+
+						var button = buttons[0];
+						button.dispatchEvent(new MouseEvent('click', {
+							bubbles: true,
+							cancelable: true,
+							view: window
+						}));
+
+						window.setTimeout(function () {
+							step(remainingAttempts - 1);
+						}, 260);
+					};
+
+					step(maxAttempts);
+				});
+			};
+
+			var fallbackClearCart = function () {
+				if (typeof window.fetch !== 'function') {
+					return Promise.reject(new Error('Fetch is not available.'));
+				}
+
+				return window.fetch('/api/cart', { method: 'DELETE' }).then(function (response) {
+					if (!response.ok) {
+						throw new Error('Cart clear request failed.');
+					}
+					return response;
+				});
+			};
+
+			var handleClearCartClick = function (button) {
+				if (clearCartBusy) return;
+				if (!window.confirm('Sepetteki t\u00fcm \u00fcr\u00fcnler kald\u0131r\u0131ls\u0131n m\u0131?')) {
+					return;
+				}
+
+				clearCartBusy = true;
+				setClearCartBusyState(button, true);
+
+				removeCartItemsSequentially(60).then(function () {
+					if (typeof window.showToast === 'function') {
+						window.showToast('Sepet temizlendi.', 'success', 2200);
+					}
+				}).catch(function () {
+					return fallbackClearCart().then(function () {
+						window.location.reload();
+					});
+				}).catch(function () {
+					if (typeof window.showToast === 'function') {
+						window.showToast('Sepet temizlenemedi.', 'error', 3200);
+					}
+				}).finally(function () {
+					clearCartBusy = false;
+					setClearCartBusyState(button, false);
+				});
+			};
+
+			var ensureClearCartButton = function () {
+				var footer = getCartFooter();
+				if (!footer) return;
+
+				var removeButtons = getVisibleRemoveButtons();
+				var button = footer.querySelector('.cart-clear-btn');
+
+				if (!removeButtons.length) {
+					footer.classList.remove('has-clear-cart');
+					if (button) button.remove();
+					return;
+				}
+
+				footer.classList.add('has-clear-cart');
+				if (!button) {
+					button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'cart-clear-btn';
+					button.textContent = 'Sepeti Temizle';
+					button.addEventListener('click', function () {
+						handleClearCartClick(button);
+					});
+					footer.appendChild(button);
+				}
+
+				setClearCartBusyState(button, clearCartBusy);
+			};
+
+			var queueEnsureClearCartButton = function () {
+				window.requestAnimationFrame(ensureClearCartButton);
+			};
+
+			queueEnsureClearCartButton();
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnsureClearCartButton).observe(document.body, { childList: true, subtree: true });
+			}
+			window.addEventListener('resize', queueEnsureClearCartButton);
+			window.setTimeout(queueEnsureClearCartButton, 500);
+			window.setTimeout(queueEnsureClearCartButton, 1400);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var styleId = 'auth-password-tools-style';
+			if (!document.getElementById(styleId)) {
+				var style = document.createElement('style');
+				style.id = styleId;
+				style.textContent = [
+					'.auth-password-host{position:relative;}',
+					'.auth-password-host input{padding-right:92px !important;}',
+					'.auth-password-toggle{position:absolute;top:50%;right:12px;transform:translateY(-50%);border:none;background:transparent;color:#475467;font-size:13px;font-weight:700;line-height:1;cursor:pointer;padding:6px 8px;border-radius:999px;z-index:2;}',
+					'.auth-password-toggle:hover{background:rgba(15,23,42,0.06);}',
+					'.auth-support-row{display:flex;justify-content:flex-end;align-items:center;margin-top:10px;}',
+					'.auth-forgot-link{color:#0f172a;font-size:13px;font-weight:700;text-decoration:none;}',
+					'.auth-forgot-link:hover{text-decoration:underline;}'
+				].join('');
+				document.head.appendChild(style);
+			}
+
+			var isAuthLikeForm = function (form) {
+				if (!form || !form.querySelector) return false;
+				var emailInput = form.querySelector('input[type="email"], input[name="email"]');
+				var passwordInput = form.querySelector('input[type="password"], input[data-password-visible="1"]');
+				return !!emailInput && !!passwordInput;
+			};
+
+			var isRegisterForm = function (form) {
+				if (!form || !form.querySelector) return false;
+				return !!form.querySelector('input[name="name"], input[name="display_name"], input[autocomplete="name"]');
+			};
+
+			var findPasswordInputs = function (root) {
+				if (!root) return [];
+				var inputs = [];
+				if (root.matches && root.matches('input[type="password"]')) {
+					inputs.push(root);
+				}
+				if (root.querySelectorAll) {
+					inputs = inputs.concat(Array.prototype.slice.call(root.querySelectorAll('input[type="password"]')));
+				}
+				return inputs;
+			};
+
+			var enhancePasswordField = function (input) {
+				if (!input || input.dataset.passwordToggleReady === '1') return;
+				var form = input.form || input.closest('form');
+				if (!isAuthLikeForm(form)) return;
+
+				var host = input.parentElement;
+				if (!host) return;
+
+				input.dataset.passwordToggleReady = '1';
+				host.classList.add('auth-password-host');
+
+				if (!host.querySelector('.auth-password-toggle')) {
+					var toggle = document.createElement('button');
+					toggle.type = 'button';
+					toggle.className = 'auth-password-toggle';
+
+					var syncToggle = function () {
+						var visible = input.type === 'text';
+						input.dataset.passwordVisible = visible ? '1' : '0';
+						toggle.textContent = visible ? 'Gizle' : 'G\u00f6ster';
+						toggle.setAttribute('aria-label', visible ? '\u015eifreyi gizle' : '\u015eifreyi g\u00f6ster');
+					};
+
+					toggle.addEventListener('click', function () {
+						input.type = input.type === 'password' ? 'text' : 'password';
+						syncToggle();
+						if (typeof input.focus === 'function') {
+							try {
+								input.focus({ preventScroll: true });
+							} catch (error) {
+								input.focus();
+							}
+						}
+					});
+
+					host.appendChild(toggle);
+					syncToggle();
+				}
+			};
+
+			var enhanceForgotPasswordLink = function (form) {
+				if (!form || form.dataset.forgotPasswordReady === '1') return;
+				if (!isAuthLikeForm(form) || isRegisterForm(form)) return;
+
+				var emailInput = form.querySelector('input[type="email"], input[name="email"]');
+				var passwordInput = form.querySelector('input[type="password"], input[data-password-toggle-ready="1"], input[data-password-visible="1"]');
+				if (!emailInput || !passwordInput) return;
+
+				var anchor = passwordInput.parentElement || passwordInput;
+				var supportRow = anchor.parentElement && anchor.parentElement.querySelector('.auth-support-row');
+				if (!supportRow) {
+					supportRow = document.createElement('div');
+					supportRow.className = 'auth-support-row';
+
+					var link = document.createElement('a');
+					link.className = 'auth-forgot-link';
+					link.textContent = '\u015eifremi Unuttum';
+
+					var syncHref = function () {
+						var href = '/sifremi-unuttum';
+						var emailValue = emailInput.value ? emailInput.value.trim() : '';
+						if (emailValue) {
+							href += '?email=' + encodeURIComponent(emailValue);
+						}
+						link.href = href;
+					};
+
+					link.addEventListener('click', syncHref);
+					emailInput.addEventListener('input', syncHref);
+					syncHref();
+
+					supportRow.appendChild(link);
+					anchor.insertAdjacentElement('afterend', supportRow);
+				}
+
+				form.dataset.forgotPasswordReady = '1';
+			};
+
+			var enhanceAuthForms = function (root) {
+				findPasswordInputs(root || document).forEach(enhancePasswordField);
+				Array.prototype.slice.call((root || document).querySelectorAll ? (root || document).querySelectorAll('form') : []).forEach(function (form) {
+					enhanceForgotPasswordLink(form);
+				});
+			};
+
+			var queueEnhanceAuthForms = function () {
+				window.requestAnimationFrame(function () {
+					enhanceAuthForms(document);
+				});
+			};
+
+			queueEnhanceAuthForms();
+			if (window.MutationObserver) {
+				new MutationObserver(function (mutations) {
+					mutations.forEach(function (mutation) {
+						Array.prototype.forEach.call(mutation.addedNodes || [], function (node) {
+							if (node && node.nodeType === 1) {
+								enhanceAuthForms(node);
+							}
+						});
+					});
+				}).observe(document.body, { childList: true, subtree: true });
+			}
+
+			window.setTimeout(queueEnhanceAuthForms, 400);
+			window.setTimeout(queueEnhanceAuthForms, 1200);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
 			var replacements = [
 				['GiriÅŸ Yap / Ãœye Ol', 'Giriş Yap / Üye Ol'],
 				['Tekrar HoÅŸ Geldin!', 'Tekrar Hoş Geldin!'],
@@ -9062,6 +9383,13 @@
 
 			var normalizeElement = function (element) {
 				if (!element || element.nodeType !== 1) return;
+				if (element.matches && element.matches('input[type="password"]')) {
+					var passwordPlaceholder = element.getAttribute('placeholder') || '';
+					if (passwordPlaceholder !== '**********' || element.placeholder !== '**********') {
+						element.setAttribute('placeholder', '**********');
+						element.placeholder = '**********';
+					}
+				}
 				['placeholder', 'title', 'aria-label', 'value'].forEach(function (attr) {
 					if (!element.hasAttribute || !element.hasAttribute(attr)) return;
 					var current = element.getAttribute(attr);

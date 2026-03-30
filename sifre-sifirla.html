@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yeni Şifre Belirle | BoomerItems</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #667085;
+      --line: #e5e7eb;
+      --brand: #f4b400;
+      --success: #027a48;
+      --error: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(244, 180, 0, 0.18), transparent 34%),
+        linear-gradient(180deg, #fffef8 0%, var(--bg) 100%);
+    }
+    .shell { width: min(100%, 720px); }
+    .logo-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 18px;
+      padding: 0 12px;
+    }
+    .logo-wrap img {
+      display: block;
+      width: min(100%, 270px);
+      height: auto;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(17, 24, 39, 0.06);
+      border-radius: 28px;
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+    .hero {
+      padding: 34px 32px 24px;
+      background: linear-gradient(135deg, #111827 0%, #202938 60%, #2b3545 100%);
+      color: #fff;
+    }
+    .eyebrow {
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f8d34d;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 18px 0 10px; font-size: 34px; line-height: 1.1; }
+    .lead { margin: 0; color: rgba(255,255,255,0.76); line-height: 1.7; }
+    .body { padding: 28px 32px 32px; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); }
+    .message {
+      margin: 20px 0 0;
+      color: #334155;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .form-shell {
+      margin-top: 24px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fafafa;
+    }
+    .field-group + .field-group { margin-top: 16px; }
+    .field-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .password-wrap {
+      position: relative;
+    }
+    .field {
+      width: 100%;
+      min-height: 52px;
+      padding: 0 96px 0 16px;
+      border: 1px solid #d0d5dd;
+      border-radius: 14px;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+    }
+    .field:focus { border-color: #111827; }
+    .toggle-btn {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: #475467;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+    .toggle-btn:hover { background: rgba(17, 24, 39, 0.06); }
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .btn-primary { background: var(--brand); color: #111827; }
+    .btn-secondary { background: #fff; color: #111827; border: 1px solid var(--line); }
+    .hint {
+      margin: 16px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .success .dot { background: var(--success); }
+    .success .status { color: var(--success); background: #ecfdf3; border-color: #abefc6; }
+    .error .dot { background: var(--error); }
+    .error .status { color: var(--error); background: #fef3f2; border-color: #fecdca; }
+    .hidden { display: none; }
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+    .footer a { color: #111827; }
+    @media (max-width: 640px) {
+      body {
+        align-items: flex-start;
+        padding: 16px;
+      }
+      .shell {
+        width: 100%;
+      }
+      .logo-wrap {
+        margin-bottom: 14px;
+        padding: 4px 8px 0;
+      }
+      .logo-wrap img {
+        width: min(100%, 220px);
+      }
+      .card {
+        border-radius: 24px;
+      }
+      .hero, .body { padding: 24px 20px; }
+      h1 { font-size: 28px; }
+      .message {
+        font-size: 14px;
+      }
+      .form-shell {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      .field {
+        min-height: 50px;
+      }
+      .actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="logo-wrap" aria-hidden="true">
+      <img src="/Boomer.svg" alt="Boomer Items">
+    </div>
+    <div class="card" id="card">
+      <div class="hero">
+        <div class="eyebrow">Yeni Şifre</div>
+        <h1 id="title">Şifrenizi yenileyin</h1>
+        <p class="lead" id="lead">Bağlantı geçerliyse yeni şifrenizi belirleyip hesabınıza tekrar güvenle giriş yapabilirsiniz.</p>
+      </div>
+      <div class="body">
+        <div class="status" id="status"><span class="dot"></span><span id="statusText">Bağlantı kontrol ediliyor</span></div>
+        <p class="message" id="message">Sıfırlama bağlantınız hazırlanıyor.</p>
+
+        <form class="form-shell hidden" id="resetForm">
+          <div class="field-group">
+            <label class="field-label" for="passwordInput">Yeni şifre</label>
+            <div class="password-wrap">
+              <input class="field" id="passwordInput" type="password" name="password" placeholder="**********" autocomplete="new-password" required>
+              <button class="toggle-btn" type="button" data-toggle-target="passwordInput">Göster</button>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="confirmInput">Yeni şifre tekrar</label>
+            <div class="password-wrap">
+              <input class="field" id="confirmInput" type="password" name="password_confirmation" placeholder="**********" autocomplete="new-password" required>
+              <button class="toggle-btn" type="button" data-toggle-target="confirmInput">Göster</button>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit" id="submitBtn">Şifreyi Güncelle</button>
+            <a class="btn btn-secondary" href="/?auth=login">Girişe Dön</a>
+          </div>
+          <p class="hint">Şifreniz en az 8 karakter olmalı. Güvenlik için bağlantı tek kullanımlıktır.</p>
+        </form>
+
+        <div class="actions hidden" id="fallbackActions">
+          <a class="btn btn-primary" href="/sifremi-unuttum">Yeni Bağlantı İste</a>
+          <a class="btn btn-secondary" href="/?auth=login">Girişe Dön</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <div>BoomerItems</div>
+      <div><a href="https://www.boomeritems.com">www.boomeritems.com</a></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = (params.get('token') || '').trim();
+      var card = document.getElementById('card');
+      var title = document.getElementById('title');
+      var lead = document.getElementById('lead');
+      var statusText = document.getElementById('statusText');
+      var message = document.getElementById('message');
+      var resetForm = document.getElementById('resetForm');
+      var fallbackActions = document.getElementById('fallbackActions');
+      var passwordInput = document.getElementById('passwordInput');
+      var confirmInput = document.getElementById('confirmInput');
+      var submitBtn = document.getElementById('submitBtn');
+
+      function setState(kind, titleText, leadText, statusLabel, detail) {
+        card.classList.remove('success', 'error');
+        if (kind) {
+          card.classList.add(kind);
+        }
+        title.textContent = titleText;
+        lead.textContent = leadText;
+        statusText.textContent = statusLabel;
+        message.textContent = detail;
+      }
+
+      function showForm() {
+        resetForm.classList.remove('hidden');
+        fallbackActions.classList.add('hidden');
+      }
+
+      function showFallback() {
+        resetForm.classList.add('hidden');
+        fallbackActions.classList.remove('hidden');
+      }
+
+      Array.prototype.forEach.call(document.querySelectorAll('.toggle-btn'), function (button) {
+        button.addEventListener('click', function () {
+          var target = document.getElementById(button.getAttribute('data-toggle-target'));
+          if (!target) return;
+          var nextType = target.type === 'password' ? 'text' : 'password';
+          target.type = nextType;
+          button.textContent = nextType === 'password' ? 'Göster' : 'Gizle';
+        });
+      });
+
+      if (!token) {
+        setState(
+          'error',
+          'Bağlantı eksik',
+          'Şifre sıfırlama bağlantısı olmadan bu sayfa kullanılamaz.',
+          'İşlem tamamlanamadı',
+          'Lütfen mail kutunuzdaki bağlantıyı kullanın veya yeni bir şifre sıfırlama talebi oluşturun.'
+        );
+        showFallback();
+        return;
+      }
+
+      showForm();
+      setState('', 'Şifrenizi yenileyin', 'Yeni şifrenizi belirleyip kaydedin.', 'Hazır', 'Yeni şifrenizi girip işlemi tamamlayabilirsiniz.');
+
+      resetForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (passwordInput.value !== confirmInput.value) {
+          setState('error', 'Şifreler eşleşmiyor', 'Lütfen iki alanı da aynı olacak şekilde doldurun.', 'İşlem tamamlanamadı', 'Şifre tekrar alanı farklı görünüyor.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        setState('', 'Şifreniz kaydediliyor', 'İşlem birkaç saniye sürebilir.', 'Gönderiliyor', 'Yeni şifre bilgileriniz güvenli şekilde güncelleniyor.');
+
+        fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: token,
+            password: passwordInput.value,
+            password_confirmation: confirmInput.value
+          })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) {
+              if (!response.ok) {
+                var error = new Error(data.message || 'Şifre güncellenemedi.');
+                error.status = response.status;
+                throw error;
+              }
+              return data;
+            });
+          })
+          .then(function () {
+            setState(
+              'success',
+              'Şifreniz güncellendi',
+              'Artık yeni şifrenizle giriş yapabilirsiniz.',
+              'Tamamlandı',
+              'Şifre yenileme işlemi başarıyla tamamlandı. Birkaç saniye içinde giriş ekranına yönlendirileceksiniz.'
+            );
+            resetForm.classList.add('hidden');
+            fallbackActions.classList.remove('hidden');
+            setTimeout(function () {
+              window.location.href = '/?auth=login&reset=1';
+            }, 2500);
+          })
+          .catch(function (error) {
+            var expired = error.status === 410;
+            setState(
+              'error',
+              expired ? 'Bağlantının süresi dolmuş' : 'İşlem tamamlanamadı',
+              expired
+                ? 'Bu bağlantı artık kullanılamaz.'
+                : 'Bağlantı geçersiz veya işlem sırasında hata oluştu.',
+              'Hata',
+              error.message || 'Lütfen tekrar deneyin.'
+            );
+            submitBtn.disabled = false;
+            if (expired || error.status === 404) {
+              showFallback();
+            }
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

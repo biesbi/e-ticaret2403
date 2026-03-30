@@ -37,6 +37,15 @@ final class MailService
             if (!tableHasColumn('users', 'email_verified_at')) {
                 db()->exec('ALTER TABLE users ADD COLUMN email_verified_at DATETIME NULL');
             }
+            if (!tableHasColumn('users', 'password_reset_token')) {
+                db()->exec('ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(128) NULL');
+            }
+            if (!tableHasColumn('users', 'password_reset_sent_at')) {
+                db()->exec('ALTER TABLE users ADD COLUMN password_reset_sent_at DATETIME NULL');
+            }
+            if (!tableHasColumn('users', 'password_reset_expires_at')) {
+                db()->exec('ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME NULL');
+            }
         }
     }
 
@@ -47,6 +56,17 @@ final class MailService
     }
 
     public static function generateVerificationToken(): string
+    {
+        return bin2hex(random_bytes(32));
+    }
+
+    public static function passwordResetLifetimeHours(): int
+    {
+        $hours = (int) env('MAIL_PASSWORD_RESET_EXPIRE_HOURS', 2);
+        return $hours > 0 ? $hours : 2;
+    }
+
+    public static function generatePasswordResetToken(): string
     {
         return bin2hex(random_bytes(32));
     }
@@ -81,7 +101,7 @@ final class MailService
 
     public static function sendVerificationEmail(string $email, string $name, string $token): void
     {
-        $verifyUrl = rtrim((string) env('APP_URL', ''), '/') . '/verify-email.html?token=' . urlencode($token);
+        $verifyUrl = rtrim((string) env('APP_URL', ''), '/') . '/verify-email?token=' . urlencode($token);
         $subject = 'BoomerItems e-posta dogrulama';
         $html = self::wrapTemplate(
             'Hesabinizi aktifleştirin',
@@ -98,6 +118,50 @@ final class MailService
             . '<p style="margin:0 0 10px;color:#475569;">Buton acilmazsa asagidaki baglantiyi tarayiciniza yapistirabilirsiniz:</p>'
             . '<p style="margin:0 0 14px;color:#0f172a;word-break:break-all;">' . self::escape($verifyUrl) . '</p>'
             . '<p style="margin:0;color:#64748b;">Bu islemi siz yapmadiysaniz bu e-postayi dikkate almayabilirsiniz.</p>'
+        );
+
+        self::queueAndAttempt($email, $subject, $html);
+    }
+
+    public static function issuePasswordResetToken(string|int $userId, string $email, string $name): string
+    {
+        self::ensureSchema();
+
+        $token = self::generatePasswordResetToken();
+        $expiresAt = date('Y-m-d H:i:s', time() + (self::passwordResetLifetimeHours() * 3600));
+
+        db()->prepare(
+            'UPDATE users
+             SET password_reset_token = ?,
+                 password_reset_sent_at = CURRENT_TIMESTAMP,
+                 password_reset_expires_at = ?
+             WHERE id = ?'
+        )->execute([$token, $expiresAt, $userId]);
+
+        self::sendPasswordResetEmail($email, $name, $token);
+
+        return $token;
+    }
+
+    public static function sendPasswordResetEmail(string $email, string $name, string $token): void
+    {
+        $resetUrl = rtrim((string) env('APP_URL', ''), '/') . '/sifre-sifirla?token=' . urlencode($token);
+        $subject = 'BoomerItems sifre sifirlama';
+        $html = self::wrapTemplate(
+            'Sifrenizi yenileyin',
+            $name,
+            '<p style="margin:0 0 14px;">BoomerItems hesabiniz icin sifre sifirlama talebi aldik.</p>'
+            . '<p style="margin:0 0 16px;">Asagidaki butona tiklayarak yeni sifrenizi belirleyebilirsiniz. Baglanti '
+            . self::passwordResetLifetimeHours() . ' saat boyunca gecerlidir ve tek kullanimliktir.</p>'
+            . self::renderButton($resetUrl, 'Yeni Sifre Belirle')
+            . self::renderInfoTable([
+                'E-posta Adresi' => $email,
+                'Gecerlilik Suresi' => self::passwordResetLifetimeHours() . ' saat',
+                'Guvenlik' => 'Tek kullanimlik sifre sifirlama baglantisi',
+            ])
+            . '<p style="margin:0 0 10px;color:#475569;">Buton acilmazsa asagidaki baglantiyi tarayiciniza yapistirabilirsiniz:</p>'
+            . '<p style="margin:0 0 14px;color:#0f172a;word-break:break-all;">' . self::escape($resetUrl) . '</p>'
+            . '<p style="margin:0;color:#64748b;">Bu istegi siz yapmadiysaniz bu e-postayi dikkate almayabilir ve hesabinizin sifresini guvenlik icin degistirebilirsiniz.</p>'
         );
 
         self::queueAndAttempt($email, $subject, $html);
