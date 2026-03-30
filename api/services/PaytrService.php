@@ -225,6 +225,8 @@ final class PaytrService {
             'timeout_limit' => $timeoutLimit,
             'currency' => $currency,
             'test_mode' => self::isTestMode() ? 1 : 0,
+            // PayTR'nin yeni ödeme arayüzünü kullan.
+            'iframe_v2' => 1,
             'lang' => 'tr',
             'callback_url' => $callbackUrl,
         ];
@@ -245,7 +247,7 @@ final class PaytrService {
         }
 
         db()->prepare('UPDATE orders SET paytr_token = ?, paytr_merchant_oid = ? WHERE id = ?')
-            ->execute([(string) $response['token'], $merchantOid, $merchantOid]);
+            ->execute([(string) $response['token'], $merchantOid, $orderId]);
 
         return [
             'provider' => 'paytr',

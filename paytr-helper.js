@@ -241,6 +241,36 @@
     if (el) el.textContent = text;
   }
 
+  function createJsonResponseLike(response, payload) {
+    const headers = new Headers(response.headers || {});
+    headers.set('content-type', 'application/json; charset=utf-8');
+    return new Response(JSON.stringify(payload), {
+      status: response.status,
+      statusText: response.statusText,
+      headers: headers
+    });
+  }
+
+  function resolvePaymentUrl(payment, orderId, orderTotal) {
+    if (!payment || typeof payment !== 'object') {
+      return '';
+    }
+
+    if (payment.payment_url) {
+      return payment.payment_url;
+    }
+
+    if (payment.iframe_token) {
+      return 'https://www.paytr.com/odeme/guvenli/' + payment.iframe_token;
+    }
+
+    if (payment.mock) {
+      return '/paytr-test.html?order_id=' + encodeURIComponent(orderId || '') + '&amount=' + encodeURIComponent(orderTotal || 0);
+    }
+
+    return '';
+  }
+
   function hideWaitingOverlay() {
     const el = document.getElementById('paytr-waiting-overlay');
     if (el) el.remove();
@@ -415,12 +445,13 @@
 
   // ─── Ödeme Başlat ───────────────────────────────────────────────────────────
 
-  function startPayment(paymentUrl, orderId) {
+  function startPayment(paymentUrl, orderId, mode) {
     if (!paymentUrl || !orderId) return;
     activeOrderId = orderId;
     paymentHandled = false;
     inlinePaytrWasVisible = false;
     const isMobileViewport = window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : window.innerWidth <= 768;
+    const openTopLevel = mode === 'top-level' || isMobileViewport;
 
     try {
       localStorage.setItem('lastOrderId', orderId);
@@ -428,10 +459,11 @@
       localStorage.removeItem('paytr_result');
     } catch(e) {}
 
-    // Mobilde 3D doğrulama aynı sekmede daha güvenilir çalışır.
-    if (isMobileViewport) {
-      console.log('📲 Mobil PayTR akışı: aynı sekmede yönlendiriliyor...', paymentUrl);
-      window.location.href = paymentUrl;
+    // Banka 3D ekranları nested iframe içinde güvenilir çalışmıyor.
+    // Bu yüzden top-level modda ödeme sayfasını mevcut sekmede aç.
+    if (openTopLevel) {
+      console.log('🌐 PayTR akışı üst sayfada açılıyor...', paymentUrl);
+      window.location.assign(paymentUrl);
       return;
     }
 
@@ -488,33 +520,28 @@
             localStorage.setItem('lastOrderTotal', JSON.stringify({ orderId, total: orderTotal, ts: Date.now() }));
           } catch(e) {}
 
-          // Masaüstünde mevcut inline checkout akışı zaten paneli açıyor.
-          // Burada tekrar yeni sekme açarsak aynı token ikinci kez tüketiliyor.
-          if (!isMobileViewport) {
-            console.log('🖥️ Masaüstü PayTR akışı ana uygulamaya bırakıldı.');
-            setTimeout(syncInlinePaytrState, 250);
-            setTimeout(syncInlinePaytrState, 1000);
+          const paymentUrl = resolvePaymentUrl(payment, orderId, orderTotal);
+          if (!paymentUrl) {
+            console.warn('⚠️ Payment objesi var ama token/url yok:', payment);
             return response;
           }
 
-          if (payment.iframe_token) {
-            const paymentUrl = 'https://www.paytr.com/odeme/guvenli/' + payment.iframe_token;
-            console.log('💳 PayTR iframe token bulundu, mobil akış başlatılıyor...');
-            setTimeout(() => startPayment(paymentUrl, orderId), 500);
+          console.log(isMobileViewport
+            ? '📲 Mobil PayTR akışı üst sayfaya taşınıyor...'
+            : '🖥️ Masaüstü PayTR akışı üst sayfaya taşınıyor...');
 
-          } else if (payment.payment_url) {
-            console.log('🔗 Payment URL bulundu:', payment.payment_url);
-            setTimeout(() => startPayment(payment.payment_url, orderId), 500);
+          setTimeout(function() {
+            startPayment(paymentUrl, orderId, 'top-level');
+          }, 25);
 
-          } else if (payment.mock) {
-            const amount = orderTotal;
-            const mockUrl = '/paytr-test.html?order_id=' + orderId + '&amount=' + amount;
-            console.log('🧪 Mock mode - yeni sekme açılıyor...');
-            setTimeout(() => startPayment(mockUrl, orderId), 500);
-
-          } else {
-            console.warn('⚠️ Payment objesi var ama token/url yok:', payment);
-          }
+          return createJsonResponseLike(response, Object.assign({}, data, {
+            payment: Object.assign({}, payment, {
+              status: 'iframe_ready',
+              iframe_token: '',
+              payment_url: paymentUrl,
+              opened_externally: true
+            })
+          }));
 
         } else if (response.ok && data && data.payment && data.payment.status === 'failed') {
           console.error('❌ PAYTR token alınamadı:', data.payment);
@@ -528,12 +555,12 @@
     return response;
   };
 
-  console.log('✅ PayTR Helper Script hazır - Mobil takeover aktif, masaüstü inline akış korunuyor');
+  console.log('✅ PayTR Helper Script hazır - top-level PayTR akışı aktif');
 
   window.PayTRHelper = {
     startPayment: startPayment,
     resetCancelledCheckout: resetCancelledCheckout,
-    version: '2.4.1'
+    version: '2.5.0'
   };
 
   // Masaüstünde inline PayTR kapatılırsa eski oturumu bırakma.

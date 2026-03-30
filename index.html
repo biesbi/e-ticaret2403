@@ -4531,6 +4531,99 @@
 	<link property="stylesheet" rel='stylesheet' id='otaku-woocommerce-extensions-responsive-css'
 		href='https://boomeritems.com/wp-content/themes/otaku/skins/default/plugins/woocommerce/woocommerce-extensions-responsive.css'
 		type='text/css' media='all' />
+	<script>
+		(function () {
+			var originalFetch = window.fetch;
+			if (typeof originalFetch !== 'function') return;
+
+			var isProductsEndpoint = function (url) {
+				return /\/api\/products(?:\/[^/?#]+)?(?:\?|$)/i.test(url || '');
+			};
+
+			var toNumber = function (value) {
+				var parsed = parseInt(value, 10);
+				return Number.isFinite(parsed) ? parsed : null;
+			};
+
+			var normalizeVariant = function (variant) {
+				if (!variant || typeof variant !== 'object') return variant;
+				var next = Object.assign({}, variant);
+				var available = toNumber(next.available_stock);
+				if (available !== null) {
+					next.stock = Math.max(0, available);
+				}
+				return next;
+			};
+
+			var normalizeProduct = function (product) {
+				if (!product || typeof product !== 'object') return product;
+				var next = Object.assign({}, product);
+				var variants = Array.isArray(next.variants) ? next.variants.map(normalizeVariant) : null;
+				if (variants) {
+					next.variants = variants;
+				}
+
+				if (next.hasVariants && variants && variants.length) {
+					var activeVariants = variants.filter(function (variant) {
+						return parseInt(variant && variant.is_active != null ? variant.is_active : 1, 10) === 1;
+					});
+					var variantAvailableTotal = activeVariants.reduce(function (sum, variant) {
+						var available = toNumber(variant.available_stock);
+						var stock = toNumber(variant.stock);
+						return sum + Math.max(0, available !== null ? available : (stock !== null ? stock : 0));
+					}, 0);
+					next.totalVariantStock = variantAvailableTotal;
+				}
+
+				var availableStock = toNumber(next.available_stock);
+				if (availableStock !== null) {
+					next.stock = Math.max(0, availableStock);
+				}
+
+				return next;
+			};
+
+			var normalizePayload = function (payload) {
+				if (!payload || typeof payload !== 'object') return payload;
+				if (Array.isArray(payload.items)) {
+					var nextList = Object.assign({}, payload);
+					nextList.items = payload.items.map(normalizeProduct);
+					return nextList;
+				}
+				return normalizeProduct(payload);
+			};
+
+			window.fetch = function (input, init) {
+				var requestUrl = '';
+				if (typeof input === 'string') requestUrl = input;
+				else if (input && typeof input.url === 'string') requestUrl = input.url;
+
+				return originalFetch.call(this, input, init).then(function (response) {
+					if (!isProductsEndpoint(requestUrl) || !response || !response.ok) {
+						return response;
+					}
+
+					var contentType = response.headers && response.headers.get ? response.headers.get('content-type') : '';
+					if (!/application\/json/i.test(contentType || '')) {
+						return response;
+					}
+
+					return response.clone().json().then(function (payload) {
+						var normalized = normalizePayload(payload);
+						var headers = new Headers(response.headers || {});
+						headers.set('content-type', 'application/json; charset=utf-8');
+						return new Response(JSON.stringify(normalized), {
+							status: response.status,
+							statusText: response.statusText,
+							headers: headers
+						});
+					}).catch(function () {
+						return response;
+					});
+				});
+			};
+		})();
+	</script>
 	<script type="module" crossorigin src="/assets/index-Du6Gv6sE.js"></script>
 	<link rel="stylesheet" crossorigin href="/assets/index--Mnj2wD-.css">
 	<style id="final-mobile-fixes">
@@ -4846,9 +4939,16 @@
 			var stockValueFromProduct = function (product) {
 				if (!product) return 0;
 				if (product.hasVariants) {
+					if (Array.isArray(product.variants) && product.variants.length) {
+						return product.variants.reduce(function (sum, variant) {
+							if (parseInt(variant && variant.is_active != null ? variant.is_active : 1, 10) !== 1) return sum;
+							var available = parseInt(variant.available_stock != null ? variant.available_stock : variant.stock || 0, 10) || 0;
+							return sum + Math.max(0, available);
+						}, 0);
+					}
 					return Math.max(0, parseInt(product.totalVariantStock || 0, 10) || 0);
 				}
-				return Math.max(0, parseInt(product.available_stock || product.stock || 0, 10) || 0);
+				return Math.max(0, parseInt(product.available_stock != null ? product.available_stock : product.stock || 0, 10) || 0);
 			};
 
 			var stockStateClass = function (stock) {
@@ -5036,7 +5136,7 @@
 				}
 				stockNode.innerHTML = stock <= 0
 					? '<strong>Stok Durumu:</strong> Bu \u00fcr\u00fcn t\u00fckenmi\u015ftir.'
-					: '<strong>Toplam Stok:</strong> ' + stock + ' adet';
+					: '<strong>Kullan\u0131labilir Stok:</strong> ' + stock + ' adet';
 
 				var walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, null);
 				var textNode;
@@ -8145,7 +8245,7 @@
 	</footer>
 
 	<!-- PayTR Ödeme Entegrasyonu -->
-	<script src="/paytr-helper.js?v=20260330a"></script>
+	<script src="/paytr-helper.js?v=20260330b"></script>
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 			var detailCache = {};

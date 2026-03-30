@@ -277,7 +277,12 @@
 
       elId.textContent = orderId;
 
-      try { localStorage.removeItem('cart'); localStorage.removeItem('cartItems'); } catch(e) {}
+      try {
+        localStorage.removeItem('cart');
+        localStorage.removeItem('cartItems');
+        localStorage.removeItem('paytr_checkout_snapshot');
+        localStorage.removeItem('paytr_result');
+      } catch(e) {}
 
       // localStorage'dan kaydedilmiş tutarı oku (API başarısız olursa fallback)
       function applyLocalTotal() {
