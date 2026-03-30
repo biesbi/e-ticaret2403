@@ -214,6 +214,7 @@ final class MailService
             'pending' => 'Beklemede',
             'confirmed' => 'Onaylandi',
             'processing' => 'Hazirlaniyor',
+            'preparing' => 'Hazirlaniyor',
             'shipped' => 'Kargoya Verildi',
             'delivered' => 'Teslim Edildi',
             'cancelled' => 'Iptal Edildi',
@@ -234,7 +235,7 @@ final class MailService
                 'Siparisiniz iptal edildi',
                 'Sorulariniz icin destek ekibimizle iletisime gecebilirsiniz.'
             );
-        } elseif ($newStatus === 'processing') {
+        } elseif ($newStatus === 'processing' || $newStatus === 'preparing') {
             $bodyParts .= self::renderNoticeBox(
                 'Siparisiniz hazirlaniyor',
                 'Urunleriniz paketleniyor. Kargoya verildikten sonra takip numarasi gonderilecektir.'

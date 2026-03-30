@@ -53,12 +53,41 @@ function orderStatusSupported(string $status): bool {
     return in_array($status, orderAllowedStatuses(), true);
 }
 
+function orderNormalizeRequestedStatus(string $status): string
+{
+    $status = strtolower(trim($status));
+    if ($status === '') {
+        return '';
+    }
+
+    $allowed = orderAllowedStatuses();
+    if (in_array($status, $allowed, true)) {
+        return $status;
+    }
+
+    $aliases = [
+        'processing' => ['preparing', 'confirmed'],
+        'preparing' => ['processing', 'confirmed'],
+        'confirmed' => ['processing', 'preparing'],
+        'cancelled' => ['failed'],
+        'failed' => ['cancelled'],
+    ];
+
+    foreach ($aliases[$status] ?? [] as $candidate) {
+        if (in_array($candidate, $allowed, true)) {
+            return $candidate;
+        }
+    }
+
+    return $status;
+}
+
 function orderApplyStockTransition(string $orderId, ?string $status, ?string $paymentStatus): void {
     $status = $status ?? '';
     $paymentStatus = $paymentStatus ?? '';
 
     if (in_array($paymentStatus, ['paid', 'confirmed', 'success'], true)
-        || in_array($status, ['paid', 'confirmed', 'processing', 'shipped', 'delivered'], true)) {
+        || in_array($status, ['paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'], true)) {
         StockService::finalizeReservedStock($orderId);
         return;
     }
@@ -579,7 +608,7 @@ if ($id !== null && $sub === 'status') {
     if ($method !== 'PATCH') error('Method not allowed.', 405);
     adminRequired();
 
-    $status = (string) input('status', '');
+    $status = orderNormalizeRequestedStatus((string) input('status', ''));
     if (!orderStatusSupported($status)) {
         error('Gecersiz durum.');
     }
@@ -613,7 +642,7 @@ if ($id !== null && $sub === 'cargo') {
     $carrier = trim((string) input('cargo_carrier', input('cargoCompany', input('cargo_company', ''))));
     if ($tracking === '') error('Takip numarasi gerekli.');
 
-    $targetStatus = StockService::resolveStatus(['shipped', 'processing', 'confirmed'], 'pending');
+    $targetStatus = StockService::resolveStatus(['shipped', 'processing', 'preparing', 'confirmed'], 'pending');
 
     $setParts = [];
     $values = [];

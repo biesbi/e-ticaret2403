@@ -55,6 +55,35 @@ function adminNormalizeRoleFilter(?string $role): ?string {
     };
 }
 
+function adminNormalizeOrderStatus(string $status): string
+{
+    $status = strtolower(trim($status));
+    if ($status === '') {
+        return '';
+    }
+
+    $allowed = StockService::allowedOrderStatuses();
+    if (in_array($status, $allowed, true)) {
+        return $status;
+    }
+
+    $aliases = [
+        'processing' => ['preparing', 'confirmed'],
+        'preparing' => ['processing', 'confirmed'],
+        'confirmed' => ['processing', 'preparing'],
+        'cancelled' => ['failed'],
+        'failed' => ['cancelled'],
+    ];
+
+    foreach ($aliases[$status] ?? [] as $candidate) {
+        if (in_array($candidate, $allowed, true)) {
+            return $candidate;
+        }
+    }
+
+    return $status;
+}
+
 function adminHydrateUserRow(array $row): array {
     $row['display_name'] = $row['display_name'] ?? $row['name'] ?? '';
     $role = $row['role'] ?? 'user';
@@ -265,7 +294,7 @@ elseif ($id === 'users' && $sub !== null && $method === 'DELETE') {
 // POST /admin/bulk/orders — toplu sipariş durumu güncelle
 elseif ($id === 'bulk' && $sub === 'orders' && $method === 'POST') {
     $ids    = input('ids', []);
-    $status = input('status', '');
+    $status = adminNormalizeOrderStatus((string) input('status', ''));
 
     $validStatuses = StockService::allowedOrderStatuses();
     if (!is_array($ids) || empty($ids)) error('Sipariş ID listesi gerekli.');
@@ -284,7 +313,7 @@ elseif ($id === 'bulk' && $sub === 'orders' && $method === 'POST') {
     )->execute($params);
 
     foreach ($ids as $orderId) {
-        if (in_array($status, ['paid', 'confirmed', 'processing', 'shipped', 'delivered'], true)) {
+        if (in_array($status, ['paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'], true)) {
             StockService::finalizeReservedStock((string) $orderId);
         } elseif (in_array($status, ['failed', 'cancelled'], true)) {
             StockService::releaseReservedStock((string) $orderId);

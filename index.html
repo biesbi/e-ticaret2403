@@ -4635,6 +4635,41 @@
 
 			var normalizePayload = function (payload) {
 				if (!payload || typeof payload !== 'object') return payload;
+				var normalizeOrderStatusValue = function (status) {
+					return String(status || '').toLowerCase() === 'preparing' ? 'processing' : status;
+				};
+				var looksLikeOrderPayload = function (value) {
+					if (!value || typeof value !== 'object') return false;
+					var id = String(value.id || '');
+					return /^BM[A-Z0-9]{10}$/i.test(id)
+						|| !!value.shippingAddress
+						|| !!value.shipping_address
+						|| value.payment_status != null
+						|| value.cargoNumber != null
+						|| value.cargo_number != null;
+				};
+				var normalizeOrder = function (order) {
+					if (!order || typeof order !== 'object') return order;
+					var nextOrder = Object.assign({}, order);
+					if (nextOrder.status != null) {
+						nextOrder.status = normalizeOrderStatusValue(nextOrder.status);
+					}
+					return nextOrder;
+				};
+				if (Array.isArray(payload)) {
+					if (payload.some(looksLikeOrderPayload)) {
+						return payload.map(normalizeOrder);
+					}
+					return payload;
+				}
+				if (looksLikeOrderPayload(payload)) {
+					return normalizeOrder(payload);
+				}
+				if (Array.isArray(payload.items) && payload.items.some(looksLikeOrderPayload)) {
+					var nextOrderList = Object.assign({}, payload);
+					nextOrderList.items = payload.items.map(normalizeOrder);
+					return nextOrderList;
+				}
 				if (Array.isArray(payload.items)) {
 					var nextList = Object.assign({}, payload);
 					nextList.items = payload.items.map(normalizeProduct);
@@ -4782,6 +4817,23 @@
 					});
 				});
 			};
+		})();
+	</script>
+	<script>
+		(function () {
+			try {
+				var rawToken = localStorage.getItem('token');
+				if (!rawToken) return;
+
+				var payload = JSON.parse(atob(rawToken.split('.')[1] || ''));
+				if (!payload || payload.role !== 'admin') return;
+
+				var path = String(window.location.pathname || '').toLowerCase();
+				var hash = String(window.location.hash || '').toLowerCase();
+				if (path.indexOf('/admin') !== -1 || hash === '#admin') {
+					localStorage.setItem('admin_panel_open', '1');
+				}
+			} catch (error) { }
 		})();
 	</script>
 	<script type="module" crossorigin src="/assets/index-Du6Gv6sE.js"></script>
@@ -9014,6 +9066,406 @@
 			}
 			setTimeout(queueEnhanceOrdersForce, 700);
 			setTimeout(queueEnhanceOrdersForce, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var detailCache = {};
+			var scheduled = false;
+			var emojiFont = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI",sans-serif';
+			var carrierOptions = [
+				'',
+				'Yurti\u00e7i Kargo',
+				'Aras Kargo',
+				'MNG Kargo',
+				'S\u00fcrat Kargo',
+				'PTT Kargo',
+				'Kargoist',
+				'DHL Express'
+			];
+			var statusMeta = {
+				pending: { label: 'Beklemede', option: '\uD83D\uDFE1 Beklemede' },
+				processing: { label: 'Haz\u0131rlan\u0131yor', option: '\uD83D\uDCE6 Haz\u0131rlan\u0131yor' },
+				preparing: { label: 'Haz\u0131rlan\u0131yor', option: '\uD83D\uDCE6 Haz\u0131rlan\u0131yor' },
+				confirmed: { label: 'Onayland\u0131', option: '\uD83D\uDFE0 Onayland\u0131' },
+				shipped: { label: 'Kargoya Verildi', option: '\uD83D\uDE9A Kargoya Verildi' },
+				delivered: { label: 'Teslim Edildi', option: '\u2705 Teslim Edildi' },
+				cancelled: { label: '\u0130ptal Edildi', option: '\u274C \u0130ptal Edildi' },
+				failed: { label: 'Ba\u015far\u0131s\u0131z', option: '\u26A0\uFE0F Ba\u015far\u0131s\u0131z' }
+			};
+
+			var ensureBridgeStyles = function () {
+				if (document.getElementById('admin-order-bridge-style')) return;
+				var style = document.createElement('style');
+				style.id = 'admin-order-bridge-style';
+				style.textContent = [
+					'.admin-order-bridge{margin-top:16px;padding:16px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;}',
+					'.admin-order-bridge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;}',
+					'.admin-order-bridge-field label{display:block;margin:0 0 6px;font-size:.85rem;font-weight:600;color:#64748b;}',
+					'.admin-order-bridge-field input,.admin-order-bridge-field select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #cbd5e1;font-size:.95rem;background:#f8fafc;font-family:' + emojiFont + ';}',
+					'.admin-order-bridge-actions{display:flex;justify-content:flex-end;gap:10px;align-items:center;}',
+					'.admin-order-bridge-btn{height:42px;padding:0 16px;border:none;border-radius:10px;background:#0f172a;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;}',
+					'.admin-order-bridge-btn[disabled]{opacity:.6;cursor:wait;}',
+					'@media (max-width: 767px){.admin-order-bridge-actions{justify-content:stretch;}.admin-order-bridge-btn{width:100%;}}'
+				].join('');
+				document.head.appendChild(style);
+			};
+
+			var getStatusLabel = function (status, withEmoji) {
+				var meta = statusMeta[String(status || '').toLowerCase()];
+				if (!meta) return String(status || '');
+				return withEmoji ? meta.option : meta.label;
+			};
+
+			var getStatusControlValue = function (status) {
+				switch (String(status || '').toLowerCase()) {
+					case 'processing':
+					case 'preparing':
+					case 'confirmed':
+						return 'preparing';
+					case 'failed':
+						return 'cancelled';
+					default:
+						return String(status || 'pending').toLowerCase();
+				}
+			};
+
+			var getStatusRetryCandidates = function (status) {
+				var normalized = String(status || '').toLowerCase();
+				var groups = {
+					preparing: ['preparing', 'processing', 'confirmed'],
+					processing: ['processing', 'preparing', 'confirmed'],
+					confirmed: ['confirmed', 'processing', 'preparing'],
+					cancelled: ['cancelled', 'failed'],
+					failed: ['failed', 'cancelled']
+				};
+				var seen = {};
+				return (groups[normalized] || [normalized]).filter(function (item) {
+					if (!item || seen[item]) return false;
+					seen[item] = true;
+					return true;
+				});
+			};
+
+			var getAuthHeaders = function (withJson) {
+				var headers = { Accept: 'application/json' };
+				if (withJson) headers['Content-Type'] = 'application/json';
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (error) { }
+				return headers;
+			};
+
+			var parseJsonSafe = function (response) {
+				return response.json().catch(function () { return {}; });
+			};
+
+			var isOrderStatusSelect = function (select) {
+				if (!select || !select.options) return false;
+				var values = Array.prototype.map.call(select.options, function (option) {
+					return String(option.value || '').toLowerCase();
+				});
+				return values.indexOf('pending') !== -1
+					&& (values.indexOf('shipped') !== -1 || values.indexOf('delivered') !== -1 || values.indexOf('cancelled') !== -1);
+			};
+
+			var normalizeStatusSelect = function (select) {
+				if (!isOrderStatusSelect(select)) return;
+				select.style.fontFamily = emojiFont;
+				Array.prototype.forEach.call(select.options, function (option) {
+					var key = String(option.value || '').toLowerCase();
+					if (statusMeta[key]) {
+						option.textContent = getStatusLabel(key, true);
+						option.style.fontFamily = emojiFont;
+					}
+				});
+			};
+
+			var showToast = function (message, type) {
+				if (typeof window.showToast === 'function') {
+					window.showToast(message, type || 'info', 3000);
+					return;
+				}
+				if (type === 'error') {
+					window.alert(message);
+				}
+			};
+
+			var extractOrderId = function (card) {
+				var match = String(card && card.textContent || '').match(/\bBM[A-Z0-9]{10}\b/i);
+				return match ? match[0].toUpperCase() : '';
+			};
+
+			var fetchOrderDetail = function (orderId, force) {
+				if (!orderId) return Promise.resolve(null);
+				if (!force && detailCache[orderId]) {
+					return Promise.resolve(detailCache[orderId]);
+				}
+
+				return fetch('/api/orders/' + encodeURIComponent(orderId), {
+					headers: getAuthHeaders(false)
+				})
+					.then(function (response) { return response.ok ? parseJsonSafe(response) : null; })
+					.then(function (payload) {
+						detailCache[orderId] = payload || null;
+						return detailCache[orderId];
+					})
+					.catch(function () { return null; });
+			};
+
+			var patchOrderStatus = function (orderId, status) {
+				var candidates = getStatusRetryCandidates(status);
+				var attempt = function (index, lastMessage) {
+					if (index >= candidates.length) {
+						return Promise.reject(new Error(lastMessage || 'Siparis durumu guncellenemedi.'));
+					}
+
+					return fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
+						method: 'PATCH',
+						headers: getAuthHeaders(true),
+						body: JSON.stringify({ status: candidates[index] })
+					}).then(function (response) {
+						return parseJsonSafe(response).then(function (payload) {
+							if (response.ok) {
+								detailCache[orderId] = payload || null;
+								return payload;
+							}
+							return attempt(index + 1, payload && payload.message);
+						});
+					});
+				};
+
+				return attempt(0, '');
+			};
+
+			var patchOrderCargo = function (orderId, tracking, company) {
+				return fetch('/api/orders/' + encodeURIComponent(orderId) + '/cargo', {
+					method: 'PATCH',
+					headers: getAuthHeaders(true),
+					body: JSON.stringify({
+						cargoNumber: tracking,
+						cargoCompany: company || ''
+					})
+				}).then(function (response) {
+					return parseJsonSafe(response).then(function (payload) {
+						if (!response.ok) {
+							throw new Error(payload && payload.message || 'Kargo bilgisi guncellenemedi.');
+						}
+						detailCache[orderId] = payload || null;
+						return payload;
+					});
+				});
+			};
+
+			var syncCardBadge = function (card, detail) {
+				if (!card || !detail) return;
+				var badge = card.querySelector('.badge-active');
+				if (!badge) return;
+				badge.textContent = getStatusLabel(detail.status, false);
+				badge.classList.toggle('success', String(detail.status || '').toLowerCase() !== 'pending');
+			};
+
+			var syncBridgeControls = function (card, detail) {
+				if (!card || !detail) return;
+				var bridge = card.querySelector('[data-admin-order-bridge="controls"]');
+				if (!bridge) return;
+
+				var cargoSelect = bridge.querySelector('[data-admin-order-field="cargo-company"]');
+				var trackingInput = bridge.querySelector('[data-admin-order-field="cargo-number"]');
+				var statusSelect = bridge.querySelector('[data-admin-order-field="status"]');
+
+				if (cargoSelect) cargoSelect.value = detail.cargoCompany || detail.cargo_company || '';
+				if (trackingInput) trackingInput.value = detail.cargoNumber || detail.cargo_number || '';
+				if (statusSelect) statusSelect.value = getStatusControlValue(detail.status);
+			};
+
+			var normalizeCardControls = function (card) {
+				Array.prototype.forEach.call(card.querySelectorAll('select'), normalizeStatusSelect);
+			};
+
+			var createBridgeField = function (labelText, control) {
+				var wrap = document.createElement('div');
+				wrap.className = 'admin-order-bridge-field';
+				var label = document.createElement('label');
+				label.textContent = labelText;
+				wrap.appendChild(label);
+				wrap.appendChild(control);
+				return wrap;
+			};
+
+			var createBridgeControls = function (card, detail) {
+				if (!card || card.querySelector('[data-admin-order-bridge="controls"]')) return;
+
+				var grid = card.querySelector('.admin-order-grid');
+				var host = grid && grid.children && grid.children[1] ? grid.children[1] : card;
+				if (!host) return;
+
+				var shell = document.createElement('div');
+				shell.className = 'admin-order-bridge';
+				shell.setAttribute('data-admin-order-bridge', 'controls');
+
+				var layout = document.createElement('div');
+				layout.className = 'admin-order-bridge-grid';
+
+				var cargoSelect = document.createElement('select');
+				cargoSelect.setAttribute('data-admin-order-field', 'cargo-company');
+				cargoSelect.style.fontFamily = emojiFont;
+				carrierOptions.forEach(function (carrier) {
+					var option = document.createElement('option');
+					option.value = carrier;
+					option.textContent = carrier || 'Kargo Firmasi Secin';
+					cargoSelect.appendChild(option);
+				});
+
+				var trackingInput = document.createElement('input');
+				trackingInput.type = 'text';
+				trackingInput.placeholder = 'Takip no veya link';
+				trackingInput.setAttribute('data-admin-order-field', 'cargo-number');
+
+				var statusSelect = document.createElement('select');
+				statusSelect.setAttribute('data-admin-order-field', 'status');
+				statusSelect.style.fontFamily = emojiFont;
+				['pending', 'preparing', 'shipped', 'delivered', 'cancelled'].forEach(function (statusKey) {
+					var option = document.createElement('option');
+					option.value = statusKey;
+					option.textContent = getStatusLabel(statusKey, true);
+					option.style.fontFamily = emojiFont;
+					statusSelect.appendChild(option);
+				});
+
+				var actionWrap = document.createElement('div');
+				actionWrap.className = 'admin-order-bridge-actions';
+				var cargoButton = document.createElement('button');
+				cargoButton.type = 'button';
+				cargoButton.className = 'admin-order-bridge-btn';
+				cargoButton.textContent = 'Kargoyu Kaydet';
+				actionWrap.appendChild(cargoButton);
+
+				layout.appendChild(createBridgeField('Kargo Firmasi', cargoSelect));
+				layout.appendChild(createBridgeField('Kargo Takip No', trackingInput));
+				layout.appendChild(createBridgeField('Siparis Durumu', statusSelect));
+				layout.appendChild(actionWrap);
+				shell.appendChild(layout);
+				host.appendChild(shell);
+
+				var orderId = extractOrderId(card);
+				var lastStatusValue = getStatusControlValue(detail && detail.status);
+				statusSelect.value = lastStatusValue;
+				cargoSelect.value = detail && (detail.cargoCompany || detail.cargo_company) || '';
+				trackingInput.value = detail && (detail.cargoNumber || detail.cargo_number) || '';
+
+				statusSelect.addEventListener('change', function () {
+					var nextValue = statusSelect.value;
+					statusSelect.disabled = true;
+
+					patchOrderStatus(orderId, nextValue)
+						.then(function (updated) {
+							lastStatusValue = getStatusControlValue(updated && updated.status);
+							statusSelect.value = lastStatusValue;
+							syncCardBadge(card, updated);
+							syncBridgeControls(card, updated);
+							normalizeCardControls(card);
+							showToast('Siparis durumu guncellendi.', 'success');
+						})
+						.catch(function (error) {
+							statusSelect.value = lastStatusValue;
+							showToast(error && error.message || 'Siparis durumu guncellenemedi.', 'error');
+						})
+						.finally(function () {
+							statusSelect.disabled = false;
+						});
+				});
+
+				cargoButton.addEventListener('click', function () {
+					var tracking = String(trackingInput.value || '').trim();
+					if (!tracking) {
+						showToast('Takip numarasi girmeden kargo bilgisi kaydedilemez.', 'error');
+						trackingInput.focus();
+						return;
+					}
+
+					cargoButton.disabled = true;
+					patchOrderCargo(orderId, tracking, cargoSelect.value)
+						.then(function (updated) {
+							syncCardBadge(card, updated);
+							syncBridgeControls(card, updated);
+							normalizeCardControls(card);
+							showToast('Kargo bilgisi guncellendi.', 'success');
+						})
+						.catch(function (error) {
+							showToast(error && error.message || 'Kargo bilgisi guncellenemedi.', 'error');
+						})
+						.finally(function () {
+							cargoButton.disabled = false;
+						});
+				});
+			};
+
+			var enhanceOrderCard = function (card) {
+				if (!card) return;
+				normalizeCardControls(card);
+
+				var orderId = extractOrderId(card);
+				if (!orderId) return;
+
+				var hasNativeControls = Array.prototype.some.call(card.querySelectorAll('select'), isOrderStatusSelect);
+				if (card.dataset.adminOrderBridgeLoading === '1') return;
+
+				if (hasNativeControls) {
+					fetchOrderDetail(orderId, false).then(function (detail) {
+						if (!detail) return;
+						syncCardBadge(card, detail);
+						normalizeCardControls(card);
+					});
+					return;
+				}
+
+				if (card.querySelector('[data-admin-order-bridge="controls"]')) {
+					fetchOrderDetail(orderId, false).then(function (detail) {
+						if (!detail) return;
+						syncCardBadge(card, detail);
+						syncBridgeControls(card, detail);
+					});
+					return;
+				}
+
+				card.dataset.adminOrderBridgeLoading = '1';
+				fetchOrderDetail(orderId, false).then(function (detail) {
+					if (!detail) return;
+					createBridgeControls(card, detail);
+					syncCardBadge(card, detail);
+					syncBridgeControls(card, detail);
+					normalizeCardControls(card);
+				}).finally(function () {
+					card.dataset.adminOrderBridgeLoading = '0';
+				});
+			};
+
+			var enhanceAdminOrders = function () {
+				ensureBridgeStyles();
+
+				var title = document.querySelector('.admin-view .admin-header h1');
+				if (!title || String(title.textContent || '').toLowerCase().indexOf('sip') === -1) return;
+
+				Array.prototype.forEach.call(document.querySelectorAll('.admin-view .admin-order-card'), enhanceOrderCard);
+			};
+
+			var queueEnhanceAdminOrders = function () {
+				if (scheduled) return;
+				scheduled = true;
+				window.requestAnimationFrame(function () {
+					scheduled = false;
+					enhanceAdminOrders();
+				});
+			};
+
+			queueEnhanceAdminOrders();
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceAdminOrders).observe(document.body, { childList: true, subtree: true });
+			}
+			window.setTimeout(queueEnhanceAdminOrders, 600);
+			window.setTimeout(queueEnhanceAdminOrders, 1500);
 		});
 	</script>
 	<script>

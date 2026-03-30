@@ -51,7 +51,7 @@ final class PaytrService {
     public static function completeMock(string $orderId, string $status): array {
         $paymentStatus = $status === 'success' ? 'paid' : 'failed';
         $orderStatus = $status === 'success'
-            ? StockService::resolveStatus(['processing', 'confirmed', 'paid'], 'pending')
+            ? StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending')
             : StockService::resolveStatus(['failed', 'cancelled', 'pending'], 'pending');
 
         $stmt = db()->prepare(
@@ -120,7 +120,7 @@ final class PaytrService {
 
         $paymentStatus = $status === 'success' ? 'paid' : 'failed';
         $orderStatus = $status === 'success'
-            ? StockService::resolveStatus(['processing', 'confirmed', 'paid'], 'pending')
+            ? StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending')
             : StockService::resolveStatus(['failed', 'cancelled', 'pending'], 'pending');
 
         $stmt = db()->prepare(

@@ -99,12 +99,12 @@ final class StockService
     {
         $columnType = tableColumnType('orders', 'status');
         if (!is_string($columnType) || !str_starts_with($columnType, 'enum(')) {
-            return ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'confirmed', 'paid', 'failed'];
+            return ['pending', 'processing', 'preparing', 'shipped', 'delivered', 'cancelled', 'confirmed', 'paid', 'failed'];
         }
 
         preg_match_all("/'([^']+)'/", $columnType, $matches);
         $values = array_values(array_unique($matches[1] ?? []));
-        return $values !== [] ? $values : ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        return $values !== [] ? $values : ['pending', 'processing', 'preparing', 'shipped', 'delivered', 'cancelled'];
     }
 
     public static function resolveStatus(array $preferred, string $fallback): string
