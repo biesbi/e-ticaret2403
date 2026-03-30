@@ -33,7 +33,9 @@ class CartService
             $hasProductReserved ? 'p.reserved_stock' : '0 AS reserved_stock',
             tableHasColumn('products', 'sku') ? 'p.sku' : 'NULL AS sku',
             tableHasColumn('products', 'set_no') ? 'p.set_no' : 'NULL AS set_no',
-            tableHasColumn('products', 'condition_tag') ? 'p.condition_tag' : 'NULL AS condition_tag',
+            tableHasColumn('products', 'product_condition')
+                ? 'p.product_condition'
+                : (tableHasColumn('products', 'condition_tag') ? 'p.condition_tag AS product_condition' : 'NULL AS product_condition'),
             tableHasColumn('products', 'images') ? 'p.images' : 'NULL AS images',
             tableHasColumn('products', 'is_active') ? 'p.is_active' : '1 AS is_active',
             $hasVariant ? 'pv.color AS variant_color' : 'NULL AS variant_color',
@@ -85,7 +87,9 @@ class CartService
                 'stock' => $stock,
                 'sku' => $row['variant_sku'] ?? $row['sku'],
                 'set_no' => $row['set_no'],
-                'condition_tag' => $row['condition_tag'],
+                'product_condition' => normalizeProductConditionTag($row['product_condition'] ?? null, 'used'),
+                'condition_tag' => normalizeProductConditionTag($row['product_condition'] ?? null, 'used'),
+                'conditionLabel' => productConditionLabel(normalizeProductConditionTag($row['product_condition'] ?? null, 'used')),
                 'images' => json_decode($row['images'] ?? '[]', true),
                 'category_name' => $row['category_name'],
                 'brand_name' => $row['brand_name'],

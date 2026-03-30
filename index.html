@@ -1125,6 +1125,13 @@
 			text-transform: uppercase;
 		}
 
+		.condition-label.is-inline {
+			position: static;
+			display: inline-flex;
+			align-items: center;
+			margin: 0 0 14px;
+		}
+
 		.condition-new {
 			background: #dcfce7;
 			color: #166534;
@@ -1135,6 +1142,18 @@
 			background: #fef3c7;
 			color: #92400e;
 			border: 1px solid #fde68a;
+		}
+
+		.admin-product-condition-field {
+			margin-top: 14px;
+		}
+
+		.admin-product-condition-help {
+			display: block;
+			margin-top: 8px;
+			font-size: 0.78rem;
+			line-height: 1.5;
+			color: #64748b;
 		}
 
 		/* === FREE SHIPPING PROGRESS BAR === */
@@ -4540,9 +4559,33 @@
 				return /\/api\/products(?:\/[^/?#]+)?(?:\?|$)/i.test(url || '');
 			};
 
+			var isProductsWriteEndpoint = function (url, method) {
+				var requestMethod = String(method || 'GET').toUpperCase();
+				return isProductsEndpoint(url) && (requestMethod === 'POST' || requestMethod === 'PUT' || requestMethod === 'PATCH');
+			};
+
 			var toNumber = function (value) {
 				var parsed = parseInt(value, 10);
 				return Number.isFinite(parsed) ? parsed : null;
+			};
+
+			var normalizeConditionValue = function (value, fallback) {
+				var safeFallback = fallback === 'new' ? 'new' : 'used';
+				var normalized = String(value == null ? '' : value).toLowerCase().trim();
+				if (!normalized) return safeFallback;
+				normalized = normalized.replace(/\s+/g, '');
+
+				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed') {
+					return 'new';
+				}
+				if (normalized === 'used' || normalized === '2' || normalized === '2el' || normalized === '2.el' || normalized === 'secondhand' || normalized === 'second-hand' || normalized === 'ikinciel' || normalized === 'mint' || normalized === 'excellent' || normalized === 'good' || normalized === 'fair') {
+					return 'used';
+				}
+				return safeFallback;
+			};
+
+			var conditionLabelFromValue = function (value) {
+				return normalizeConditionValue(value, 'used') === 'new' ? '0' : '2. el';
 			};
 
 			var normalizeVariant = function (variant) {
@@ -4558,10 +4601,17 @@
 			var normalizeProduct = function (product) {
 				if (!product || typeof product !== 'object') return product;
 				var next = Object.assign({}, product);
+				var conditionTag = normalizeConditionValue(next.conditionTag || next.condition_tag || next.product_condition, 'used');
 				var variants = Array.isArray(next.variants) ? next.variants.map(normalizeVariant) : null;
 				if (variants) {
 					next.variants = variants;
 				}
+
+				next.product_condition = conditionTag;
+				next.condition_tag = conditionTag;
+				next.conditionTag = conditionTag;
+				next.condition_label = conditionLabelFromValue(conditionTag);
+				next.conditionLabel = next.condition_label;
 
 				if (next.hasVariants && variants && variants.length) {
 					var activeVariants = variants.filter(function (variant) {
@@ -4593,12 +4643,117 @@
 				return normalizeProduct(payload);
 			};
 
+			var resolveWriteMethod = function (input, init) {
+				var initMethod = init && init.method;
+				var inputMethod = input && typeof input === 'object' ? input.method : null;
+				return String(initMethod || inputMethod || 'GET').toUpperCase();
+			};
+
+			var isVisibleElement = function (element) {
+				return !!(element && (element.offsetWidth || element.offsetHeight || (element.getClientRects && element.getClientRects().length)));
+			};
+
+			var isAdminProductForm = function (form) {
+				return !!(form
+					&& form.querySelector
+					&& form.querySelector('input[name="name"]')
+					&& (form.querySelector('input[name="price"]') || form.querySelector('input[name="stock"]')));
+			};
+
+			var getActiveAdminProductForm = function () {
+				var forms = Array.prototype.slice.call(document.querySelectorAll('.admin-view form')).filter(isAdminProductForm);
+				if (!forms.length) return null;
+				var visible = forms.filter(isVisibleElement);
+				return visible[0] || forms[0] || null;
+			};
+
+			var readConditionFromDom = function () {
+				var form = getActiveAdminProductForm();
+				var field = form && form.querySelector('select[name="conditionTag"], select[name="product_condition"], select[data-product-condition-field]');
+				return normalizeConditionValue(field && field.value, 'used');
+			};
+
+			var prepareProductWriteRequest = function (input, init, requestUrl) {
+				var requestInit = Object.assign({}, init || {});
+				var requestMethod = resolveWriteMethod(input, requestInit);
+				if (!isProductsWriteEndpoint(requestUrl, requestMethod)) {
+					return Promise.resolve({ input: input, init: init });
+				}
+
+				if (input && typeof input === 'object') {
+					['credentials', 'cache', 'redirect', 'referrer', 'referrerPolicy', 'integrity', 'keepalive', 'mode', 'signal'].forEach(function (key) {
+						if (requestInit[key] === undefined && input[key] !== undefined) {
+							requestInit[key] = input[key];
+						}
+					});
+				}
+
+				var headers = new Headers(requestInit.headers || (input && input.headers) || {});
+				var bodySource = requestInit.body;
+				if (bodySource == null && input && typeof input.clone === 'function') {
+					try {
+						bodySource = input.clone().text();
+					} catch (error) {
+						bodySource = null;
+					}
+				}
+
+				return Promise.resolve(bodySource).then(function (rawBody) {
+					if (typeof rawBody !== 'string' || rawBody.trim() === '') {
+						return { input: input, init: init };
+					}
+
+					var contentType = headers.get('content-type') || '';
+					if (contentType && !/application\/json/i.test(contentType)) {
+						return { input: input, init: init };
+					}
+
+					var payload;
+					try {
+						payload = JSON.parse(rawBody);
+					} catch (error) {
+						return { input: input, init: init };
+					}
+					if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+						return { input: input, init: init };
+					}
+
+					var conditionValue = normalizeConditionValue(
+						payload.conditionTag || payload.condition_tag || payload.product_condition || readConditionFromDom(),
+						'used'
+					);
+
+					payload.product_condition = conditionValue;
+					payload.condition_tag = conditionValue;
+					payload.conditionTag = conditionValue;
+
+					requestInit.method = requestMethod;
+					requestInit.headers = headers;
+					requestInit.body = JSON.stringify(payload);
+
+					if (!headers.has('content-type')) {
+						headers.set('content-type', 'application/json;charset=UTF-8');
+					}
+
+					return {
+						input: typeof input === 'string' ? input : requestUrl,
+						init: requestInit
+					};
+				}).catch(function () {
+					return { input: input, init: init };
+				});
+			};
+
 			window.fetch = function (input, init) {
+				var context = this;
 				var requestUrl = '';
+				var requestMethod = resolveWriteMethod(input, init);
 				if (typeof input === 'string') requestUrl = input;
 				else if (input && typeof input.url === 'string') requestUrl = input.url;
 
-				return originalFetch.call(this, input, init).then(function (response) {
+				return prepareProductWriteRequest(input, init, requestUrl).then(function (prepared) {
+					return originalFetch.call(context, prepared.input, prepared.init);
+				}).then(function (response) {
 					if (!isProductsEndpoint(requestUrl) || !response || !response.ok) {
 						return response;
 					}
@@ -4610,6 +4765,11 @@
 
 					return response.clone().json().then(function (payload) {
 						var normalized = normalizePayload(payload);
+						if (isProductsWriteEndpoint(requestUrl, requestMethod) && normalized && typeof window.CustomEvent === 'function') {
+							window.dispatchEvent(new CustomEvent('boomer:product-saved', {
+								detail: normalized
+							}));
+						}
 						var headers = new Headers(response.headers || {});
 						headers.set('content-type', 'application/json; charset=utf-8');
 						return new Response(JSON.stringify(normalized), {
@@ -5194,6 +5354,353 @@
 			}
 
 			window.addEventListener('resize', queueRefresh);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var API_BASE = '/api';
+			var productIndex = [];
+			var productIndexPromise = null;
+			var productIndexLoaded = false;
+			var lastOpenedProductId = null;
+			var refreshQueued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var normalizeConditionValue = function (value, fallback) {
+				var safeFallback = fallback === 'new' ? 'new' : 'used';
+				var normalized = String(value == null ? '' : value).toLowerCase().trim();
+				if (!normalized) return safeFallback;
+				normalized = normalized.replace(/\s+/g, '');
+
+				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed') {
+					return 'new';
+				}
+				if (normalized === 'used' || normalized === '2' || normalized === '2el' || normalized === '2.el' || normalized === 'secondhand' || normalized === 'second-hand' || normalized === 'ikinciel' || normalized === 'mint' || normalized === 'excellent' || normalized === 'good' || normalized === 'fair') {
+					return 'used';
+				}
+				return safeFallback;
+			};
+
+			var conditionLabelFromValue = function (value) {
+				return normalizeConditionValue(value, 'used') === 'new' ? '0' : '2. el';
+			};
+
+			var conditionClassFromValue = function (value) {
+				return normalizeConditionValue(value, 'used') === 'new' ? 'condition-new' : 'condition-used';
+			};
+
+			var parsePrice = function (text) {
+				var normalized = String(text || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+				var parsed = parseFloat(normalized);
+				return Number.isFinite(parsed) ? parsed : null;
+			};
+
+			var isVisibleElement = function (element) {
+				return !!(element && (element.offsetWidth || element.offsetHeight || (element.getClientRects && element.getClientRects().length)));
+			};
+
+			var normalizeProductCondition = function (product) {
+				if (!product || typeof product !== 'object') return 'used';
+				return normalizeConditionValue(product.conditionTag || product.condition_tag || product.product_condition, 'used');
+			};
+
+			var fetchProductIndex = function () {
+				if (productIndexLoaded) return Promise.resolve(productIndex);
+				if (productIndexPromise) return productIndexPromise;
+
+				productIndexPromise = fetch(API_BASE + '/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch(API_BASE + '/products?limit=500&page=' + page)
+									.then(function (response) { return response.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						productIndex = Array.isArray(items) ? items : [];
+						productIndexLoaded = true;
+						return productIndex;
+					})
+					.catch(function () {
+						productIndex = [];
+						productIndexLoaded = true;
+						return productIndex;
+					});
+
+				return productIndexPromise;
+			};
+
+			var upsertProductIndexItem = function (product) {
+				if (!product || !product.id) return;
+				var index = productIndex.findIndex(function (item) {
+					return String(item && item.id) === String(product.id);
+				});
+				if (index === -1) {
+					productIndex.push(product);
+					return;
+				}
+				productIndex[index] = Object.assign({}, productIndex[index] || {}, product);
+			};
+
+			var findProductById = function (productId) {
+				if (!productId) return null;
+				return productIndex.find(function (item) {
+					return String(item && item.id) === String(productId);
+				}) || null;
+			};
+
+			var findProductForCard = function (card) {
+				if (!card) return null;
+				if (card.dataset.productId) {
+					var exact = findProductById(card.dataset.productId);
+					if (exact) return exact;
+				}
+
+				var titleNode = card.querySelector('.card-title, .product-title, h3, h4');
+				if (!titleNode) return null;
+				var title = normalizeText(titleNode.textContent);
+				if (!title) return null;
+
+				var priceNode = card.querySelector('.product-price, .card-footer, .price, .price-current, .current-price');
+				var price = parsePrice(priceNode ? priceNode.textContent : '');
+				var candidates = productIndex.filter(function (item) {
+					return normalizeText(item && (item.title || item.name)) === title;
+				});
+
+				if (!candidates.length) return null;
+				if (price === null) return candidates[0];
+
+				var exactMatch = candidates.find(function (item) {
+					return Math.abs((parseFloat(item && item.price) || 0) - price) < 0.01;
+				});
+				return exactMatch || candidates[0];
+			};
+
+			var ensureCardBadge = function (card) {
+				var media = card.querySelector('.card-media, .product-image-wrapper, .product-thumb, .product-media, .product-image') || card;
+				if (media && media.tagName === 'IMG') {
+					media = media.parentElement || card;
+				}
+				if (media && window.getComputedStyle && window.getComputedStyle(media).position === 'static') {
+					media.style.position = 'relative';
+				}
+
+				var badge = media.querySelector('.condition-label[data-condition-badge="card"]');
+				if (!badge) {
+					badge = document.createElement('span');
+					badge.className = 'condition-label';
+					badge.setAttribute('data-condition-badge', 'card');
+					media.appendChild(badge);
+				}
+				return badge;
+			};
+
+			var applyConditionToCard = function (card, product) {
+				if (!card || !product) return;
+				var conditionTag = normalizeProductCondition(product);
+				var badge = ensureCardBadge(card);
+				badge.className = 'condition-label ' + conditionClassFromValue(conditionTag);
+				badge.textContent = conditionLabelFromValue(conditionTag);
+				card.dataset.conditionTag = conditionTag;
+				if (product && product.id) {
+					card.dataset.productId = product.id;
+				}
+			};
+
+			var findDetailProduct = function (modal) {
+				if (!modal) return null;
+				if (lastOpenedProductId) {
+					var byId = findProductById(lastOpenedProductId);
+					if (byId) return byId;
+				}
+
+				var titleNode = modal.querySelector('h1, h2, h3, .detail-title, .product-title');
+				var title = normalizeText(titleNode ? titleNode.textContent : '');
+				if (!title) return null;
+
+				return productIndex.find(function (item) {
+					return normalizeText(item && (item.title || item.name)) === title;
+				}) || null;
+			};
+
+			var ensureDetailBadge = function (host) {
+				var badge = host.querySelector('.condition-label.is-inline[data-condition-badge="detail"]');
+				if (badge) return badge;
+
+				badge = document.createElement('span');
+				badge.className = 'condition-label is-inline';
+				badge.setAttribute('data-condition-badge', 'detail');
+
+				var categoryNode = host.querySelector('.detail-category-tag');
+				var titleNode = host.querySelector('h1, h2, h3, .detail-title, .product-title');
+				if (categoryNode) {
+					categoryNode.insertAdjacentElement('afterend', badge);
+				} else if (titleNode) {
+					titleNode.insertAdjacentElement('beforebegin', badge);
+				} else {
+					host.insertBefore(badge, host.firstChild);
+				}
+
+				return badge;
+			};
+
+			var applyConditionToDetail = function (modal, product) {
+				if (!modal || !product) return;
+				var host = modal.querySelector('.detail-info-section') || modal.querySelector('.product-detail-modal > div:last-child') || modal;
+				var badge = ensureDetailBadge(host);
+				var conditionTag = normalizeProductCondition(product);
+				badge.className = 'condition-label is-inline ' + conditionClassFromValue(conditionTag);
+				badge.textContent = conditionLabelFromValue(conditionTag);
+			};
+
+			var refreshStoreBadges = function () {
+				if (!productIndex.length) return;
+
+				document.querySelectorAll('.app-product-card, .product-card').forEach(function (card) {
+					var product = findProductForCard(card);
+					if (product) applyConditionToCard(card, product);
+				});
+
+				var modal = document.querySelector('.product-detail-modal');
+				if (modal) {
+					var detailProduct = findDetailProduct(modal);
+					if (detailProduct) applyConditionToDetail(modal, detailProduct);
+				}
+			};
+
+			var isAdminProductForm = function (form) {
+				return !!(form
+					&& form.querySelector
+					&& form.querySelector('input[name="name"]')
+					&& (form.querySelector('input[name="price"]') || form.querySelector('input[name="stock"]')));
+			};
+
+			var findConditionMatchByName = function (name) {
+				var normalizedName = normalizeText(name);
+				if (!normalizedName) return null;
+
+				var match = productIndex.find(function (item) {
+					return normalizeText(item && (item.title || item.name)) === normalizedName;
+				});
+				return match ? normalizeProductCondition(match) : null;
+			};
+
+			var ensureAdminConditionField = function (form) {
+				if (!isAdminProductForm(form)) return;
+
+				var anchorInput = form.querySelector('input[name="stock"]') || form.querySelector('input[name="price"]');
+				var anchor = anchorInput && anchorInput.closest ? anchorInput.closest('.form-group') : null;
+				if (!anchor || !anchor.parentNode) return;
+
+				var wrapper = form.querySelector('.admin-product-condition-field');
+				if (!wrapper) {
+					wrapper = document.createElement('div');
+					wrapper.className = 'form-group admin-product-condition-field';
+					wrapper.innerHTML = ''
+						+ '<label>\u00dcr\u00fcn Durumu</label>'
+						+ '<select name="conditionTag" data-product-condition-field="1">'
+						+ '<option value="used">2. el</option>'
+						+ '<option value="new">0</option>'
+						+ '</select>'
+						+ '<small class="admin-product-condition-help">Varsay\u0131lan deger 2. el. \u0130sterseniz bu alandan 0 olarak degi\u015ftirebilirsiniz.</small>';
+					anchor.insertAdjacentElement('afterend', wrapper);
+				}
+
+				var select = wrapper.querySelector('select');
+				var nameInput = form.querySelector('input[name="name"]');
+				if (!select) return;
+
+				if (select.dataset.bound !== '1') {
+					select.dataset.bound = '1';
+					select.addEventListener('change', function () {
+						select.dataset.userChanged = '1';
+					});
+				}
+
+				if (nameInput && nameInput.dataset.conditionBound !== '1') {
+					nameInput.dataset.conditionBound = '1';
+					nameInput.addEventListener('input', function () {
+						if (select.dataset.userChanged === '1') return;
+						select.value = normalizeConditionValue(findConditionMatchByName(nameInput.value) || 'used', 'used');
+					});
+				}
+
+				if (select.dataset.userChanged !== '1') {
+					var matchedCondition = findConditionMatchByName(nameInput ? nameInput.value : '');
+					select.value = normalizeConditionValue(matchedCondition || 'used', 'used');
+				}
+			};
+
+			var refreshAdminConditionFields = function () {
+				if (!document.querySelector('.admin-view')) return;
+				fetchProductIndex().then(function () {
+					Array.prototype.slice.call(document.querySelectorAll('.admin-view form')).forEach(function (form) {
+						ensureAdminConditionField(form);
+					});
+				});
+			};
+
+			var queueRefresh = function () {
+				if (refreshQueued) return;
+				refreshQueued = true;
+				requestAnimationFrame(function () {
+					refreshQueued = false;
+					fetchProductIndex().then(function () {
+						refreshStoreBadges();
+						refreshAdminConditionFields();
+					});
+				});
+			};
+
+			document.addEventListener('click', function (event) {
+				var card = event.target && event.target.closest ? event.target.closest('.app-product-card, .product-card') : null;
+				if (!card) return;
+				var product = findProductForCard(card);
+				if (product && product.id) {
+					lastOpenedProductId = product.id;
+				}
+			}, true);
+
+			queueRefresh();
+			if (window.MutationObserver) {
+				new MutationObserver(queueRefresh).observe(document.body, { childList: true, subtree: true });
+			}
+
+			window.addEventListener('resize', queueRefresh);
+			window.addEventListener('boomer:product-saved', function (event) {
+				upsertProductIndexItem(event && event.detail);
+				queueRefresh();
+			});
+			setTimeout(queueRefresh, 700);
+			setTimeout(queueRefresh, 1600);
 		});
 	</script>
 	<script>

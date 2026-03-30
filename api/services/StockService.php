@@ -10,6 +10,41 @@ final class StockService
             return;
         }
 
+        if (tableExists('products')) {
+            if (!tableHasColumn('products', 'product_condition')) {
+                db()->exec("ALTER TABLE products ADD COLUMN product_condition ENUM('new','used') NOT NULL DEFAULT 'used'");
+
+                if (tableHasColumn('products', 'condition_tag')) {
+                    db()->exec(
+                        "UPDATE products
+                         SET product_condition = CASE
+                             WHEN LOWER(TRIM(COALESCE(condition_tag, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed')
+                                 THEN 'new'
+                             ELSE 'used'
+                         END"
+                    );
+                }
+            }
+
+            db()->exec(
+                "UPDATE products
+                 SET product_condition = CASE
+                     WHEN LOWER(TRIM(COALESCE(product_condition, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed')
+                         THEN 'new'
+                     ELSE 'used'
+                 END
+                 WHERE product_condition IS NULL
+                    OR LOWER(TRIM(COALESCE(product_condition, ''))) IN ('0', 'zero', 'sifir', 'unused', 'sealed', '2', '2el', '2.el', 'secondhand', 'second-hand', 'ikinciel', 'mint', 'excellent', 'good', 'fair')"
+            );
+
+            $conditionColumnMeta = db()->query("SHOW COLUMNS FROM products LIKE 'product_condition'")->fetch();
+            $conditionColumnType = strtolower((string) ($conditionColumnMeta['Type'] ?? ''));
+            $conditionColumnDefault = (string) ($conditionColumnMeta['Default'] ?? '');
+            if ($conditionColumnType !== "enum('new','used')" || $conditionColumnDefault !== 'used') {
+                db()->exec("ALTER TABLE products MODIFY COLUMN product_condition ENUM('new','used') NOT NULL DEFAULT 'used'");
+            }
+        }
+
         if (tableExists('products') && !tableHasColumn('products', 'reserved_stock')) {
             db()->exec('ALTER TABLE products ADD COLUMN reserved_stock INT NOT NULL DEFAULT 0 AFTER stock');
         }

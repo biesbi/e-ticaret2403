@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS products (
   stock         INT          NOT NULL DEFAULT 0,
   sku           VARCHAR(100) NULL UNIQUE,
   set_no        VARCHAR(60)  NULL,
-  condition_tag ENUM('mint','excellent','good','fair') NOT NULL DEFAULT 'mint',
+  product_condition ENUM('new','used') NOT NULL DEFAULT 'used',
   images        JSON         NULL,   -- ["url1","url2",...]
   is_active     TINYINT(1)   NOT NULL DEFAULT 1,
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -52,10 +52,16 @@ function productPayloadValue(string $column, string $slug, mixed $current = null
         'old_price' => (float) input('old_price', input('oldPrice', $current ?? 0)),
         'stock' => (int) input('stock', $current ?? 0),
         'is_active' => (int) input('is_active', input('isActive', $current ?? 1)),
+        'product_condition', 'condition_tag' => normalizeProductConditionTag(
+            input($column, input('product_condition', input('condition_tag', input('conditionTag', $current ?? 'used')))),
+            is_string($current) ? normalizeProductConditionTag($current, 'used') : 'used'
+        ),
         'category_id' => productNullableForeignKey(input('category_id', input('categoryId', $current))),
         'brand_id' => productNullableForeignKey(input('brand_id', input('brandId', $current))),
         default => input($column, input(match ($column) {
             'old_price' => 'oldPrice',
+            'product_condition' => 'conditionTag',
+            'condition_tag' => 'conditionTag',
             'category_id' => 'categoryId',
             'brand_id' => 'brandId',
             'is_active' => 'isActive',
@@ -261,7 +267,7 @@ if ($id === null) {
                 (int) input('stock', 0),
             ];
 
-            foreach (['slug', 'sku', 'set_no', 'condition_tag', 'images', 'img', 'desi', 'pieces', 'old_price', 'is_active'] as $column) {
+            foreach (['slug', 'sku', 'set_no', 'product_condition', 'condition_tag', 'images', 'img', 'desi', 'pieces', 'old_price', 'is_active'] as $column) {
                 if (!tableHasColumn('products', $column)) {
                     continue;
                 }
@@ -376,7 +382,7 @@ if ($id !== null && $sub === null) {
             $name = trim((string) input('name', (string) ($current['name'] ?? '')));
             $slug = slugify($name);
 
-            foreach (['category_id', 'brand_id', 'name', 'description', 'price', 'old_price', 'stock', 'images', 'img', 'desi', 'pieces', 'is_active'] as $column) {
+            foreach (['category_id', 'brand_id', 'name', 'description', 'price', 'old_price', 'stock', 'product_condition', 'condition_tag', 'images', 'img', 'desi', 'pieces', 'is_active'] as $column) {
                 if (!tableHasColumn('products', $column)) {
                     continue;
                 }
@@ -384,6 +390,8 @@ if ($id !== null && $sub === null) {
                     'category_id' => ['category_id', 'categoryId'],
                     'brand_id' => ['brand_id', 'brandId'],
                     'old_price' => ['old_price', 'oldPrice'],
+                    'product_condition' => ['product_condition', 'condition_tag', 'conditionTag'],
+                    'condition_tag' => ['condition_tag', 'product_condition', 'conditionTag'],
                     'is_active' => ['is_active', 'isActive'],
                     'images' => ['images', 'imageList', 'img', 'image'],
                     'img' => ['img', 'image'],

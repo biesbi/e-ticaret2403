@@ -176,6 +176,47 @@ function inferPiecesFromProduct(array $product): int {
     return (int) str_replace('.', '', $match[1]);
 }
 
+function normalizeProductConditionTag(mixed $value, string $default = 'used'): string {
+    $fallback = in_array($default, ['new', 'used'], true) ? $default : 'used';
+    if ($value === null) {
+        return $fallback;
+    }
+
+    $normalized = strtolower(trim((string) $value));
+    if ($normalized === '') {
+        return $fallback;
+    }
+
+    $map = [
+        'new' => 'new',
+        '0' => 'new',
+        'zero' => 'new',
+        'sifir' => 'new',
+        'sifirurun' => 'new',
+        'unused' => 'new',
+        'sealed' => 'new',
+        'used' => 'used',
+        '2' => 'used',
+        '2el' => 'used',
+        '2.el' => 'used',
+        '2. el' => 'used',
+        'secondhand' => 'used',
+        'second-hand' => 'used',
+        'ikinciel' => 'used',
+        'ikinci el' => 'used',
+        'mint' => 'used',
+        'excellent' => 'used',
+        'good' => 'used',
+        'fair' => 'used',
+    ];
+
+    return $map[$normalized] ?? $fallback;
+}
+
+function productConditionLabel(string $conditionTag): string {
+    return normalizeProductConditionTag($conditionTag) === 'new' ? '0' : '2. el';
+}
+
 function legacyProduct(array $product): array {
     $images = normalizeImages($product['images'] ?? []);
     if ($images === [] && !empty($product['img']) && is_string($product['img'])) {
@@ -191,6 +232,12 @@ function legacyProduct(array $product): array {
     $availableStock = max(0, $stock - $reservedStock);
     $isActive = isset($product['is_active']) ? (int) $product['is_active'] : 1;
     $pieces = inferPiecesFromProduct($product);
+    $conditionTag = normalizeProductConditionTag(
+        $product['product_condition']
+            ?? ($product['condition_tag'] ?? ($product['conditionTag'] ?? null)),
+        'used'
+    );
+    $conditionLabel = productConditionLabel($conditionTag);
 
     return [
         ...$product,
@@ -208,6 +255,11 @@ function legacyProduct(array $product): array {
         'pieces' => $pieces,
         'price' => isset($product['price']) ? (float) $product['price'] : 0.0,
         'oldPrice' => isset($product['old_price']) ? (float) $product['old_price'] : (isset($product['oldPrice']) ? (float) $product['oldPrice'] : 0.0),
+        'product_condition' => $conditionTag,
+        'condition_tag' => $conditionTag,
+        'conditionTag' => $conditionTag,
+        'condition_label' => $conditionLabel,
+        'conditionLabel' => $conditionLabel,
         'reserved_stock' => $reservedStock,
         'available_stock' => $availableStock,
         'isActive' => $isActive === 1,
