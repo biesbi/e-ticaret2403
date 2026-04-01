@@ -1156,6 +1156,65 @@
 			color: #64748b;
 		}
 
+		.admin-user-verify-head,
+		.admin-user-actions-head,
+		.admin-user-verify-cell,
+		.admin-user-actions-cell {
+			white-space: nowrap;
+		}
+
+		.admin-user-verify-badge {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 10px;
+			border-radius: 999px;
+			border: 1px solid #dbe3ee;
+			background: #f8fafc;
+			color: #334155;
+			font-size: 0.78rem;
+			font-weight: 800;
+			line-height: 1;
+		}
+
+		.admin-user-verify-badge.is-verified {
+			background: #ecfdf5;
+			border-color: #a7f3d0;
+			color: #047857;
+		}
+
+		.admin-user-verify-badge.is-pending {
+			background: #fff7ed;
+			border-color: #fdba74;
+			color: #c2410c;
+		}
+
+		.admin-user-delete-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 7px 12px;
+			border: 1px solid #fecaca;
+			border-radius: 10px;
+			background: #fff1f2;
+			color: #be123c;
+			font-size: 0.82rem;
+			font-weight: 800;
+			line-height: 1;
+			cursor: pointer;
+			transition: background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+		}
+
+		.admin-user-delete-btn:hover:not(:disabled) {
+			background: #ffe4e6;
+			border-color: #fda4af;
+		}
+
+		.admin-user-delete-btn:disabled {
+			opacity: 0.6;
+			cursor: wait;
+		}
+
 		/* === FREE SHIPPING PROGRESS BAR === */
 		.free-shipping-progress {
 			padding: 10px 0 8px;
@@ -2045,6 +2104,10 @@
 			var origFetch = window.fetch;
 			var origAlert = window.alert;
 			var observedOrderIds = window.__observedOrderIds || (window.__observedOrderIds = []);
+			var normalizeApiUrl = function (value) {
+				if (typeof value !== 'string') return value;
+				return value.replace(/^https?:\/\/(?:www\.)?boomeritems\.com\/api(?=\/|$)/i, '/api');
+			};
 
 			var rememberOrderIds = function (payload) {
 				var collect = function (value) {
@@ -2080,6 +2143,9 @@
 
 			window.fetch = function () {
 				var args = arguments;
+				if (typeof args[0] === 'string') {
+					args = [normalizeApiUrl(args[0]), args[1]];
+				}
 				var url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url || '');
 				var opts = args[1] || {};
 				var method = (opts.method || 'GET').toUpperCase();
@@ -2168,7 +2234,7 @@
 
 		/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â 3. Ãƒâ€“deme Yeniden Deneme UI Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 		(function () {
-			var API = 'https://www.boomeritems.com/api';
+			var API = '/api';
 
 			/* Order success sayfasÃ„Â±nda "Ãƒâ€“demeyi Tekrar Dene" butonu ekle */
 			function checkAndAddRetryButton() {
@@ -4570,22 +4636,25 @@
 			};
 
 			var normalizeConditionValue = function (value, fallback) {
-				var safeFallback = fallback === 'new' ? 'new' : 'used';
+				var fallbackValue = String(fallback == null ? '' : fallback).toLowerCase();
+				var safeFallback = fallbackValue.indexOf('sıfır') !== -1 || fallbackValue.indexOf('sifir') !== -1 || fallbackValue === 'new'
+					? '2. El Sıfır'
+					: '2. el';
 				var normalized = String(value == null ? '' : value).toLowerCase().trim();
 				if (!normalized) return safeFallback;
 				normalized = normalized.replace(/\s+/g, '');
 
-				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed') {
-					return 'new';
+				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed' || normalized === '2.elsıfır' || normalized === '2.elsifir' || normalized === '2elsıfır' || normalized === '2elsifir') {
+					return '2. El Sıfır';
 				}
 				if (normalized === 'used' || normalized === '2' || normalized === '2el' || normalized === '2.el' || normalized === 'secondhand' || normalized === 'second-hand' || normalized === 'ikinciel' || normalized === 'mint' || normalized === 'excellent' || normalized === 'good' || normalized === 'fair') {
-					return 'used';
+					return '2. el';
 				}
 				return safeFallback;
 			};
 
 			var conditionLabelFromValue = function (value) {
-				return normalizeConditionValue(value, 'used') === 'new' ? '2.el' : '2. el sıfır';
+				return normalizeConditionValue(value, '2. El Sıfır');
 			};
 
 			var normalizeVariant = function (variant) {
@@ -4601,7 +4670,7 @@
 			var normalizeProduct = function (product) {
 				if (!product || typeof product !== 'object') return product;
 				var next = Object.assign({}, product);
-				var conditionTag = normalizeConditionValue(next.conditionTag || next.condition_tag || next.product_condition, 'used');
+				var conditionTag = normalizeConditionValue(next.conditionTag || next.condition_tag || next.product_condition, '2. El Sıfır');
 				var variants = Array.isArray(next.variants) ? next.variants.map(normalizeVariant) : null;
 				if (variants) {
 					next.variants = variants;
@@ -4705,7 +4774,7 @@
 			var readConditionFromDom = function () {
 				var form = getActiveAdminProductForm();
 				var field = form && form.querySelector('select[name="conditionTag"], select[name="product_condition"], select[data-product-condition-field]');
-				return normalizeConditionValue(field && field.value, 'used');
+				return normalizeConditionValue(field && field.value, '2. El Sıfır');
 			};
 
 			var prepareProductWriteRequest = function (input, init, requestUrl) {
@@ -4755,7 +4824,7 @@
 
 					var conditionValue = normalizeConditionValue(
 						payload.conditionTag || payload.condition_tag || payload.product_condition || readConditionFromDom(),
-						'used'
+						'2. El Sıfır'
 					);
 
 					payload.product_condition = conditionValue;
@@ -5431,26 +5500,29 @@
 			};
 
 			var normalizeConditionValue = function (value, fallback) {
-				var safeFallback = fallback === 'new' ? 'new' : 'used';
+				var fallbackValue = String(fallback == null ? '' : fallback).toLowerCase();
+				var safeFallback = fallbackValue.indexOf('sıfır') !== -1 || fallbackValue.indexOf('sifir') !== -1 || fallbackValue === 'new'
+					? '2. El Sıfır'
+					: '2. el';
 				var normalized = String(value == null ? '' : value).toLowerCase().trim();
 				if (!normalized) return safeFallback;
 				normalized = normalized.replace(/\s+/g, '');
 
-				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed') {
-					return 'new';
+				if (normalized === 'new' || normalized === '0' || normalized === 'zero' || normalized === 'sifir' || normalized === 'unused' || normalized === 'sealed' || normalized === '2.elsıfır' || normalized === '2.elsifir' || normalized === '2elsıfır' || normalized === '2elsifir') {
+					return '2. El Sıfır';
 				}
 				if (normalized === 'used' || normalized === '2' || normalized === '2el' || normalized === '2.el' || normalized === 'secondhand' || normalized === 'second-hand' || normalized === 'ikinciel' || normalized === 'mint' || normalized === 'excellent' || normalized === 'good' || normalized === 'fair') {
-					return 'used';
+					return '2. el';
 				}
 				return safeFallback;
 			};
 
 			var conditionLabelFromValue = function (value) {
-				return normalizeConditionValue(value, 'used') === 'new' ? '2. el' : '2. el sıfır';
+				return normalizeConditionValue(value, '2. El Sıfır');
 			};
 
 			var conditionClassFromValue = function (value) {
-				return normalizeConditionValue(value, 'used') === 'new' ? 'condition-new' : 'condition-used';
+				return normalizeConditionValue(value, '2. El Sıfır') === '2. El Sıfır' ? 'condition-new' : 'condition-used';
 			};
 
 			var parsePrice = function (text) {
@@ -5464,8 +5536,8 @@
 			};
 
 			var normalizeProductCondition = function (product) {
-				if (!product || typeof product !== 'object') return 'used';
-				return normalizeConditionValue(product.conditionTag || product.condition_tag || product.product_condition, 'used');
+				if (!product || typeof product !== 'object') return '2. El Sıfır';
+				return normalizeConditionValue(product.conditionTag || product.condition_tag || product.product_condition, '2. El Sıfır');
 			};
 
 			var fetchProductIndex = function () {
@@ -5679,16 +5751,22 @@
 					wrapper.innerHTML = ''
 						+ '<label>\u00dcr\u00fcn Durumu</label>'
 						+ '<select name="conditionTag" data-product-condition-field="1">'
-						+ '<option value="used">2. el</option>'
-						+ '<option value="new">0</option>'
+						+ '<option value="2. el">2. el</option>'
+						+ '<option value="2. El Sıfır">2. El Sıfır</option>'
 						+ '</select>'
-						+ '<small class="admin-product-condition-help">Varsay\u0131lan deger 2. el. \u0130sterseniz bu alandan 0 olarak degi\u015ftirebilirsiniz.</small>';
+						+ '<small class="admin-product-condition-help">Varsayilan deger 2. El Sıfır.</small>';
 					anchor.insertAdjacentElement('afterend', wrapper);
 				}
 
 				var select = wrapper.querySelector('select');
 				var nameInput = form.querySelector('input[name="name"]');
 				if (!select) return;
+
+				var productNameKey = normalizeText(nameInput ? nameInput.value : '');
+				if (select.dataset.productNameKey !== productNameKey && document.activeElement !== nameInput) {
+					select.dataset.productNameKey = productNameKey;
+					delete select.dataset.userChanged;
+				}
 
 				if (select.dataset.bound !== '1') {
 					select.dataset.bound = '1';
@@ -5701,13 +5779,13 @@
 					nameInput.dataset.conditionBound = '1';
 					nameInput.addEventListener('input', function () {
 						if (select.dataset.userChanged === '1') return;
-						select.value = normalizeConditionValue(findConditionMatchByName(nameInput.value) || 'used', 'used');
+						select.value = normalizeConditionValue(findConditionMatchByName(nameInput.value) || select.value || '2. El Sıfır', select.value || '2. El Sıfır');
 					});
 				}
 
 				if (select.dataset.userChanged !== '1') {
 					var matchedCondition = findConditionMatchByName(nameInput ? nameInput.value : '');
-					select.value = normalizeConditionValue(matchedCondition || 'used', 'used');
+					select.value = normalizeConditionValue(matchedCondition || select.value || '2. El Sıfır', select.value || '2. El Sıfır');
 				}
 			};
 
@@ -5753,6 +5831,321 @@
 			});
 			setTimeout(queueRefresh, 700);
 			setTimeout(queueRefresh, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var usersIndexCache = {};
+			var usersIndexLoadedAt = 0;
+			var usersIndexPromise = null;
+			var queued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var parseJsonSafe = function (response) {
+				if (!response || typeof response.json !== 'function') return Promise.resolve({});
+				return response.json().catch(function () { return {}; });
+			};
+
+			var getAuthHeaders = function (includeJson) {
+				var headers = { 'Accept': 'application/json' };
+				if (includeJson) headers['Content-Type'] = 'application/json';
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (e) { }
+				return headers;
+			};
+
+			var showFeedback = function (message, type) {
+				if (typeof window.showToast === 'function') {
+					window.showToast(message, type || 'info', 3200);
+					return;
+				}
+				if (type === 'error') {
+					window.alert(message);
+				}
+			};
+
+			var getUsersTable = function () {
+				return document.querySelector('.admin-view .admin-table');
+			};
+
+			var isAdminUsersView = function () {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				var titleText = normalizeText(title ? title.textContent : '');
+				var table = getUsersTable();
+				var headerText = normalizeText(table && table.querySelector('thead') ? table.querySelector('thead').textContent : '');
+				if (!table) return false;
+				if (titleText.indexOf('kullanici') !== -1 || titleText.indexOf('uye') !== -1) {
+					return headerText.indexOf('email') !== -1 || headerText.indexOf('e-posta') !== -1;
+				}
+				return (headerText.indexOf('email') !== -1 || headerText.indexOf('e-posta') !== -1)
+					&& (headerText.indexOf('rol') !== -1 || headerText.indexOf('harcama') !== -1 || headerText.indexOf('siparis') !== -1);
+			};
+
+			var extractEmailFromRow = function (row) {
+				if (!row) return '';
+				var mailLink = row.querySelector('a[href^="mailto:"]');
+				if (mailLink && mailLink.textContent) {
+					return String(mailLink.textContent || '').trim().toLowerCase();
+				}
+				var match = String(row.textContent || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+				return match ? String(match[0]).trim().toLowerCase() : '';
+			};
+
+			var cacheUsers = function (items) {
+				Array.prototype.forEach.call(items || [], function (user) {
+					var email = String(user && user.email || '').trim().toLowerCase();
+					if (!email) return;
+					usersIndexCache[email] = user;
+				});
+			};
+
+			var requestUsersPage = function (page) {
+				return fetch('/api/admin/users?limit=100&page=' + page, {
+					headers: getAuthHeaders(false)
+				}).then(function (response) {
+					if (!response.ok) {
+						throw new Error('admin users request failed');
+					}
+					return parseJsonSafe(response);
+				});
+			};
+
+			var fetchUsersIndex = function (emails) {
+				var missing = Array.prototype.filter.call(emails || [], function (email) {
+					return !!email && !usersIndexCache[email];
+				});
+				var isFresh = (Date.now() - usersIndexLoadedAt) < 60000;
+
+				if (missing.length === 0 && isFresh) {
+					return Promise.resolve(usersIndexCache);
+				}
+
+				if (usersIndexPromise) {
+					return usersIndexPromise.then(function () { return usersIndexCache; });
+				}
+
+				usersIndexPromise = requestUsersPage(1)
+					.then(function (payload) {
+						cacheUsers(payload && payload.items);
+						var pages = Math.max(1, parseInt(payload && payload.pages || 1, 10) || 1);
+						var sequence = Promise.resolve();
+
+						for (var page = 2; page <= pages; page += 1) {
+							(function (pageNo) {
+								sequence = sequence.then(function () {
+									var unresolved = Array.prototype.filter.call(emails || [], function (email) {
+										return !!email && !usersIndexCache[email];
+									});
+									if (!unresolved.length) return null;
+									return requestUsersPage(pageNo).then(function (nextPayload) {
+										cacheUsers(nextPayload && nextPayload.items);
+									});
+								});
+							})(page);
+						}
+
+						return sequence;
+					})
+					.catch(function () {
+						return null;
+					})
+					.then(function () {
+						usersIndexLoadedAt = Date.now();
+						usersIndexPromise = null;
+						return usersIndexCache;
+					}, function () {
+						usersIndexPromise = null;
+						return usersIndexCache;
+					});
+
+				return usersIndexPromise;
+			};
+
+			var ensureUsersHeaders = function (table) {
+				if (!table) return;
+				var headRow = table.querySelector('thead tr');
+				if (!headRow) return;
+
+				var verifyHead = headRow.querySelector('[data-admin-user-verify-head]');
+				if (!verifyHead) {
+					verifyHead = document.createElement('th');
+					verifyHead.setAttribute('data-admin-user-verify-head', '1');
+					verifyHead.className = 'admin-user-verify-head';
+					verifyHead.textContent = 'Dogrulama';
+					headRow.appendChild(verifyHead);
+				}
+
+				var actionsHead = headRow.querySelector('[data-admin-user-actions-head]');
+				if (!actionsHead) {
+					actionsHead = document.createElement('th');
+					actionsHead.setAttribute('data-admin-user-actions-head', '1');
+					actionsHead.className = 'admin-user-actions-head';
+					actionsHead.textContent = 'Islem';
+					headRow.appendChild(actionsHead);
+				}
+			};
+
+			var ensureUserCell = function (row, attribute, className) {
+				if (!row) return null;
+				var cell = row.querySelector('td[' + attribute + ']');
+				if (!cell) {
+					cell = document.createElement('td');
+					cell.setAttribute(attribute, '1');
+					cell.className = className;
+					row.appendChild(cell);
+				}
+				return cell;
+			};
+
+			var renderVerifyCell = function (row, user) {
+				var cell = ensureUserCell(row, 'data-admin-user-verify-cell', 'admin-user-verify-cell');
+				if (!cell) return;
+				if (!user) {
+					cell.textContent = '-';
+					return;
+				}
+
+				var badge = cell.querySelector('.admin-user-verify-badge');
+				if (!badge) {
+					badge = document.createElement('span');
+					badge.className = 'admin-user-verify-badge';
+					cell.innerHTML = '';
+					cell.appendChild(badge);
+				}
+
+				var verified = !!(parseInt(user.email_verified, 10) || user.is_verified);
+				badge.className = 'admin-user-verify-badge ' + (verified ? 'is-verified' : 'is-pending');
+				badge.textContent = verified ? 'Dogrulandi' : 'Bekliyor';
+				badge.title = verified && user.email_verified_at
+					? 'Dogrulama: ' + user.email_verified_at
+					: (verified ? 'E-posta dogrulandi' : 'E-posta dogrulamasi bekleniyor');
+			};
+
+			var bindDeleteButton = function (button, row, user) {
+				if (!button || !row || !user) return;
+				if (button.dataset.bound === '1' && button.dataset.userId === String(user.id || '')) {
+					return;
+				}
+
+				button.dataset.bound = '1';
+				button.dataset.userId = String(user.id || '');
+				button.onclick = function () {
+					var email = String(user.email || '').trim();
+					if (!user.id) {
+						showFeedback('Kullanici kimligi bulunamadi.', 'error');
+						return;
+					}
+
+					if (!window.confirm(email + ' kullanicisini silmek istiyor musunuz?')) {
+						return;
+					}
+
+					button.disabled = true;
+					button.textContent = 'Siliniyor...';
+
+					fetch('/api/admin/users/' + encodeURIComponent(user.id), {
+						method: 'DELETE',
+						headers: getAuthHeaders(true)
+					})
+						.then(function (response) {
+							return parseJsonSafe(response).then(function (payload) {
+								if (!response.ok) {
+									throw new Error(payload && payload.message || 'Kullanici silinemedi.');
+								}
+								return payload || {};
+							});
+						})
+						.then(function () {
+							delete usersIndexCache[email.toLowerCase()];
+							if (row.parentNode) {
+								row.parentNode.removeChild(row);
+							}
+							showFeedback('Kullanici silindi.', 'success');
+							queueEnhanceAdminUsers();
+						})
+						.catch(function (error) {
+							button.disabled = false;
+							button.textContent = 'Sil';
+							showFeedback(error && error.message || 'Kullanici silinemedi.', 'error');
+						});
+				};
+			};
+
+			var renderActionsCell = function (row, user) {
+				var cell = ensureUserCell(row, 'data-admin-user-actions-cell', 'admin-user-actions-cell');
+				if (!cell) return;
+				if (!user) {
+					cell.textContent = '-';
+					return;
+				}
+
+				var button = cell.querySelector('.admin-user-delete-btn');
+				if (!button) {
+					button = document.createElement('button');
+					button.type = 'button';
+					button.className = 'admin-user-delete-btn';
+					cell.innerHTML = '';
+					cell.appendChild(button);
+				}
+
+				button.disabled = false;
+				button.textContent = 'Sil';
+				bindDeleteButton(button, row, user);
+			};
+
+			var enhanceAdminUsers = function () {
+				if (!isAdminUsersView()) return;
+				var table = getUsersTable();
+				var tbody = table && table.querySelector('tbody');
+				if (!table || !tbody) return;
+
+				ensureUsersHeaders(table);
+
+				var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+				if (!rows.length) return;
+
+				var emails = rows.map(extractEmailFromRow).filter(Boolean);
+				if (!emails.length) return;
+
+				fetchUsersIndex(emails).then(function () {
+					rows.forEach(function (row) {
+						var email = extractEmailFromRow(row);
+						var user = email ? usersIndexCache[email] || null : null;
+						renderVerifyCell(row, user);
+						renderActionsCell(row, user);
+					});
+				});
+			};
+
+			var queueEnhanceAdminUsers = function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					enhanceAdminUsers();
+				});
+			};
+
+			queueEnhanceAdminUsers();
+			if (window.MutationObserver) {
+				new MutationObserver(queueEnhanceAdminUsers).observe(document.body, { childList: true, subtree: true });
+			}
+			setTimeout(queueEnhanceAdminUsers, 700);
+			setTimeout(queueEnhanceAdminUsers, 1600);
 		});
 	</script>
 	<script>
@@ -7131,7 +7524,7 @@
 			};
 
 			var extractOrderId = function (row) {
-				var match = String(row.textContent || '').match(/\bBM[A-Z0-9-]{8,}\b/i);
+				var match = String(row.textContent || '').match(/\bBM[A-Z0-9]{10}\b/i);
 				return match ? match[0].toUpperCase() : '';
 			};
 
@@ -7341,7 +7734,7 @@
 			};
 
 			var extractOrderId = function (row) {
-				var match = String(row.textContent || '').match(/\bBM[A-Z0-9-]{8,}\b/i);
+				var match = String(row.textContent || '').match(/\bBM[A-Z0-9]{10}\b/i);
 				return match ? match[0].toUpperCase() : '';
 			};
 
@@ -7447,7 +7840,7 @@
 			var detailCache = {};
 			var detailPromiseCache = {};
 			var queued = false;
-			var orderIdPattern = /\bBM[A-Z0-9-]{8,}\b/i;
+			var orderIdPattern = /\bBM[A-Z0-9]{10}\b/i;
 
 			var normalizeText = function (value) {
 				return String(value || '')

@@ -49,31 +49,47 @@ final class PaytrService {
     }
 
     public static function completeMock(string $orderId, string $status): array {
-        $paymentStatus = $status === 'success' ? 'paid' : 'failed';
-        $orderStatus = $status === 'success'
-            ? StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending')
-            : StockService::resolveStatus(['failed', 'cancelled', 'pending'], 'pending');
+        $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+        $fetch->execute([$orderId]);
+        $currentOrder = $fetch->fetch();
 
-        $stmt = db()->prepare(
-            'UPDATE orders
-             SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE id = ?'
-        );
-        $stmt->execute([$paymentStatus, $orderStatus, $orderId]);
-
-        if ($stmt->rowCount() === 0) {
+        if (!$currentOrder) {
             error('Siparis bulunamadi.', 404);
         }
 
-        $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
-        $fetch->execute([$orderId]);
-        $order = $fetch->fetch();
+        if ($status !== 'success') {
+            $failedOrder = OrderService::markCardPaymentFailed($orderId);
 
-        if ($status === 'success') {
-            StockService::finalizeReservedStock($orderId);
-        } else {
-            StockService::releaseReservedStock($orderId);
+            ok([
+                'success' => true,
+                'order' => $failedOrder ? legacyOrder($failedOrder) : ['id' => $orderId],
+                'payment_status' => 'failed',
+            ]);
         }
+
+        if (($currentOrder['payment_status'] ?? '') === 'paid' && ($currentOrder['stock_state'] ?? 'none') !== 'reserved') {
+            ok([
+                'success' => true,
+                'order' => legacyOrder($currentOrder),
+                'payment_status' => 'paid',
+            ]);
+        }
+
+        $paymentStatus = 'paid';
+        $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+
+        db()->prepare(
+            'UPDATE orders
+             SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?'
+        )->execute([$paymentStatus, $orderStatus, $orderId]);
+
+        StockService::finalizeReservedStock($orderId);
+        self::sendOrderReceivedEmail($orderId);
+
+        $updated = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+        $updated->execute([$orderId]);
+        $order = $updated->fetch();
 
         ok([
             'success' => true,
@@ -118,26 +134,50 @@ final class PaytrService {
             exit('OK');
         }
 
-        $paymentStatus = $status === 'success' ? 'paid' : 'failed';
-        $orderStatus = $status === 'success'
-            ? StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending')
-            : StockService::resolveStatus(['failed', 'cancelled', 'pending'], 'pending');
-
-        $stmt = db()->prepare(
-            'UPDATE orders
-             SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE id = ?'
-        );
-        $stmt->execute([$paymentStatus, $orderStatus, $orderId]);
-
         if ($status === 'success') {
+            $paymentStatus = 'paid';
+            $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+
+            db()->prepare(
+                'UPDATE orders
+                 SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE id = ?'
+            )->execute([$paymentStatus, $orderStatus, $orderId]);
+
             StockService::finalizeReservedStock($orderId);
+            self::sendOrderReceivedEmail($orderId);
         } else {
-            StockService::releaseReservedStock($orderId);
+            OrderService::markCardPaymentFailed($orderId);
         }
 
         http_response_code(200);
         exit('OK');
+    }
+
+    private static function sendOrderReceivedEmail(string $orderId): void {
+        try {
+            $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+            $stmt->execute([$orderId]);
+            $order = $stmt->fetch();
+            if (!$order) {
+                return;
+            }
+
+            $itemsStmt = db()->prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id ASC');
+            $itemsStmt->execute([$orderId]);
+            $order['items'] = $itemsStmt->fetchAll();
+
+            $legacyOrder = legacyOrder($order);
+            $shippingAddress = $legacyOrder['shippingAddress'] ?? [];
+            $email = trim((string) ($shippingAddress['email'] ?? ''));
+            $name = trim((string) ($shippingAddress['fullname'] ?? ''));
+
+            if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                MailService::sendOrderReceivedEmail($email, $name, $legacyOrder);
+            }
+        } catch (Throwable) {
+            // PayTR callback akisini e-posta hatasi yuzunden bozma.
+        }
     }
 
     private static function createMockPayment(array $order, ?string $reason = null): array {

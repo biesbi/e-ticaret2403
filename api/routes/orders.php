@@ -5,7 +5,7 @@ StockService::ensureSchema();
 // Otomatik stok temizleme: %5 ihtimalle terk edilen siparişleri temizle
 // PayTR ödeme oturumu max 30 dk; 2 saat sonra hâlâ pending olan stok rezervasyonları serbest bırakılır
 if (random_int(1, 20) === 1) {
-    try { StockService::releaseAbandonedReservations(2); } catch (Throwable) {}
+    try { OrderService::cleanupAbandonedCardPayments(2); } catch (Throwable) {}
 }
 
 function generateOrderId(): string {
@@ -197,7 +197,9 @@ if ($id === 'track') {
 
 if ($id === null && $method === 'GET') {
     adminRequired();
-    $stmt = db()->query('SELECT * FROM orders ORDER BY created_at DESC');
+    $stmt = db()->query(
+        'SELECT * FROM orders WHERE ' . OrderService::visibleListSql() . ' ORDER BY created_at DESC'
+    );
     $orders = $stmt->fetchAll();
 
     if (!$orders) {
@@ -340,29 +342,13 @@ if ($id === 'cancel-payment' && $method === 'POST') {
         ]);
     }
 
-    $fields = [
-        'payment_status = ?',
-        'status = ?',
-        'updated_at = CURRENT_TIMESTAMP',
-    ];
-    $values = ['failed', 'cancelled'];
-
-    if (tableHasColumn('orders', 'paytr_token')) {
-        $fields[] = 'paytr_token = NULL';
-    }
-    if (tableHasColumn('orders', 'paytr_merchant_oid')) {
-        $fields[] = 'paytr_merchant_oid = NULL';
-    }
-
-    $values[] = $orderId;
-    db()->prepare('UPDATE orders SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($values);
-
-    orderApplyStockTransition($orderId, 'cancelled', 'failed');
+    $updatedOrder = OrderService::markCardPaymentFailed($orderId);
+    if ($updatedOrder === null) error('Siparis bulunamadi.', 404);
 
     ok([
         'success' => true,
         'order_id' => $orderId,
-        'message' => 'Odeme iptal edildi ve stok iade edildi.',
+        'message' => 'Odeme iptal edildi; siparis gizlendi, stok ve kupon iade edildi.',
     ]);
 }
 
@@ -377,7 +363,12 @@ if ($id === null && $method === 'POST') {
 
     if ($payload !== null) {
         $recentOrder = db()->prepare(
-            "SELECT id FROM orders WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL 30 SECOND) LIMIT 1"
+            "SELECT id
+             FROM orders
+             WHERE user_id = ?
+               AND created_at > DATE_SUB(NOW(), INTERVAL 30 SECOND)
+               AND NOT (payment_method = 'card' AND payment_status = 'failed')
+             LIMIT 1"
         );
         $recentOrder->execute([$payload['sub']]);
         if ($recentOrder->fetch()) {
@@ -588,11 +579,23 @@ if ($id === null && $method === 'POST') {
             ], $items),
         ];
 
-        MailService::sendOrderReceivedEmail($customerEmail, $customerName, $response);
-
         if ($paymentMethod === 'card') {
-            $payment = PaytrService::createPayment(['id' => $orderId, 'total' => $total], $items, $shippingAddress);
+            try {
+                $payment = PaytrService::createPayment(['id' => $orderId, 'total' => $total], $items, $shippingAddress);
+            } catch (Throwable $paymentError) {
+                OrderService::purgeUnpaidOrder($orderId);
+                throw $paymentError;
+            }
+
+            $paymentStatus = (string) ($payment['status'] ?? '');
+            if (!in_array($paymentStatus, ['iframe_ready', 'mock_ready'], true)) {
+                OrderService::purgeUnpaidOrder($orderId);
+                throw new RuntimeException((string) ($payment['message'] ?? 'PayTR odeme oturumu baslatilamadi.'));
+            }
+
             $response['payment'] = $payment;
+        } else {
+            MailService::sendOrderReceivedEmail($customerEmail, $customerName, $response);
         }
 
         ok($response);
@@ -613,9 +616,17 @@ if ($id !== null && $sub === 'status') {
         error('Gecersiz durum.');
     }
 
-    $stmt = db()->prepare('UPDATE orders SET status = ? WHERE id = ?');
+    $existing = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+    $existing->execute([$id]);
+    $currentOrder = $existing->fetch();
+    if (!$currentOrder) error('Siparis bulunamadi.', 404);
+
+    if (($currentOrder['status'] ?? '') === $status) {
+        ok(legacyOrder($currentOrder));
+    }
+
+    $stmt = db()->prepare('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
     $stmt->execute([$status, $id]);
-    if ($stmt->rowCount() === 0) error('Siparis bulunamadi.', 404);
 
     orderApplyStockTransition((string) $id, $status, null);
 

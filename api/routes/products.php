@@ -53,8 +53,8 @@ function productPayloadValue(string $column, string $slug, mixed $current = null
         'stock' => (int) input('stock', $current ?? 0),
         'is_active' => (int) input('is_active', input('isActive', $current ?? 1)),
         'product_condition', 'condition_tag' => normalizeProductConditionTag(
-            input($column, input('product_condition', input('condition_tag', input('conditionTag', $current ?? 'used')))),
-            is_string($current) ? normalizeProductConditionTag($current, 'used') : 'used'
+            input($column, input('product_condition', input('condition_tag', input('conditionTag', $current ?? '2. El Sıfır')))),
+            is_string($current) ? normalizeProductConditionTag($current, '2. El Sıfır') : '2. El Sıfır'
         ),
         'category_id' => productNullableForeignKey(input('category_id', input('categoryId', $current))),
         'brand_id' => productNullableForeignKey(input('brand_id', input('brandId', $current))),

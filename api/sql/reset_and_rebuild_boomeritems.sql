@@ -65,7 +65,7 @@ CREATE TABLE products (
   fixed_shipping_fee DECIMAL(10,2) NULL DEFAULT NULL,
   stock INT NOT NULL DEFAULT 0,
   pieces INT NOT NULL DEFAULT 0,
-  product_condition ENUM('new','used') NOT NULL DEFAULT 'used',
+  product_condition ENUM('2. el','2. El Sıfır') NOT NULL DEFAULT '2. El Sıfır',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -65,6 +65,26 @@
         ? 'Ödemeniz alındı. Sipariş sayfanıza yönlendiriliyorsunuz...'
         : 'Ödeme işlemi tamamlanamadı. Ana sayfaya yönlendiriliyorsunuz...';
 
+      function notifyFailedPaymentBackend() {
+        if (isSuccess || !orderId) return;
+
+        try {
+          var headers = { 'Content-Type': 'application/json' };
+          try {
+            var token = localStorage.getItem('token');
+            if (token) headers.Authorization = 'Bearer ' + token;
+          } catch (e) {}
+
+          fetch('/api/orders/cancel-payment', {
+            method: 'POST',
+            keepalive: true,
+            credentials: 'include',
+            headers: headers,
+            body: JSON.stringify({ order_id: orderId })
+          }).catch(function () {});
+        } catch (e) {}
+      }
+
       // Ana sekmeye BroadcastChannel + localStorage ile haber ver
       if (orderId) {
         try {
@@ -83,6 +103,8 @@
       }
 
       // Geri sayım ve yönlendirme
+      notifyFailedPaymentBackend();
+
       var delay = isSuccess ? 3 : 4;
       var remaining = delay;
 

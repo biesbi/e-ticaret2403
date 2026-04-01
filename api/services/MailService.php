@@ -282,26 +282,40 @@ final class MailService
 
     public static function sendRegistrationAdminEmail(string $registeredEmail, string $registeredName): void
     {
-        $adminEmail = trim((string) env('MAIL_ADMIN_EMAIL', 'boomeritems@gmail.com'));
-        if ($adminEmail === '' || !filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
+        $rawRecipients = [
+            trim((string) env('MAIL_ADMIN_EMAIL', 'boomeritems@gmail.com')),
+            trim((string) env('MAIL_REGISTRATION_NOTIFY_EMAIL', 'bsametbaran@hotmail.com')),
+        ];
+
+        $recipients = [];
+        foreach ($rawRecipients as $candidate) {
+            if ($candidate === '' || !filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $recipients[strtolower($candidate)] = $candidate;
+        }
+
+        if ($recipients === []) {
             return;
         }
 
         $subject = 'Yeni uye kaydi: ' . $registeredName;
-        $html = self::wrapTemplate(
-            'Yeni uye kaydi alindi',
-            'BoomerItems',
-            '<p>Sitede yeni bir kullanici kaydi olustu.</p>'
-            . self::renderInfoTable([
-                'Ad Soyad' => $registeredName,
-                'E-posta' => $registeredEmail,
-                'Kayit Tarihi' => date('d.m.Y H:i'),
-                'Bildirim Adresi' => $adminEmail,
-            ])
-            . '<p style="margin:18px 0 0;color:#475569;">Bu bildirim otomatik olarak olusturulmustur.</p>'
-        );
+        foreach ($recipients as $recipient) {
+            $html = self::wrapTemplate(
+                'Yeni uye kaydi alindi',
+                'BoomerItems',
+                '<p>Sitede yeni bir kullanici kaydi olustu.</p>'
+                . self::renderInfoTable([
+                    'Ad Soyad' => $registeredName,
+                    'E-posta' => $registeredEmail,
+                    'Kayit Tarihi' => date('d.m.Y H:i'),
+                    'Bildirim Adresi' => $recipient,
+                ])
+                . '<p style="margin:18px 0 0;color:#475569;">Bu bildirim otomatik olarak olusturulmustur.</p>'
+            );
 
-        self::queueAndAttempt($adminEmail, $subject, $html);
+            self::queueAndAttempt($recipient, $subject, $html);
+        }
     }
 
     public static function wrapTemplate(string $title, string $name, string $bodyHtml): string
@@ -375,13 +389,7 @@ final class MailService
 
         $sent = false;
         if ($enabled) {
-            $sent = self::deliver($toEmail, $subject, $html);
-            db()->prepare(
-                'UPDATE email_queue
-                 SET status = ?, attempts = attempts + 1,
-                     sent_at = CASE WHEN ? = "sent" THEN CURRENT_TIMESTAMP ELSE sent_at END
-                 WHERE id = ?'
-            )->execute([$sent ? 'sent' : 'failed', $sent ? 'sent' : 'failed', $queueId]);
+            $sent = self::attemptQueuedMail($queueId, $toEmail, $subject, $html, 0);
         }
 
         return [
@@ -391,6 +399,51 @@ final class MailService
             'mail_enabled' => $enabled,
             'smtp_host' => (string) env('MAIL_HOST', ''),
         ];
+    }
+
+    public static function processQueue(int $limit = 20): array
+    {
+        self::ensureSchema();
+
+        if (!filter_var(env('MAIL_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN)) {
+            return ['processed' => 0, 'sent' => 0, 'failed' => 0, 'reason' => 'MAIL_ENABLED=false'];
+        }
+
+        $maxAttempts = max(1, (int) env('MAIL_MAX_ATTEMPTS', 4));
+        $retryDelay  = max(0, (int) env('MAIL_RETRY_DELAY_MINUTES', 5));
+
+        $stmt = db()->prepare(
+            'SELECT id, to_email, subject, body, attempts
+             FROM email_queue
+             WHERE status = "pending"
+               AND attempts < ?
+               AND scheduled_at <= NOW()
+             ORDER BY scheduled_at ASC
+             LIMIT ?'
+        );
+        $stmt->execute([$maxAttempts, $limit]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $sent   = 0;
+        $failed = 0;
+
+        foreach ($rows as $row) {
+            $ok = self::attemptQueuedMail(
+                (int) $row['id'],
+                (string) $row['to_email'],
+                (string) $row['subject'],
+                (string) $row['body'],
+                (int) $row['attempts']
+            );
+
+            if ($ok) {
+                $sent++;
+            } else {
+                $failed++;
+            }
+        }
+
+        return ['processed' => count($rows), 'sent' => $sent, 'failed' => $failed];
     }
 
     private static function queueAndAttempt(string $toEmail, string $subject, string $html): void
@@ -405,15 +458,119 @@ final class MailService
             return;
         }
 
-        $sent = self::deliver($toEmail, $subject, $html);
-        db()->prepare(
-            'UPDATE email_queue
-             SET status = ?, attempts = attempts + 1, sent_at = CASE WHEN ? = "sent" THEN CURRENT_TIMESTAMP ELSE sent_at END
-             WHERE id = ?'
-        )->execute([$sent ? 'sent' : 'failed', $sent ? 'sent' : 'failed', $queueId]);
+        self::attemptQueuedMail($queueId, $toEmail, $subject, $html, 0);
     }
 
-    private static function deliver(string $toEmail, string $subject, string $html): bool
+    private static function attemptQueuedMail(
+        int $queueId,
+        string $toEmail,
+        string $subject,
+        string $html,
+        int $attempts
+    ): bool {
+        $sent = self::deliver($toEmail, $subject, $html);
+        $newAttempts = $attempts + 1;
+
+        if ($sent) {
+            db()->prepare(
+                'UPDATE email_queue
+                 SET status = "sent",
+                     attempts = ?,
+                     sent_at = CURRENT_TIMESTAMP
+                 WHERE id = ?'
+            )->execute([$newAttempts, $queueId]);
+            return true;
+        }
+
+        $maxAttempts = max(1, (int) env('MAIL_MAX_ATTEMPTS', 4));
+        $retryDelay  = max(0, (int) env('MAIL_RETRY_DELAY_MINUTES', 5));
+        $newStatus   = $newAttempts >= $maxAttempts ? 'failed' : 'pending';
+        $nextTryAt   = date('Y-m-d H:i:s', time() + ($retryDelay * 60 * $newAttempts));
+
+        db()->prepare(
+            'UPDATE email_queue
+             SET status = ?,
+                 attempts = ?,
+                 scheduled_at = ?,
+                 sent_at = NULL
+             WHERE id = ?'
+        )->execute([$newStatus, $newAttempts, $nextTryAt, $queueId]);
+
+        return false;
+    }
+
+    private static function dispatchAsync(string $toEmail, string $subject, string $html, int $queueId): void
+    {
+        if (self::flushResponse()) {
+            $sent = self::deliver($toEmail, $subject, $html);
+            db()->prepare(
+                'UPDATE email_queue
+                 SET status = ?, attempts = attempts + 1,
+                     sent_at = CASE WHEN ? = "sent" THEN CURRENT_TIMESTAMP ELSE sent_at END
+                 WHERE id = ?'
+            )->execute([$sent ? 'sent' : 'failed', $sent ? 'sent' : 'failed', $queueId]);
+            return;
+        }
+
+        self::dispatchBackground($toEmail, $subject, $html, $queueId);
+    }
+
+    private static function flushResponse(): bool
+    {
+        if (headers_sent()) {
+            return false;
+        }
+
+        ignore_user_abort(true);
+
+        if (function_exists('fastcgi_finish_request')) {
+            if (ob_get_level() > 0) {
+                ob_end_flush();
+            }
+            fastcgi_finish_request();
+            set_time_limit(120);
+            return true;
+        }
+
+        $content = ob_get_clean() ?: '';
+        header('Content-Length: ' . strlen($content));
+        header('Connection: close');
+        echo $content;
+
+        if (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        flush();
+        set_time_limit(120);
+        return true;
+    }
+
+    private static function dispatchBackground(string $toEmail, string $subject, string $html, int $queueId): void
+    {
+        $phpBin  = PHP_BINARY ?: 'php';
+        $script  = __DIR__ . '/../scripts/mail_worker.php';
+
+        if (!file_exists($script)) {
+            $sent = self::deliver($toEmail, $subject, $html);
+            db()->prepare(
+                'UPDATE email_queue
+                 SET status = ?, attempts = attempts + 1,
+                     sent_at = CASE WHEN ? = "sent" THEN CURRENT_TIMESTAMP ELSE sent_at END
+                 WHERE id = ?'
+            )->execute([$sent ? 'sent' : 'failed', $sent ? 'sent' : 'failed', $queueId]);
+            return;
+        }
+
+        $cmd = escapeshellcmd($phpBin) . ' ' . escapeshellarg($script) . ' ' . escapeshellarg((string)$queueId);
+
+        if (str_starts_with(PHP_OS, 'WIN')) {
+            pclose(popen('start /B ' . $cmd . ' > NUL 2>&1', 'r'));
+        } else {
+            exec($cmd . ' > /dev/null 2>&1 &');
+        }
+    }
+
+    public static function deliver(string $toEmail, string $subject, string $html): bool
     {
         $vendorAutoload = __DIR__ . '/../../vendor/autoload.php';
         if (!file_exists($vendorAutoload)) {
@@ -428,42 +585,58 @@ final class MailService
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
         try {
             $mail->isSMTP();
-            $mail->Host = (string) env('MAIL_HOST', 'localhost');
-            $mail->SMTPAuth = true;
-            $mail->Username = (string) env('MAIL_USER', '');
-            $mail->Password = (string) env('MAIL_PASS', '');
-            $secure = strtolower((string) env('MAIL_SECURE', 'tls'));
+            $mail->Host       = (string) env('MAIL_HOST', 'localhost');
+            $mail->SMTPAuth   = true;
+            $mail->Username   = (string) env('MAIL_USER', '');
+            $mail->Password   = (string) env('MAIL_PASS', '');
+            $secure           = strtolower((string) env('MAIL_SECURE', 'tls'));
             $mail->SMTPSecure = $secure === 'ssl'
                 ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
                 : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = (int) env('MAIL_PORT', 587);
-            $mail->CharSet = 'UTF-8';
-            $mail->Timeout = 20;
+            $mail->Port       = (int) env('MAIL_PORT', 587);
+            $mail->CharSet    = 'UTF-8';
+            $mail->Timeout    = (int) env('MAIL_SMTP_TIMEOUT', 45);
+            $mail->SMTPKeepAlive = false;
 
-            if (filter_var(env('MAIL_ALLOW_SELF_SIGNED', 'true'), FILTER_VALIDATE_BOOLEAN)) {
+            $allowSelfSigned = filter_var(env('MAIL_ALLOW_SELF_SIGNED', 'false'), FILTER_VALIDATE_BOOLEAN);
+            if ($allowSelfSigned) {
                 $mail->SMTPOptions = [
                     'ssl' => [
-                        'verify_peer' => false,
-                        'verify_peer_name' => false,
+                        'verify_peer'       => false,
+                        'verify_peer_name'  => false,
                         'allow_self_signed' => true,
                     ],
                 ];
             }
 
             $fromEmail = trim((string) env('MAIL_FROM_EMAIL', 'noreply@boomeritems.com'));
-            $fromName = trim((string) env('MAIL_FROM_NAME', 'BoomerItems'));
+            $fromName  = trim((string) env('MAIL_FROM_NAME', 'BoomerItems'));
+            $appHost   = parse_url((string) env('APP_URL', ''), PHP_URL_HOST);
+            if (is_string($appHost) && $appHost !== '') {
+                $mail->Hostname = $appHost;
+            }
             $mail->setFrom($fromEmail, $fromName);
+            $mail->Sender = $fromEmail;
             $mail->addAddress($toEmail);
+
+            $replyTo = trim((string) env('MAIL_REPLY_TO', ''));
+            if ($replyTo !== '' && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+                $mail->addReplyTo($replyTo);
+            }
 
             $mail->isHTML(true);
             $mail->Subject = $subject;
-            $mail->Body = $html;
+            $mail->Body    = $html;
             $mail->AltBody = trim(preg_replace('/\s+/', ' ', strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>', '</tr>'], "\n", $html))));
 
+            $mail->XMailer = ' ';
+
             $mail->send();
+            $mail->smtpClose();
             return true;
         } catch (\PHPMailer\PHPMailer\Exception $e) {
-            error_log('[MailService] SMTP hatasi: ' . $e->getMessage());
+            $details = trim($mail->ErrorInfo ?: $e->getMessage());
+            error_log('[MailService] SMTP hatasi: ' . ($details !== '' ? $details : $e->getMessage()));
             return false;
         }
     }

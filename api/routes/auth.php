@@ -3,9 +3,9 @@
 MailService::ensureSchema();
 
 $passwordColumn = tableHasColumn('users', 'password_hash') ? 'password_hash' : 'password';
-$hasUsername = tableHasColumn('users', 'username');
+$hasUsername    = tableHasColumn('users', 'username');
 $hasDisplayName = tableHasColumn('users', 'display_name');
-$nameColumn = $hasDisplayName ? 'display_name' : (tableHasColumn('users', 'name') ? 'name' : 'email');
+$nameColumn     = $hasDisplayName ? 'display_name' : (tableHasColumn('users', 'name') ? 'name' : 'email');
 $isActiveColumn = tableHasColumn('users', 'is_active');
 
 switch ($id) {
@@ -18,7 +18,7 @@ switch ($id) {
         }
 
         $identifier = strtolower(trim(input('email', input('username', ''))));
-        $password = (string) input('password', '');
+        $password   = (string) input('password', '');
 
         if ($identifier === '' || $password === '') {
             error('E-posta ve sifre gerekli.');
@@ -39,26 +39,14 @@ switch ($id) {
             error('Kullanici adi veya sifre hatali.', 401);
         }
 
-        $isAdmin = (($user['role'] ?? 'user') === 'admin');
+        $isAdmin       = (($user['role'] ?? 'user') === 'admin');
         $emailVerified = !empty($user['email_verified']) || !empty($user['email_verified_at']);
 
-        if (!$isAdmin && !$emailVerified) {
-            AuditLog::write(AuditLog::LOGIN_FAIL, (string) $user['id'], 'user', $user['id'], [
-                'reason' => 'email_not_verified',
-                'email' => $user['email'],
-            ]);
-            json([
-                'success' => false,
-                'message' => 'Lutfen e-posta adresinizi dogrulayin. Gerekirse yeni dogrulama maili isteyebilirsiniz.',
-                'code' => 'EMAIL_NOT_VERIFIED',
-                'verification_required' => true,
-                'email' => $user['email'],
-                'resend_endpoint' => '/api/auth/resend-verification',
-            ], 403);
-        }
-
         if ($isActiveColumn && !$isAdmin && isset($user['is_active']) && (int) $user['is_active'] !== 1) {
-            error('Hesabiniz henuz aktif degil. Lutfen e-posta adresinizi dogrulayin.', 403);
+            if ($emailVerified) {
+                error('Hesabiniz aktif degil. Destek ile iletisime gecin.', 403);
+            }
+            db()->prepare('UPDATE users SET is_active = 1 WHERE id = ?')->execute([$user['id']]);
         }
 
         db()->prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?')->execute([$user['id']]);
@@ -67,7 +55,7 @@ switch ($id) {
         AuditLog::write(AuditLog::LOGIN_SUCCESS, (string) $user['id'], 'user', $user['id']);
 
         $token = jwtEncode([
-            'sub' => $user['id'],
+            'sub'  => $user['id'],
             'user' => $user['username'] ?? $user['email'],
             'role' => ($isAdmin ? 'admin' : 'customer'),
         ]);
@@ -76,20 +64,23 @@ switch ($id) {
             'SELECT id, status, total, subtotal, discount, shipping_address, cargo_number, cargo_company, created_at
              FROM orders
              WHERE user_id = ?
+               AND ' . OrderService::visibleListSql() . '
              ORDER BY created_at DESC'
         );
         $orders->execute([$user['id']]);
 
         ok([
-            'token' => $token,
-            'user' => legacyUser([
-                'id' => $user['id'],
-                'username' => $user['username'] ?? $user['email'],
-                'display_name' => $user['display_name'] ?? $user['name'] ?? '',
-                'email' => $user['email'],
-                'role' => ($isAdmin ? 'admin' : 'customer'),
+            'token'                => $token,
+            'email_verified'       => $emailVerified,
+            'verification_pending' => !$emailVerified,
+            'user'                 => legacyUser([
+                'id'             => $user['id'],
+                'username'       => $user['username'] ?? $user['email'],
+                'display_name'   => $user['display_name'] ?? $user['name'] ?? '',
+                'email'          => $user['email'],
+                'role'           => ($isAdmin ? 'admin' : 'customer'),
                 'email_verified' => $emailVerified,
-                'orders' => array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll()),
+                'orders'         => array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll()),
             ]),
         ]);
         break;
@@ -99,8 +90,8 @@ switch ($id) {
         RateLimit::check('auth_register', 5, 600);
 
         $displayName = trim((string) input('name', input('display_name', '')));
-        $email = strtolower(trim((string) input('email', '')));
-        $password = (string) input('password', '');
+        $email       = strtolower(trim((string) input('email', '')));
+        $password    = (string) input('password', '');
 
         if ($displayName === '' || $email === '' || $password === '') {
             error('Tum alanlar zorunlu.');
@@ -116,7 +107,7 @@ switch ($id) {
         }
 
         $baseUsername = strtolower(preg_replace('/[^a-z0-9]+/', '', strstr($email, '@', true) ?: $displayName));
-        $username = $baseUsername !== '' ? $baseUsername : 'user' . time();
+        $username     = $baseUsername !== '' ? $baseUsername : 'user' . time();
 
         if ($hasUsername) {
             $suffix = 1;
@@ -145,9 +136,9 @@ switch ($id) {
             }
         }
 
-        $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $hash       = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
         $userIdType = tableColumnType('users', 'id') ?? '';
-        $userId = str_contains($userIdType, 'char') || str_contains($userIdType, 'varchar')
+        $userId     = str_contains($userIdType, 'char') || str_contains($userIdType, 'varchar')
             ? substr(generatePublicId(18), 0, 36)
             : null;
 
@@ -163,7 +154,7 @@ switch ($id) {
                 ? [$userId, $username, $displayName, $email, $hash, 'customer', 0, null]
                 : [$username, $displayName, $email, $hash, 'customer', 0, null];
             if ($isActiveColumn) {
-                $values[] = 0;
+                $values[] = 1;
             }
 
             $placeholders = implode(',', array_fill(0, count($columns), '?'));
@@ -181,7 +172,7 @@ switch ($id) {
                 ? [$userId, $email, $displayName, $hash, 'user', 0, null]
                 : [$email, $displayName, $hash, 'user', 0, null];
             if ($isActiveColumn) {
-                $values[] = 0;
+                $values[] = 1;
             }
 
             $placeholders = implode(',', array_fill(0, count($columns), '?'));
@@ -195,10 +186,10 @@ switch ($id) {
         AuditLog::write(AuditLog::REGISTER, (string) $createdId, 'user', $createdId, ['email' => $email]);
 
         ok([
-            'success' => true,
-            'verification_required' => true,
-            'email' => $email,
-            'message' => 'Kayit tamamlandi. Hesabinizi aktifleştirmek icin e-posta adresinize gonderilen dogrulama baglantisina tiklayin.',
+            'success'               => true,
+            'verification_pending'  => true,
+            'email'                 => $email,
+            'message'               => 'Kayit tamamlandi. Giris yapabilirsiniz. E-posta adresinize dogrulama linki gonderildi.',
         ]);
         break;
 
@@ -231,9 +222,9 @@ switch ($id) {
 
         if (($user['role'] ?? 'user') !== 'admin' && (!empty($user['email_verified']) || !empty($user['email_verified_at']))) {
             ok([
-                'success' => true,
+                'success'          => true,
                 'already_verified' => true,
-                'message' => 'Bu e-posta adresi zaten dogrulanmis.',
+                'message'          => 'Bu e-posta adresi zaten dogrulanmis.',
             ]);
         }
 
@@ -283,8 +274,8 @@ switch ($id) {
         if ($method !== 'POST') error('Method not allowed.', 405);
         RateLimit::check('auth_reset_password', 10, 3600);
 
-        $token = trim((string) input('token', ''));
-        $password = (string) input('password', '');
+        $token                = trim((string) input('token', ''));
+        $password             = (string) input('password', '');
         $passwordConfirmation = (string) input('password_confirmation', input('passwordConfirmation', ''));
 
         if ($token === '') {
@@ -363,9 +354,9 @@ switch ($id) {
 
         if (!empty($user['email_verified']) || !empty($user['email_verified_at'])) {
             ok([
-                'success' => true,
+                'success'          => true,
                 'already_verified' => true,
-                'message' => 'E-posta adresiniz zaten dogrulanmis. Giris yapabilirsiniz.',
+                'message'          => 'E-posta adresiniz zaten dogrulanmis. Giris yapabilirsiniz.',
             ]);
         }
 
@@ -426,6 +417,7 @@ switch ($id) {
             'SELECT id, status, total, city, district, tracking_no, cargo_carrier, created_at
              FROM orders
              WHERE user_id = ?
+               AND ' . OrderService::visibleListSql() . '
              ORDER BY created_at DESC'
         );
         $orders->execute([$user['id']]);

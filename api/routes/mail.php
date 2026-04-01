@@ -1,11 +1,38 @@
 <?php
 // ══════════════════════════════════════════════════
-//  POST /api/mail/test   — Test e-postası gönder
-//  Sadece admin kullanıcılar erişebilir.
+//  Mail Routes — Sadece admin erişimi
+//  POST /api/mail/test             — Test e-postası gönder
+//  POST /api/mail/queue/process    — Bekleyen mailleri işle (retry)
+//  GET  /api/mail/queue/status     — Queue istatistikleri
 // ══════════════════════════════════════════════════
 
 Auth::requireAdmin();
 
+// /api/mail/queue/process  veya  /api/mail/queue/status
+if (($segments[1] ?? '') === 'queue') {
+    $action = $segments[2] ?? '';
+
+    if ($action === 'process' && $method === 'POST') {
+        $body  = json_decode(file_get_contents('php://input'), true) ?? [];
+        $limit = max(1, min(100, (int) ($body['limit'] ?? 20)));
+        $result = MailService::processQueue($limit);
+        json(['success' => true, 'result' => $result]);
+    }
+
+    if ($action === 'status' && $method === 'GET') {
+        MailService::ensureSchema();
+        $rows = db()->query(
+            'SELECT status, COUNT(*) as total, MAX(created_at) as last_created
+             FROM email_queue
+             GROUP BY status'
+        )->fetchAll(PDO::FETCH_ASSOC);
+        json(['success' => true, 'queue' => $rows]);
+    }
+
+    error('Bilinmeyen mail queue eylemi.', 404);
+}
+
+// POST /api/mail/test
 if ($method !== 'POST') {
     error('Method Not Allowed', 405);
 }

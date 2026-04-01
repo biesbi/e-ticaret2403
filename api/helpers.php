@@ -199,9 +199,12 @@ function inferPiecesFromProduct(array $product): int
     return (int) str_replace('.', '', $match[1]);
 }
 
-function normalizeProductConditionTag(mixed $value, string $default = 'used'): string
+function normalizeProductConditionTag(mixed $value, string $default = '2. El Sıfır'): string
 {
-    $fallback = in_array($default, ['new', 'used'], true) ? $default : 'used';
+    $defaultNormalized = strtolower(trim((string) $default));
+    $fallback = in_array($defaultNormalized, ['new', '0', 'zero', 'sifir', 'sifirurun', 'unused', 'sealed', '2. el sıfır', '2.el sıfır'], true)
+        ? '2. El Sıfır'
+        : '2. el';
     if ($value === null) {
         return $fallback;
     }
@@ -212,26 +215,32 @@ function normalizeProductConditionTag(mixed $value, string $default = 'used'): s
     }
 
     $map = [
-        'new' => 'new',
-        '0' => 'new',
-        'zero' => 'new',
-        'sifir' => 'new',
-        'sifirurun' => 'new',
-        'unused' => 'new',
-        'sealed' => 'new',
-        'used' => 'used',
-        '2' => 'used',
-        '2el' => 'used',
-        '2.el' => 'used',
-        '2. el' => 'used',
-        'secondhand' => 'used',
-        'second-hand' => 'used',
-        'ikinciel' => 'used',
-        'ikinci el' => 'used',
-        'mint' => 'used',
-        'excellent' => 'used',
-        'good' => 'used',
-        'fair' => 'used',
+        'new' => '2. El Sıfır',
+        '0' => '2. El Sıfır',
+        'zero' => '2. El Sıfır',
+        'sifir' => '2. El Sıfır',
+        'sifirurun' => '2. El Sıfır',
+        'unused' => '2. El Sıfır',
+        'sealed' => '2. El Sıfır',
+        '2. el sıfır' => '2. El Sıfır',
+        '2. el sifir' => '2. El Sıfır',
+        '2.elsıfır' => '2. El Sıfır',
+        '2.elsifir' => '2. El Sıfır',
+        '2elsıfır' => '2. El Sıfır',
+        '2elsifir' => '2. El Sıfır',
+        'used' => '2. el',
+        '2' => '2. el',
+        '2el' => '2. el',
+        '2.el' => '2. el',
+        '2. el' => '2. el',
+        'secondhand' => '2. el',
+        'second-hand' => '2. el',
+        'ikinciel' => '2. el',
+        'ikinci el' => '2. el',
+        'mint' => '2. el',
+        'excellent' => '2. el',
+        'good' => '2. el',
+        'fair' => '2. el',
     ];
 
     return $map[$normalized] ?? $fallback;
@@ -239,7 +248,12 @@ function normalizeProductConditionTag(mixed $value, string $default = 'used'): s
 
 function productConditionLabel(string $conditionTag): string
 {
-    return normalizeProductConditionTag($conditionTag) === 'new' ? '2.el' : '2. el sıfır';
+    return normalizeProductConditionTag($conditionTag);
+}
+
+function productConditionDisplayLabel(string $conditionTag): string
+{
+    return normalizeProductConditionTag($conditionTag);
 }
 
 function legacyProduct(array $product): array
@@ -261,9 +275,9 @@ function legacyProduct(array $product): array
     $conditionTag = normalizeProductConditionTag(
         $product['product_condition']
         ?? ($product['condition_tag'] ?? ($product['conditionTag'] ?? null)),
-        'used'
+        '2. El Sıfır'
     );
-    $conditionLabel = productConditionLabel($conditionTag);
+    $conditionLabel = productConditionDisplayLabel($conditionTag);
 
     return [
         ...$product,

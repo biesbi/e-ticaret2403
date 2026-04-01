@@ -30,6 +30,9 @@ function adminUserSelectSql(): string {
     if (tableHasColumn('users', 'is_active')) {
         $parts[] = 'is_active';
     }
+    $parts[] = tableHasColumn('users', 'email_verified')
+        ? 'email_verified'
+        : 'CASE WHEN email_verified_at IS NULL THEN 0 ELSE 1 END AS email_verified';
     if (tableHasColumn('users', 'email_verified_at')) {
         $parts[] = 'email_verified_at';
     }
@@ -90,7 +93,9 @@ function adminHydrateUserRow(array $row): array {
     $row['role'] = $role === 'customer' ? 'user' : $role;
     $row['role_label'] = $role === 'admin' ? 'admin' : 'customer';
     $row['is_active'] = isset($row['is_active']) ? (int) $row['is_active'] : 1;
-    $row['is_verified'] = !empty($row['email_verified_at']);
+    $verifiedFlag = isset($row['email_verified']) ? (int) $row['email_verified'] : (!empty($row['email_verified_at']) ? 1 : 0);
+    $row['is_verified'] = $verifiedFlag === 1 || !empty($row['email_verified_at']);
+    unset($row['email_verified']);
     return $row;
 }
 

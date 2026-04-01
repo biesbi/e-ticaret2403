@@ -12,36 +12,52 @@ final class StockService
 
         if (tableExists('products')) {
             if (!tableHasColumn('products', 'product_condition')) {
-                db()->exec("ALTER TABLE products ADD COLUMN product_condition ENUM('new','used') NOT NULL DEFAULT 'used'");
+                db()->exec("ALTER TABLE products ADD COLUMN product_condition VARCHAR(32) NOT NULL DEFAULT '2. El Sıfır'");
 
                 if (tableHasColumn('products', 'condition_tag')) {
                     db()->exec(
                         "UPDATE products
                          SET product_condition = CASE
-                             WHEN LOWER(TRIM(COALESCE(condition_tag, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed')
-                                 THEN 'new'
-                             ELSE 'used'
+                             WHEN LOWER(TRIM(COALESCE(condition_tag, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed', '2. el sıfır')
+                                 THEN '2. El Sıfır'
+                             WHEN LOWER(TRIM(COALESCE(condition_tag, ''))) IN ('used', '2', '2el', '2.el', 'secondhand', 'second-hand', 'ikinciel', 'ikinci el', 'mint', 'excellent', 'good', 'fair', '2. el')
+                                 THEN '2. el'
+                             ELSE '2. el'
                          END"
                     );
                 }
             }
 
+            $conditionColumnMeta = db()->query("SHOW COLUMNS FROM products LIKE 'product_condition'")->fetch();
+            $conditionColumnType = strtolower((string) ($conditionColumnMeta['Type'] ?? ''));
+            if ($conditionColumnType !== 'varchar(32)') {
+                db()->exec("ALTER TABLE products MODIFY COLUMN product_condition VARCHAR(32) NOT NULL DEFAULT '2. El Sıfır'");
+            }
+
             db()->exec(
                 "UPDATE products
                  SET product_condition = CASE
-                     WHEN LOWER(TRIM(COALESCE(product_condition, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed')
-                         THEN 'new'
-                     ELSE 'used'
+                     WHEN LOWER(TRIM(COALESCE(product_condition, ''))) IN ('new', '0', 'zero', 'sifir', 'unused', 'sealed', '2. el sıfır')
+                         THEN '2. El Sıfır'
+                     WHEN LOWER(TRIM(COALESCE(product_condition, ''))) IN ('used', '2', '2el', '2.el', 'secondhand', 'second-hand', 'ikinciel', 'ikinci el', 'mint', 'excellent', 'good', 'fair', '2. el')
+                         THEN '2. el'
+                     ELSE '2. el'
                  END
                  WHERE product_condition IS NULL
-                    OR LOWER(TRIM(COALESCE(product_condition, ''))) IN ('0', 'zero', 'sifir', 'unused', 'sealed', '2', '2el', '2.el', 'secondhand', 'second-hand', 'ikinciel', 'mint', 'excellent', 'good', 'fair')"
+                    OR LOWER(TRIM(COALESCE(product_condition, ''))) IN ('new', 'used', '0', 'zero', 'sifir', 'unused', 'sealed', '2', '2el', '2.el', 'secondhand', 'second-hand', 'ikinciel', 'mint', 'excellent', 'good', 'fair', '2. el', '2. el sıfır')"
             );
 
-            $conditionColumnMeta = db()->query("SHOW COLUMNS FROM products LIKE 'product_condition'")->fetch();
-            $conditionColumnType = strtolower((string) ($conditionColumnMeta['Type'] ?? ''));
             $conditionColumnDefault = (string) ($conditionColumnMeta['Default'] ?? '');
-            if ($conditionColumnType !== "enum('new','used')" || $conditionColumnDefault !== 'used') {
-                db()->exec("ALTER TABLE products MODIFY COLUMN product_condition ENUM('new','used') NOT NULL DEFAULT 'used'");
+            if ($conditionColumnType !== "enum('2. el','2. el sıfır')" || $conditionColumnDefault !== '2. El Sıfır') {
+                db()->exec("ALTER TABLE products MODIFY COLUMN product_condition ENUM('2. el','2. El Sıfır') NOT NULL DEFAULT '2. El Sıfır'");
+            }
+        }
+
+        if (tableExists('products')) {
+            $conditionColumnMeta = db()->query("SHOW COLUMNS FROM products LIKE 'product_condition'")->fetch();
+            $conditionColumnDefault = (string) ($conditionColumnMeta['Default'] ?? '');
+            if ($conditionColumnDefault !== '2. El Sıfır') {
+                db()->exec("ALTER TABLE products MODIFY COLUMN product_condition ENUM('2. el','2. El Sıfır') NOT NULL DEFAULT '2. El Sıfır'");
             }
         }
 

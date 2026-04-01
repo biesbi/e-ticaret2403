@@ -19,9 +19,10 @@ require_once __DIR__ . '/services/AuditLog.php';
 require_once __DIR__ . '/services/CartService.php';
 require_once __DIR__ . '/services/UploadService.php';
 require_once __DIR__ . '/services/AdminService.php';
-require_once __DIR__ . '/services/PaytrService.php';
-require_once __DIR__ . '/services/MailService.php';
 require_once __DIR__ . '/services/StockService.php';
+require_once __DIR__ . '/services/OrderService.php';
+require_once __DIR__ . '/services/MailService.php';
+require_once __DIR__ . '/services/PaytrService.php';
 
 // ─── 4. Global Middleware'leri Uygula ─────────
 ErrorHandler::register();    // Hata yakalama (ilk sıraya alınmalı)

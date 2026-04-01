@@ -139,7 +139,7 @@
         if (token) headers.Authorization = 'Bearer ' + token;
       } catch (e) {}
 
-      await fetch('https://www.boomeritems.com/api/orders/cancel-payment', {
+      await fetch('/api/orders/cancel-payment', {
         method: 'POST',
         keepalive: true,
         credentials: 'include',
@@ -376,6 +376,9 @@
     hideWaitingOverlay();
     console.error('❌ ÖDEME BAŞARISIZ!', orderId);
     restoreCheckoutSnapshot(orderId);
+    if (orderId) {
+      cancelPendingPayment(orderId);
+    }
     try {
       localStorage.removeItem('lastOrderId');
       localStorage.removeItem('lastOrderTotal');
@@ -420,7 +423,7 @@
         } catch(e) {}
 
         const response = await fetch(
-          'https://www.boomeritems.com/api/payments/paytr/status/' + orderId,
+          '/api/payments/paytr/status/' + orderId,
           { credentials: 'include', headers }
         );
         if (!response.ok) throw new Error('Status check failed');
