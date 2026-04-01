@@ -8,6 +8,7 @@
 .admin-main {
   min-height: 0;
   overflow-y: auto;
+  background: #f8fafc !important; /* Elegant background for admin main */
 }
 
 /* Ürün (ekle/düzenle) sayfalarında çoklu görsel listesi çok uzayınca,
@@ -23,3 +24,153 @@
   padding: 24px;
 }
 
+/* ═══════════════════════════════════════ */
+/* DASHBOARD PREMIUM AESTHETIC UPGRADES    */
+/* ═══════════════════════════════════════ */
+
+/* Page Header (Yönetim Paneli h1) */
+.admin-header h1 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.04em !important;
+  margin-bottom: 24px !important;
+  text-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* Grid Layout Improvements */
+.stat-grid, .admin-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 24px !important;
+}
+
+/* Toplam Satış Card (Make it pop out to span 2 cols on wide screens) */
+@media(min-width: 1024px) {
+  .stat-grid .stat-card {
+    grid-column: span 2 !important;
+  }
+}
+
+.stat-grid .stat-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  border: 1px solid rgba(255, 204, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.stat-grid .stat-card .stat-label {
+  color: #94a3b8 !important;
+}
+
+.stat-grid .stat-card .stat-value {
+  background: linear-gradient(135deg, #ffcc00 0%, #fbbf24 100%) !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 3.5rem !important;
+}
+
+/* Standart Stat Card Premium Tasarımı */
+.stat-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 20px !important;
+  padding: 32px 28px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at top right, rgba(255,204,0,0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(255, 204, 0, 0.4) !important;
+}
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+/* Label & Value Typographies */
+.stat-label {
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  margin-bottom: 16px !important;
+  z-index: 2;
+}
+
+.stat-value {
+  font-size: 2.5rem !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  font-family: 'Inter', sans-serif !important;
+  line-height: 1 !important;
+  letter-spacing: -0.02em !important;
+  z-index: 2;
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass Panel Utility (already exists in React but we enforce aesthetics) */
+.glass-panel {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* 📦 Hatali Emoji & Bekleyen Card Düzeltmesi */
+.admin-stats-grid > div:nth-child(4) .stat-label {
+  font-size: 0 !important; 
+}
+.admin-stats-grid > div:nth-child(4) .stat-label::before {
+  content: "📦 BEKLEYEN" !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: #d97706 !important;
+}
+.admin-stats-grid > div:nth-child(4) {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+.admin-stats-grid > div:nth-child(4) .stat-value {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Son Siparişler listesi Card */
+.admin-card {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  padding: 32px !important;
+  margin-top: 24px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+.admin-card h3 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin-bottom: 24px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid rgba(241, 245, 249, 1) !important;
+}

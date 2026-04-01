@@ -14,6 +14,9 @@
 	<meta name="description"
 		content="Hayal Et, Ke&#351;fet, Koleksiyonunu B&#252;y&#252;t! LEGO setleri, diecast ara&#231;lar ve koleksiyon fig&#252;rleri BoomerItems'ta seni bekliyor.">
 	<meta name="theme-color" content="#ffcc00">
+	<link rel="manifest" href="/manifest.json">
+	<link rel="icon" type="image/svg+xml" href="/Boomer.svg">
+
 	<meta name='robots' content='index, follow' />
 	<script>
 		try {
@@ -532,7 +535,7 @@
 			}
 
 			body {
-				padding-top: var(--mobile-sticky-offset) !important;
+				padding-top: var(--mobile-banner-height) !important;
 			}
 
 			.app-header.mobile-only,
@@ -543,6 +546,11 @@
 				left: 0 !important;
 				right: 0 !important;
 				z-index: 14010 !important;
+				background: rgba(255, 255, 255, 0.5) !important;
+				backdrop-filter: blur(16px) !important;
+				-webkit-backdrop-filter: blur(16px) !important;
+				border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+				box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05) !important;
 			}
 
 			.app-styled-mobile {
@@ -9021,6 +9029,7 @@
 			display: block !important;
 		}
 	</style>
+  <link rel="stylesheet" href="/admin-overrides.css">
 </head>
 
 <body
