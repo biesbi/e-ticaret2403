@@ -7164,7 +7164,8 @@
 
 						(items || []).forEach(function (item) {
 							var title = normalizeText(item && (item.title || item.name));
-							var stock = Math.max(0, parseInt(item && (item.available_stock || item.stock), 10) || 0);
+							var stockValue = item && item.available_stock != null ? item.available_stock : item && item.stock;
+							var stock = Math.max(0, parseInt(stockValue, 10) || 0);
 							var price = Math.max(0, toNumber(item && item.price));
 							var category = String(item && (item.category || item.category_name || '') || '');
 							var brand = String(item && (item.brand || item.brand_name || '') || '');
@@ -7563,6 +7564,36 @@
 				return detailPromiseCache[orderId];
 			};
 
+			var getAdminStatusLabel = function (detail) {
+				var custom = String(detail && (detail.admin_status_label || detail.adminStatusLabel || '') || '').trim();
+				if (custom) return custom;
+				var fallback = String(detail && (detail.status_label || detail.statusLabel || detail.status || '') || '').trim();
+				return fallback || 'Beklemede';
+			};
+
+			var getStatusCell = function (row) {
+				var direct = row.querySelector('td[data-label="Durum"], td[data-label="durum"]');
+				if (direct) return direct;
+
+				var table = row.closest('table');
+				var headerRow = table && table.querySelector('thead tr');
+				if (!headerRow) return null;
+
+				var headers = Array.prototype.slice.call(headerRow.children);
+				var statusIndex = headers.findIndex(function (cell) {
+					return normalizeText(cell.textContent) === 'durum';
+				});
+
+				return statusIndex >= 0 ? row.children[statusIndex] || null : null;
+			};
+
+			var syncRowStatus = function (row, detail) {
+				var cell = getStatusCell(row);
+				if (!cell || cell.querySelector('select, input, button')) return;
+				cell.textContent = getAdminStatusLabel(detail);
+				cell.setAttribute('data-admin-status', String(detail && (detail.admin_status_key || detail.adminStatusKey || detail.status || 'pending') || 'pending'));
+			};
+
 			var getTargetCell = function (row, orderId) {
 				var cells = Array.prototype.slice.call(row.querySelectorAll('td'));
 				return cells.find(function (cell) {
@@ -7615,6 +7646,7 @@
 					ensureItemsShell(cell);
 					getOrderDetail(orderId).then(function (detail) {
 						renderOrderItems(row, detail);
+						syncRowStatus(row, detail);
 					});
 				});
 			};
@@ -9487,13 +9519,14 @@
 			];
 			var statusMeta = {
 				pending: { label: 'Beklemede', option: '\uD83D\uDFE1 Beklemede' },
+				payment_received: { label: '\u00d6deme Yap\u0131ld\u0131', option: '\u2705 \u00d6deme Yap\u0131ld\u0131' },
 				processing: { label: 'Haz\u0131rlan\u0131yor', option: '\uD83D\uDCE6 Haz\u0131rlan\u0131yor' },
 				preparing: { label: 'Haz\u0131rlan\u0131yor', option: '\uD83D\uDCE6 Haz\u0131rlan\u0131yor' },
 				confirmed: { label: 'Onayland\u0131', option: '\uD83D\uDFE0 Onayland\u0131' },
 				shipped: { label: 'Kargoya Verildi', option: '\uD83D\uDE9A Kargoya Verildi' },
 				delivered: { label: 'Teslim Edildi', option: '\u2705 Teslim Edildi' },
 				cancelled: { label: '\u0130ptal Edildi', option: '\u274C \u0130ptal Edildi' },
-				failed: { label: 'Ba\u015far\u0131s\u0131z', option: '\u26A0\uFE0F Ba\u015far\u0131s\u0131z' }
+				failed: { label: 'Sipari\u015f Verilemedi', option: '\u26A0\uFE0F Sipari\u015f Verilemedi' }
 			};
 
 			var ensureBridgeStyles = function () {
@@ -9517,6 +9550,19 @@
 				var meta = statusMeta[String(status || '').toLowerCase()];
 				if (!meta) return String(status || '');
 				return withEmoji ? meta.option : meta.label;
+			};
+
+			var getAdminDisplayMeta = function (detail) {
+				var key = String(detail && (detail.admin_status_key || detail.adminStatusKey || detail.status || 'pending') || 'pending').toLowerCase();
+				var label = String(detail && (detail.admin_status_label || detail.adminStatusLabel || '') || '').trim();
+				if (!label) {
+					label = getStatusLabel(key, false);
+				}
+				return {
+					key: key,
+					label: label || 'Beklemede',
+					isSuccess: ['payment_received', 'paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'].indexOf(key) !== -1
+				};
 			};
 
 			var getStatusControlValue = function (status) {
@@ -9664,8 +9710,9 @@
 				if (!card || !detail) return;
 				var badge = card.querySelector('.badge-active');
 				if (!badge) return;
-				badge.textContent = getStatusLabel(detail.status, false);
-				badge.classList.toggle('success', String(detail.status || '').toLowerCase() !== 'pending');
+				var display = getAdminDisplayMeta(detail);
+				badge.textContent = display.label;
+				badge.classList.toggle('success', display.isSuccess);
 			};
 
 			var syncBridgeControls = function (card, detail) {

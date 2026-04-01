@@ -259,6 +259,41 @@ final class StockService
         db()->prepare('UPDATE orders SET stock_state = ? WHERE id = ?')->execute([$state, $orderId]);
     }
 
+    public static function syncReservedStock(?array $productIds = null, ?array $variantIds = null): void
+    {
+        self::ensureSchema();
+        $pdo = db();
+
+        $productIds = $productIds === null ? null : array_values(array_unique(array_filter(array_map(
+            static fn(mixed $id): string => trim((string) $id),
+            $productIds
+        ), static fn(string $id): bool => $id !== '')));
+
+        $variantIds = $variantIds === null ? null : array_values(array_unique(array_filter(array_map(
+            static fn(mixed $id): int => (int) $id,
+            $variantIds
+        ), static fn(int $id): bool => $id > 0)));
+
+        if (tableExists('products') && tableHasColumn('products', 'reserved_stock')) {
+            self::syncProductReservedStock($pdo, $productIds);
+        }
+
+        if (tableExists('product_variants') && tableHasColumn('product_variants', 'reserved_stock')) {
+            self::syncVariantReservedStock($pdo, $variantIds);
+        }
+    }
+
+    public static function syncReservedStockForOrder(string $orderId): void
+    {
+        self::ensureSchema();
+        if ($orderId === '') {
+            return;
+        }
+
+        $targets = self::orderStockTargets(db(), $orderId);
+        self::syncReservedStock($targets['product_ids'], $targets['variant_ids']);
+    }
+
     /**
      * Terk edilen siparişlerin stok rezervasyonlarını serbest bırakır.
      * Varsayılan eşik 2 saat — PayTR ödeme oturumu max 30 dk sürer.
@@ -324,6 +359,7 @@ final class StockService
             $items = $pdo->prepare('SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ? FOR UPDATE');
             $items->execute([$orderId]);
             $lines = $items->fetchAll();
+            $targets = self::extractStockTargets($lines);
 
             foreach ($lines as $line) {
                 $quantity = max(0, (int) ($line['quantity'] ?? 0));
@@ -378,6 +414,7 @@ final class StockService
 
             $nextState = $finalize ? 'finalized' : 'released';
             $pdo->prepare('UPDATE orders SET stock_state = ? WHERE id = ?')->execute([$nextState, $orderId]);
+            self::syncReservedStock($targets['product_ids'], $targets['variant_ids']);
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -385,5 +422,118 @@ final class StockService
             }
             throw $e;
         }
+    }
+
+    private static function syncProductReservedStock(PDO $pdo, ?array $productIds): void
+    {
+        if ($productIds !== null && $productIds === []) {
+            return;
+        }
+
+        if ($productIds === null) {
+            $pdo->exec('UPDATE products SET reserved_stock = 0');
+            $rows = $pdo->query(
+                "SELECT oi.product_id, SUM(oi.quantity) AS reserved_qty
+                 FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id
+                 WHERE o.stock_state = 'reserved'
+                   AND oi.variant_id IS NULL
+                 GROUP BY oi.product_id"
+            )->fetchAll();
+        } else {
+            $placeholders = implode(', ', array_fill(0, count($productIds), '?'));
+            $pdo->prepare('UPDATE products SET reserved_stock = 0 WHERE id IN (' . $placeholders . ')')->execute($productIds);
+            $stmt = $pdo->prepare(
+                "SELECT oi.product_id, SUM(oi.quantity) AS reserved_qty
+                 FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id
+                 WHERE o.stock_state = 'reserved'
+                   AND oi.variant_id IS NULL
+                   AND oi.product_id IN (" . $placeholders . ')
+                 GROUP BY oi.product_id'
+            );
+            $stmt->execute($productIds);
+            $rows = $stmt->fetchAll();
+        }
+
+        $update = $pdo->prepare('UPDATE products SET reserved_stock = ? WHERE id = ?');
+        foreach ($rows as $row) {
+            $update->execute([
+                max(0, (int) ($row['reserved_qty'] ?? 0)),
+                (string) ($row['product_id'] ?? ''),
+            ]);
+        }
+    }
+
+    private static function syncVariantReservedStock(PDO $pdo, ?array $variantIds): void
+    {
+        if ($variantIds !== null && $variantIds === []) {
+            return;
+        }
+
+        if ($variantIds === null) {
+            $pdo->exec('UPDATE product_variants SET reserved_stock = 0');
+            $rows = $pdo->query(
+                "SELECT oi.variant_id, SUM(oi.quantity) AS reserved_qty
+                 FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id
+                 WHERE o.stock_state = 'reserved'
+                   AND oi.variant_id IS NOT NULL
+                 GROUP BY oi.variant_id"
+            )->fetchAll();
+        } else {
+            $placeholders = implode(', ', array_fill(0, count($variantIds), '?'));
+            $pdo->prepare('UPDATE product_variants SET reserved_stock = 0 WHERE id IN (' . $placeholders . ')')->execute($variantIds);
+            $stmt = $pdo->prepare(
+                "SELECT oi.variant_id, SUM(oi.quantity) AS reserved_qty
+                 FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id
+                 WHERE o.stock_state = 'reserved'
+                   AND oi.variant_id IN (" . $placeholders . ')
+                 GROUP BY oi.variant_id'
+            );
+            $stmt->execute($variantIds);
+            $rows = $stmt->fetchAll();
+        }
+
+        $update = $pdo->prepare('UPDATE product_variants SET reserved_stock = ? WHERE id = ?');
+        foreach ($rows as $row) {
+            $update->execute([
+                max(0, (int) ($row['reserved_qty'] ?? 0)),
+                (int) ($row['variant_id'] ?? 0),
+            ]);
+        }
+    }
+
+    private static function orderStockTargets(PDO $pdo, string $orderId): array
+    {
+        $stmt = $pdo->prepare('SELECT product_id, variant_id FROM order_items WHERE order_id = ?');
+        $stmt->execute([$orderId]);
+
+        return self::extractStockTargets($stmt->fetchAll());
+    }
+
+    private static function extractStockTargets(array $lines): array
+    {
+        $productIds = [];
+        $variantIds = [];
+
+        foreach ($lines as $line) {
+            $variantId = (int) ($line['variant_id'] ?? 0);
+            if ($variantId > 0) {
+                $variantIds[] = $variantId;
+                continue;
+            }
+
+            $productId = trim((string) ($line['product_id'] ?? ''));
+            if ($productId !== '') {
+                $productIds[] = $productId;
+            }
+        }
+
+        return [
+            'product_ids' => array_values(array_unique($productIds)),
+            'variant_ids' => array_values(array_unique($variantIds)),
+        ];
     }
 }

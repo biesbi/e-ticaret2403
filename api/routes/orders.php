@@ -198,7 +198,7 @@ if ($id === 'track') {
 if ($id === null && $method === 'GET') {
     adminRequired();
     $stmt = db()->query(
-        'SELECT * FROM orders WHERE ' . OrderService::visibleListSql() . ' ORDER BY created_at DESC'
+        'SELECT * FROM orders ORDER BY created_at DESC'
     );
     $orders = $stmt->fetchAll();
 
@@ -554,6 +554,7 @@ if ($id === null && $method === 'POST') {
         }
 
         $pdo->commit();
+        StockService::syncReservedStockForOrder($orderId);
 
         $response = [
             'id' => $orderId,
@@ -594,8 +595,10 @@ if ($id === null && $method === 'POST') {
             }
 
             $response['payment'] = $payment;
+            MailService::sendOrderAdminNotification($response, $customerEmail, $customerName, $paymentMethod, 'pending');
         } else {
             MailService::sendOrderReceivedEmail($customerEmail, $customerName, $response);
+            MailService::sendOrderAdminNotification($response, $customerEmail, $customerName, $paymentMethod, 'pending');
         }
 
         ok($response);

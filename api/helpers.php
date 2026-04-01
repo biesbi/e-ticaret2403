@@ -323,6 +323,9 @@ function legacyOrder(array $order): array
         $items = array_map('legacyOrderItem', $order['items']);
     }
 
+    $status = (string) ($order['status'] ?? ($order['payment_status'] ?? 'pending'));
+    $adminStatus = orderAdminDisplayMeta($order);
+
     return [
         ...$order,
         'id' => (string) ($order['id'] ?? ''),
@@ -346,7 +349,64 @@ function legacyOrder(array $order): array
         'total' => isset($order['total']) ? (float) $order['total'] : 0.0,
         'subtotal' => isset($order['subtotal']) ? (float) $order['subtotal'] : 0.0,
         'discount' => isset($order['discount']) ? (float) $order['discount'] : 0.0,
+        'status_label' => orderStatusDisplayLabel($status),
+        'statusLabel' => orderStatusDisplayLabel($status),
+        'admin_status_key' => $adminStatus['key'],
+        'adminStatusKey' => $adminStatus['key'],
+        'admin_status_label' => $adminStatus['label'],
+        'adminStatusLabel' => $adminStatus['label'],
+        'admin_status_tone' => $adminStatus['tone'],
+        'adminStatusTone' => $adminStatus['tone'],
         'items' => $items,
+    ];
+}
+
+function orderStatusDisplayLabel(string $status): string
+{
+    return match (strtolower(trim($status))) {
+        'processing', 'preparing' => "Haz\u{0131}rlan\u{0131}yor",
+        'confirmed' => "Onayland\u{0131}",
+        'paid' => "\u{00D6}deme Yap\u{0131}ld\u{0131}",
+        'shipped' => 'Kargoya Verildi',
+        'delivered' => 'Teslim Edildi',
+        'cancelled' => "\u{0130}ptal Edildi",
+        'failed' => "Sipari\u{015F} Verilemedi",
+        default => 'Beklemede',
+    };
+}
+
+function orderAdminDisplayMeta(array $order): array
+{
+    $status = strtolower(trim((string) ($order['status'] ?? 'pending')));
+    $paymentStatus = strtolower(trim((string) ($order['payment_status'] ?? '')));
+    $paymentMethod = strtolower(trim((string) ($order['payment_method'] ?? '')));
+    $stockState = strtolower(trim((string) ($order['stock_state'] ?? 'none')));
+
+    if ($paymentStatus === 'failed' || $status === 'failed') {
+        return [
+            'key' => 'failed',
+            'label' => "Sipari\u{015F} Verilemedi",
+            'tone' => 'error',
+        ];
+    }
+
+    if ($paymentMethod === 'card' && $paymentStatus === 'pending' && $stockState === 'reserved') {
+        return [
+            'key' => 'payment_received',
+            'label' => "\u{00D6}deme Yap\u{0131}ld\u{0131}",
+            'tone' => 'success',
+        ];
+    }
+
+    $displayStatus = $status !== '' ? $status : ($paymentStatus !== '' ? $paymentStatus : 'pending');
+    $tone = in_array($displayStatus, ['paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'], true)
+        ? 'success'
+        : ($displayStatus === 'cancelled' ? 'error' : 'neutral');
+
+    return [
+        'key' => $displayStatus,
+        'label' => orderStatusDisplayLabel($displayStatus),
+        'tone' => $tone,
     ];
 }
 

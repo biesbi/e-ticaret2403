@@ -208,6 +208,69 @@ final class MailService
         self::queueAndAttempt($email, $subject, $html);
     }
 
+    public static function sendOrderAdminNotification(
+        array $order,
+        string $customerEmail,
+        string $customerName,
+        string $paymentMethod,
+        string $paymentStatus
+    ): void {
+        $rawRecipients = [
+            trim((string) env('MAIL_ORDER_NOTIFY_EMAIL', 'bsametbarn@hotmail.com')),
+            trim((string) env('MAIL_ADMIN_EMAIL', '')),
+        ];
+
+        $recipients = [];
+        foreach ($rawRecipients as $candidate) {
+            if ($candidate === '' || !filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            $recipients[strtolower($candidate)] = $candidate;
+        }
+
+        if ($recipients === []) {
+            return;
+        }
+
+        $orderId = (string) ($order['id'] ?? '');
+        $subtotal = number_format((float) ($order['subtotal'] ?? 0), 2, ',', '.');
+        $shippingFee = number_format((float) ($order['shipping_fee'] ?? $order['shipping_cost'] ?? 0), 2, ',', '.');
+        $discount = number_format((float) ($order['discount'] ?? 0), 2, ',', '.');
+        $giftWrapCost = number_format((float) ($order['gift_wrap_cost'] ?? 0), 2, ',', '.');
+        $total = number_format((float) ($order['total'] ?? 0), 2, ',', '.');
+        $shipping = is_array($order['shippingAddress'] ?? null) ? $order['shippingAddress'] : ($order['shipping_address'] ?? []);
+        $city = trim((string) ($shipping['city'] ?? ''));
+        $district = trim((string) ($shipping['district'] ?? ''));
+        $subject = 'Yeni siparis alindi: #' . $orderId;
+
+        foreach ($recipients as $recipient) {
+            $html = self::wrapTemplate(
+                'Yeni siparis bildirimi',
+                'BoomerItems',
+                '<p>Sistemde yeni bir siparis olustu.</p>'
+                . self::renderInfoTable([
+                    'Siparis No' => $orderId,
+                    'Musteri' => $customerName !== '' ? $customerName : 'Misafir Musteri',
+                    'E-posta' => $customerEmail !== '' ? $customerEmail : '-',
+                    'Odeme Yontemi' => $paymentMethod,
+                    'Odeme Durumu' => $paymentStatus,
+                    'Ara Toplam' => $subtotal . ' TL',
+                    'Indirim' => $discount . ' TL',
+                    'Kargo' => $shippingFee . ' TL',
+                    'Hediye Paketi' => $giftWrapCost . ' TL',
+                    'Toplam' => $total . ' TL',
+                    'Teslimat' => trim($district . ' / ' . $city, ' /'),
+                    'Bildirim Adresi' => $recipient,
+                    'Kayit Tarihi' => date('d.m.Y H:i'),
+                ])
+                . self::renderOrderItems(is_array($order['items'] ?? null) ? $order['items'] : [])
+                . '<p style="margin:18px 0 0;color:#475569;">Bu bildirim siparis olustugu anda otomatik gonderilmistir.</p>'
+            );
+
+            self::queueAndAttempt($recipient, $subject, $html);
+        }
+    }
+
     public static function sendOrderStatusEmail(string $email, string $name, string $orderId, string $newStatus): void
     {
         $statusLabels = [
