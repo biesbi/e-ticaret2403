@@ -349,6 +349,9 @@ function legacyOrder(array $order): array
         'total' => isset($order['total']) ? (float) $order['total'] : 0.0,
         'subtotal' => isset($order['subtotal']) ? (float) $order['subtotal'] : 0.0,
         'discount' => isset($order['discount']) ? (float) $order['discount'] : 0.0,
+        'shippingCost' => isset($order['shipping_cost']) ? (float) $order['shipping_cost'] : 0.0,
+        'paymentStatus' => (string) ($order['payment_status'] ?? ''),
+        'paymentMethod' => (string) ($order['payment_method'] ?? ''),
         'status_label' => orderStatusDisplayLabel($status),
         'statusLabel' => orderStatusDisplayLabel($status),
         'admin_status_key' => $adminStatus['key'],
@@ -431,6 +434,7 @@ function legacyOrderItem(array $item): array
         'quantity' => $qty,
         'price' => $price,
         'unit_price' => $price,
+        'unitPrice' => $price,
         'line_total' => $lineTotal,
         'lineTotal' => $lineTotal,
     ];
