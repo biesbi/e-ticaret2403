@@ -70,6 +70,263 @@ function productPayloadValue(string $column, string $slug, mixed $current = null
     };
 }
 
+function productExportPlainText(mixed $value): string
+{
+    $text = preg_replace('/\s+/u', ' ', trim(strip_tags((string) $value)));
+    return trim((string) $text);
+}
+
+function productExportTruncate(string $value, int $limit): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+        if (mb_strlen($value, 'UTF-8') <= $limit) {
+            return $value;
+        }
+
+        return rtrim(mb_substr($value, 0, max(0, $limit - 3), 'UTF-8')) . '...';
+    }
+
+    if (strlen($value) <= $limit) {
+        return $value;
+    }
+
+    return rtrim(substr($value, 0, max(0, $limit - 3))) . '...';
+}
+
+function productExportMetaTitle(array $product, string $siteName = 'BoomerItems'): string
+{
+    $name = trim((string) ($product['title'] ?? ($product['name'] ?? '')));
+    return $name === '' ? $siteName : $name . ' | ' . $siteName;
+}
+
+function productExportMetaDescription(array $product): string
+{
+    $parts = [];
+
+    $category = trim((string) ($product['category'] ?? ($product['category_name'] ?? '')));
+    $brand = trim((string) ($product['brand'] ?? ($product['brand_name'] ?? '')));
+    $pieces = (int) ($product['pieces'] ?? 0);
+    $condition = trim((string) ($product['conditionLabel'] ?? ($product['condition_label'] ?? '')));
+    $price = (float) ($product['price'] ?? 0);
+    $summary = productExportPlainText($product['description'] ?? '');
+
+    if ($category !== '') {
+        $parts[] = $category;
+    }
+    if ($brand !== '') {
+        $parts[] = $brand;
+    }
+    if ($pieces > 0) {
+        $parts[] = number_format($pieces, 0, ',', '.') . ' parca';
+    }
+    if ($condition !== '') {
+        $parts[] = 'Durum: ' . $condition;
+    }
+    if ($price > 0) {
+        $parts[] = 'Fiyat: ' . number_format($price, 2, ',', '.') . ' TL';
+    }
+
+    $prefix = trim((string) ($product['title'] ?? ($product['name'] ?? '')));
+    $meta = $prefix;
+    if ($parts !== []) {
+        $meta .= '. ' . implode(', ', $parts) . '.';
+    }
+    if ($summary !== '') {
+        $meta .= ' ' . $summary;
+    }
+
+    return productExportTruncate(trim($meta), 160);
+}
+
+function productExportPresets(): array
+{
+    return [
+        'meta' => ['id', 'name', 'slug', 'url', 'meta_title', 'meta_description', 'img', 'category_name', 'brand_name', 'sku', 'set_no'],
+        'seo' => ['name', 'url', 'meta_title', 'meta_description', 'img'],
+        'full' => ['id', 'name', 'slug', 'url', 'meta_title', 'meta_description', 'description', 'category_name', 'brand_name', 'sku', 'set_no', 'price', 'stock', 'available_stock', 'is_active', 'img', 'created_at', 'updated_at'],
+    ];
+}
+
+function productExportAllowedFields(): array
+{
+    $fields = [
+        'id',
+        'name',
+        'title',
+        'slug',
+        'url',
+        'meta_title',
+        'meta_description',
+        'description',
+        'category_name',
+        'category',
+        'brand_name',
+        'brand',
+        'category_id',
+        'brand_id',
+        'sku',
+        'set_no',
+        'price',
+        'old_price',
+        'stock',
+        'available_stock',
+        'reserved_stock',
+        'is_active',
+        'stock_status',
+        'condition_tag',
+        'condition_label',
+        'desi',
+        'pieces',
+        'img',
+        'images',
+        'fixed_shipping_fee',
+        'created_at',
+        'updated_at',
+    ];
+
+    return array_values(array_unique($fields));
+}
+
+function productExportResolveFields(?string $fieldsParam, ?string $presetParam): array
+{
+    $allowed = array_fill_keys(productExportAllowedFields(), true);
+    $presets = productExportPresets();
+    $preset = strtolower(trim((string) $presetParam));
+    $rawFields = trim((string) $fieldsParam);
+    $fields = [];
+
+    if ($rawFields !== '') {
+        foreach (preg_split('/\s*,\s*/', $rawFields) ?: [] as $field) {
+            $field = trim((string) $field);
+            if ($field !== '' && isset($allowed[$field])) {
+                $fields[] = $field;
+            }
+        }
+    } else {
+        $fields = $presets[$preset] ?? $presets['meta'];
+    }
+
+    $fields = array_values(array_unique($fields));
+    if ($fields === []) {
+        $fields = $presets['meta'];
+    }
+
+    return $fields;
+}
+
+function productExportDelimiter(?string $value): string
+{
+    return match (strtolower(trim((string) $value))) {
+        ';', 'semicolon', 'excel' => ';',
+        'tab', '\\t' => "\t",
+        default => ',',
+    };
+}
+
+function productExportUrl(array $product, ?string $baseUrl = null): string
+{
+    $slug = trim((string) ($product['slug'] ?? ''));
+    if ($slug === '') {
+        return '';
+    }
+
+    return toAbsoluteUrl('/urun/' . rawurlencode($slug), $baseUrl ?: currentBaseUrl());
+}
+
+function productExportImages(array $product, string $baseUrl): string
+{
+    $images = $product['images'] ?? [];
+    if (is_string($images)) {
+        $images = normalizeImages($images);
+    }
+
+    if (!is_array($images)) {
+        return '';
+    }
+
+    $urls = [];
+    foreach ($images as $imageUrl) {
+        $imageUrl = trim((string) $imageUrl);
+        if ($imageUrl === '') {
+            continue;
+        }
+        $urls[] = toAbsoluteUrl($imageUrl, $baseUrl);
+    }
+
+    return implode(' | ', array_values(array_unique($urls)));
+}
+
+function productExportFieldValue(array $product, string $field, string $baseUrl): string
+{
+    $value = $product[$field] ?? null;
+
+    return match ($field) {
+        'url' => productExportUrl($product, $baseUrl),
+        'meta_title' => productExportMetaTitle($product),
+        'meta_description' => productExportMetaDescription($product),
+        'description' => productExportPlainText($product['description'] ?? ''),
+        'img' => toAbsoluteUrl((string) ($product['img'] ?? ''), $baseUrl),
+        'images' => productExportImages($product, $baseUrl),
+        'is_active' => isset($product['is_active']) ? ((int) $product['is_active'] === 1 ? '1' : '0') : '',
+        'price', 'old_price', 'desi', 'fixed_shipping_fee' => $value !== null
+            ? (string) $value
+            : '',
+        'stock', 'available_stock', 'reserved_stock', 'pieces' => $value !== null ? (string) ((int) $value) : '',
+        default => is_scalar($value) || $value === null
+            ? trim((string) ($value ?? ''))
+            : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+    };
+}
+
+function productStreamCsvExport(array $rows, array $fields, string $delimiter, string $preset): void
+{
+    $baseUrl = currentBaseUrl();
+    $filenamePreset = preg_replace('/[^a-z0-9_-]+/i', '-', $preset) ?: 'custom';
+    $filename = 'products-' . strtolower($filenamePreset) . '-' . date('Ymd-His') . '.csv';
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+
+    $output = fopen('php://output', 'wb');
+    if ($output === false) {
+        error('CSV olusturulamadi.', 500);
+    }
+
+    fwrite($output, "\xEF\xBB\xBF");
+    fputcsv($output, $fields, $delimiter);
+
+    foreach ($rows as $row) {
+        $product = legacyProduct($row);
+        $record = [];
+        foreach ($fields as $field) {
+            $record[] = productExportFieldValue($product, $field, $baseUrl);
+        }
+        fputcsv($output, $record, $delimiter);
+    }
+
+    fclose($output);
+}
+
+if ($id === 'slug' && $sub !== null) {
+    if ($method !== 'GET') {
+        error('Method not allowed.', 405);
+    }
+
+    $product = fetchProductDetailBySlug(urldecode((string) $sub));
+    if (!$product) {
+        error('Urun bulunamadi.', 404);
+    }
+
+    ok($product);
+}
+
 if ($id === 'categories') {
     $categorySelect = productColumns('categories', ['id', 'name', 'slug', 'parent_id', 'sort_order']);
 
@@ -198,25 +455,7 @@ if ($id === null) {
                 }
             }
 
-            $page = max(1, (int) ($_GET['page'] ?? 1));
-            $limit = max(1, min(100, (int) ($_GET['limit'] ?? 24)));
-            $offset = ($page - 1) * $limit;
-
-            $primaryImgSub = tableExists('product_images')
-                ? ', (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) AS primary_image_url'
-                : '';
-
             $whereSql = implode(' AND ', $where);
-
-            // Fetch Total Count
-            $countStmt = db()->prepare(
-                "SELECT COUNT(*) FROM products p 
-                 LEFT JOIN categories c ON c.id = p.category_id 
-                 LEFT JOIN brands b ON b.id = p.brand_id 
-                 WHERE $whereSql"
-            );
-            $countStmt->execute($params);
-            $total = (int) $countStmt->fetchColumn();
 
             $sort = $_GET['sort'] ?? 'newest';
             if ($sort === 'price_asc') {
@@ -228,6 +467,45 @@ if ($id === null) {
             } else {
                 $orderBy = 'p.created_at DESC';
             }
+
+            $primaryImgSub = tableExists('product_images')
+                ? ', (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) AS primary_image_url'
+                : '';
+
+            if (strtolower(trim((string) ($_GET['format'] ?? ''))) === 'csv') {
+                adminRequired();
+
+                $stmt = db()->prepare(
+                    "SELECT p.*, c.name AS category_name, b.name AS brand_name{$primaryImgSub}
+                     FROM products p
+                     LEFT JOIN categories c ON c.id = p.category_id
+                     LEFT JOIN brands b ON b.id = p.brand_id
+                     WHERE $whereSql
+                     ORDER BY $orderBy"
+                );
+                $stmt->execute($params);
+
+                $preset = strtolower(trim((string) ($_GET['preset'] ?? 'meta')));
+                $fields = productExportResolveFields($_GET['fields'] ?? null, $preset);
+                $delimiter = productExportDelimiter($_GET['delimiter'] ?? null);
+
+                productStreamCsvExport($stmt->fetchAll(), $fields, $delimiter, $preset);
+                exit;
+            }
+
+            $page = max(1, (int) ($_GET['page'] ?? 1));
+            $limit = max(1, min(100, (int) ($_GET['limit'] ?? 24)));
+            $offset = ($page - 1) * $limit;
+
+            // Fetch Total Count
+            $countStmt = db()->prepare(
+                "SELECT COUNT(*) FROM products p 
+                 LEFT JOIN categories c ON c.id = p.category_id 
+                 LEFT JOIN brands b ON b.id = p.brand_id 
+                 WHERE $whereSql"
+            );
+            $countStmt->execute($params);
+            $total = (int) $countStmt->fetchColumn();
 
             $stmt = db()->prepare(
                 "SELECT p.*, c.name AS category_name, b.name AS brand_name{$primaryImgSub}

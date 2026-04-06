@@ -274,13 +274,6 @@ class CartService
                     'name' => $item['name'],
                     'reason' => 'Urun satisa uygun degil.',
                 ];
-            } elseif ($item['quantity'] > $item['stock']) {
-                $issues[] = [
-                    'product_id' => $item['product_id'],
-                    'variant_id' => $item['variant_id'] ?? null,
-                    'name' => $item['name'],
-                    'reason' => "Yetersiz stok. Istenen: {$item['quantity']}, Mevcut: {$item['stock']}",
-                ];
             }
         }
 

@@ -86,8 +86,7 @@ function orderApplyStockTransition(string $orderId, ?string $status, ?string $pa
     $status = $status ?? '';
     $paymentStatus = $paymentStatus ?? '';
 
-    if (in_array($paymentStatus, ['paid', 'confirmed', 'success'], true)
-        || in_array($status, ['paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'], true)) {
+    if (in_array($paymentStatus, ['paid', 'confirmed', 'success'], true)) {
         StockService::finalizeReservedStock($orderId);
         return;
     }
@@ -96,6 +95,32 @@ function orderApplyStockTransition(string $orderId, ?string $status, ?string $pa
         || in_array($status, ['failed', 'cancelled'], true)) {
         StockService::releaseReservedStock($orderId);
     }
+}
+
+function orderNormalizeCheckoutErrorMessage(Throwable $error): string
+{
+    $message = trim((string) $error->getMessage());
+    $normalized = strtolower($message);
+
+    if ($message === '') {
+        return 'Odeme asamasinda stok kontrolu tamamlanamadi. Lutfen tekrar deneyin.';
+    }
+
+    $stockIndicators = [
+        'yeterli stok yok',
+        'stok rezervasyonu basarisiz',
+        'stok yetersiz',
+        'stogu onay aninda yetersiz',
+        'stokta urun yok',
+    ];
+
+    foreach ($stockIndicators as $needle) {
+        if (str_contains($normalized, $needle)) {
+            return 'Odeme asamasinda bu urunun stogu tukenmis veya degismis. Lutfen sepetinizi kontrol edip tekrar deneyin.';
+        }
+    }
+
+    return $message;
 }
 
 function orderInsertItem(string $orderId, array $line): void {
@@ -198,7 +223,7 @@ if ($id === 'track') {
 if ($id === null && $method === 'GET') {
     adminRequired();
     $stmt = db()->query(
-        'SELECT * FROM orders ORDER BY created_at DESC'
+        'SELECT * FROM orders WHERE ' . OrderService::visibleListSql() . ' ORDER BY created_at DESC'
     );
     $orders = $stmt->fetchAll();
 
@@ -449,7 +474,7 @@ if ($id === null && $method === 'POST') {
     $pdo->beginTransaction();
 
     try {
-        $items = StockService::reserveOrderItems($rawItems);
+        $items = StockService::reserveOrderItems($rawItems, false);
         $subtotal = (float) array_sum(array_map(fn(array $line) => (float) ($line['line_total'] ?? 0), $items));
 
         $discount = 0.0;
@@ -547,14 +572,13 @@ if ($id === null && $method === 'POST') {
             orderInsertItem($orderId, $line);
         }
 
-        StockService::setOrderStockState($orderId, 'reserved');
+        StockService::setOrderStockState($orderId, 'none');
 
         if ($couponCode !== '') {
             $pdo->prepare('UPDATE coupons SET used_count = used_count + 1 WHERE code = ?')->execute([$couponCode]);
         }
 
         $pdo->commit();
-        StockService::syncReservedStockForOrder($orderId);
 
         $response = [
             'id' => $orderId,
@@ -565,7 +589,7 @@ if ($id === null && $method === 'POST') {
             'gift_wrap_cost' => $giftWrapCost,
             'total' => $total,
             'status' => 'pending',
-            'stock_state' => 'reserved',
+            'stock_state' => 'none',
             'shippingAddress' => $shippingAddress,
             'items' => array_map(static fn(array $line) => [
                 'product_id' => $line['product_id'],
@@ -606,7 +630,7 @@ if ($id === null && $method === 'POST') {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        error($e->getMessage());
+        error(orderNormalizeCheckoutErrorMessage($e));
     }
 }
 
@@ -628,10 +652,10 @@ if ($id !== null && $sub === 'status') {
         ok(legacyOrder($currentOrder));
     }
 
+    orderApplyStockTransition((string) $id, $status, null);
+
     $stmt = db()->prepare('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
     $stmt->execute([$status, $id]);
-
-    orderApplyStockTransition((string) $id, $status, null);
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);
@@ -686,12 +710,12 @@ if ($id !== null && $sub === 'cargo') {
     $exists->execute([$id]);
     if (!$exists->fetch()) error('Siparis bulunamadi.', 404);
 
+    orderApplyStockTransition((string) $id, $targetStatus, null);
+
     $stmt = db()->prepare(
         'UPDATE orders SET ' . implode(', ', $setParts) . ' WHERE id = ?'
     );
     $stmt->execute($values);
-
-    orderApplyStockTransition((string) $id, $targetStatus, null);
 
     $fetch = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
     $fetch->execute([$id]);

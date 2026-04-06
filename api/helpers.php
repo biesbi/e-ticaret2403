@@ -308,6 +308,192 @@ function legacyProduct(array $product): array
     ];
 }
 
+function productPrimaryImageSelectClause(): string
+{
+    return tableExists('product_images')
+        ? ', (SELECT pi.url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) AS primary_image_url'
+        : '';
+}
+
+function productBaseSelectQuery(): string
+{
+    return 'SELECT p.*, c.name AS category_name, b.name AS brand_name' . productPrimaryImageSelectClause() . '
+            FROM products p
+            LEFT JOIN categories c ON c.id = p.category_id
+            LEFT JOIN brands b ON b.id = p.brand_id';
+}
+
+function loadProductGallery(string $productId, array $product = []): array
+{
+    if (tableExists('product_images')) {
+        $stmt = db()->prepare(
+            'SELECT id, url, alt_text, is_primary, sort_order
+             FROM product_images
+             WHERE product_id = ?
+             ORDER BY is_primary DESC, sort_order ASC, id ASC'
+        );
+        $stmt->execute([$productId]);
+        $rows = $stmt->fetchAll();
+        if ($rows !== []) {
+            return $rows;
+        }
+    }
+
+    $fallback = normalizeImages($product['images'] ?? []);
+    if ($fallback === [] && !empty($product['img']) && is_string($product['img'])) {
+        $fallback = [$product['img']];
+    }
+
+    return array_map(
+        static function (string $url, int $index) use ($product): array {
+            return [
+                'id' => null,
+                'url' => $url,
+                'alt_text' => $product['name'] ?? ($product['title'] ?? ''),
+                'is_primary' => $index === 0 ? 1 : 0,
+                'sort_order' => $index,
+            ];
+        },
+        $fallback,
+        array_keys($fallback)
+    );
+}
+
+function loadProductVariants(string $productId): array
+{
+    if (!tableExists('product_variants')) {
+        return [];
+    }
+
+    $stmt = db()->prepare(
+        'SELECT id, product_id, color, color_code, sku, stock, reserved_stock, price_diff, is_active, sort_order
+         FROM product_variants
+         WHERE product_id = ?
+         ORDER BY sort_order ASC, id ASC'
+    );
+    $stmt->execute([$productId]);
+    $variants = $stmt->fetchAll();
+
+    if ($variants === []) {
+        return [];
+    }
+
+    return array_map(static function (array $variant): array {
+        $stock = (int) ($variant['stock'] ?? 0);
+        $reserved = (int) ($variant['reserved_stock'] ?? 0);
+        $variant['reserved_stock'] = max(0, $reserved);
+        $variant['available_stock'] = max(0, $stock - $reserved);
+        return $variant;
+    }, $variants);
+}
+
+function hydrateProductDetail(array $product): array
+{
+    $result = legacyProduct($product);
+    $productId = (string) ($result['id'] ?? '');
+    $gallery = $productId !== '' ? loadProductGallery($productId, $product) : [];
+    $variants = $productId !== '' ? loadProductVariants($productId) : [];
+    $activeVariants = array_filter($variants, static fn(array $variant): bool => (int) ($variant['is_active'] ?? 1) === 1);
+
+    $result['gallery'] = $gallery;
+    $result['variants'] = $variants;
+    $result['hasVariants'] = $variants !== [];
+    $result['totalVariantStock'] = (int) array_sum(array_column($activeVariants, 'available_stock'));
+
+    return $result;
+}
+
+function fetchProductDetailById(string $productId, bool $includeInactive = false): ?array
+{
+    if ($productId === '') {
+        return null;
+    }
+
+    $where = ['p.id = ?'];
+    $params = [$productId];
+    if (tableHasColumn('products', 'is_active') && !$includeInactive) {
+        $where[] = 'p.is_active = 1';
+    }
+
+    $stmt = db()->prepare(productBaseSelectQuery() . ' WHERE ' . implode(' AND ', $where) . ' LIMIT 1');
+    $stmt->execute($params);
+    $product = $stmt->fetch();
+
+    return $product ? hydrateProductDetail($product) : null;
+}
+
+function fetchProductDetailBySlug(string $slug, bool $includeInactive = false): ?array
+{
+    $slug = trim($slug);
+    if ($slug === '' || !tableHasColumn('products', 'slug')) {
+        return null;
+    }
+
+    $where = ['p.slug = ?'];
+    $params = [$slug];
+    if (tableHasColumn('products', 'is_active') && !$includeInactive) {
+        $where[] = 'p.is_active = 1';
+    }
+
+    $stmt = db()->prepare(productBaseSelectQuery() . ' WHERE ' . implode(' AND ', $where) . ' LIMIT 1');
+    $stmt->execute($params);
+    $product = $stmt->fetch();
+
+    return $product ? hydrateProductDetail($product) : null;
+}
+
+function currentBaseUrl(): string
+{
+    $https = $_SERVER['HTTPS'] ?? '';
+    $isHttps = ($https !== '' && $https !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+    $scheme = $isHttps ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+    return $scheme . '://' . $host;
+}
+
+function toAbsoluteUrl(string $url, ?string $baseUrl = null): string
+{
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+
+    if (preg_match('#^https?://#i', $url) === 1) {
+        return $url;
+    }
+
+    $base = rtrim($baseUrl ?: currentBaseUrl(), '/');
+    if (str_starts_with($url, '//')) {
+        $scheme = parse_url($base, PHP_URL_SCHEME) ?: 'https';
+        return $scheme . ':' . $url;
+    }
+
+    return $base . '/' . ltrim($url, '/');
+}
+
+function fetchSitemapProducts(): array
+{
+    if (!tableHasColumn('products', 'slug')) {
+        return [];
+    }
+
+    $dateColumn = tableHasColumn('products', 'updated_at') ? 'updated_at' : 'created_at';
+    $where = ['slug IS NOT NULL', "TRIM(slug) <> ''"];
+    if (tableHasColumn('products', 'is_active')) {
+        $where[] = 'is_active = 1';
+    }
+
+    $stmt = db()->query(
+        'SELECT slug, name, ' . $dateColumn . ' AS last_modified
+         FROM products
+         WHERE ' . implode(' AND ', $where) . '
+         ORDER BY ' . $dateColumn . ' DESC'
+    );
+
+    return $stmt->fetchAll();
+}
+
 function legacyOrder(array $order): array
 {
     $shipping = [];

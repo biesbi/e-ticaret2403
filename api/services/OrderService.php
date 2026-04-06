@@ -9,8 +9,22 @@ final class OrderService
         }
 
         $prefix = $alias !== '' ? rtrim($alias, '.') . '.' : '';
+        $paymentMethod = "COALESCE({$prefix}payment_method, '')";
+        $paymentStatus = "COALESCE({$prefix}payment_status, 'pending')";
+        $status = "COALESCE({$prefix}status, 'pending')";
+        $stockState = tableHasColumn('orders', 'stock_state')
+            ? "COALESCE({$prefix}stock_state, 'none')"
+            : "'none'";
 
-        return "NOT (COALESCE({$prefix}payment_method, '') = 'card' AND COALESCE({$prefix}payment_status, 'pending') <> 'paid')";
+        // Admin listesinde sadece yarim kalmis kart denemelerini gizle.
+        // Gecmiste statusu ilerlemis veya stok islemi tamamlanmis siparisler tekrar gorunur olsun.
+        return sprintf(
+            "NOT (%s = 'card' AND %s <> 'paid' AND %s IN ('pending', 'failed', 'cancelled') AND %s <> 'finalized')",
+            $paymentMethod,
+            $paymentStatus,
+            $status,
+            $stockState
+        );
     }
 
     public static function markCardPaymentFailed(string $orderId): ?array
@@ -146,7 +160,6 @@ final class OrderService
              FROM orders
              WHERE payment_method = 'card'
                AND payment_status = 'pending'
-               AND stock_state = 'reserved'
                AND status = 'pending'
                AND created_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
              ORDER BY created_at ASC

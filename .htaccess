@@ -5,6 +5,12 @@
   # Exclude uploads, assets and api directories from page rewrites
   RewriteRule ^(uploads|assets|public|api)/ - [L]
 
+  # Dynamic sitemap
+  RewriteRule ^sitemap\.xml$ sitemap.php [L,NC]
+
+  # Product detail pages
+  RewriteRule ^urun/([^/]+)/?$ urun.php?slug=$1 [L,QSA,NC]
+
   # Public pages: remove .html from visible URLs
   RewriteCond %{THE_REQUEST} \s/+(hakkimizda|iletisim|siparis-takip|mesafeli-satis-sozlesmesi|iade-cayma-kosullari|gizlilik-politikasi|collector|verify-email|sifremi-unuttum|sifre-sifirla)\.html(?:[\s?]|$) [NC]
   RewriteRule ^ %1 [R=301,L,NE]

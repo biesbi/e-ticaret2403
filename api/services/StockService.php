@@ -134,7 +134,7 @@ final class StockService
         return in_array($fallback, $allowed, true) ? $fallback : ($allowed[0] ?? $fallback);
     }
 
-    public static function reserveOrderItems(array $rawItems): array
+    public static function reserveOrderItems(array $rawItems, bool $reserve = true): array
     {
         self::ensureSchema();
         $pdo = db();
@@ -216,14 +216,16 @@ final class StockService
                 $line['unit_price'] = max(0.0, ((float) ($product['price'] ?? 0)) + $modifier);
 
                 // Stok negatife düşme koruması: reserved_stock hiçbir zaman stock'u aşamaz
-                $reserveVariant = $pdo->prepare(
-                    'UPDATE product_variants
-                     SET reserved_stock = LEAST(reserved_stock + ?, stock)
-                     WHERE id = ? AND (stock - reserved_stock) >= ?'
-                );
-                $reserveVariant->execute([$quantity, (int) $variant['id'], $quantity]);
-                if ($reserveVariant->rowCount() === 0) {
-                    throw new RuntimeException("'{$product['name']}' varyanti icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
+                if ($reserve) {
+                    $reserveVariant = $pdo->prepare(
+                        'UPDATE product_variants
+                         SET reserved_stock = LEAST(reserved_stock + ?, stock)
+                         WHERE id = ? AND (stock - reserved_stock) >= ?'
+                    );
+                    $reserveVariant->execute([$quantity, (int) $variant['id'], $quantity]);
+                    if ($reserveVariant->rowCount() === 0) {
+                        throw new RuntimeException("'{$product['name']}' varyanti icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
+                    }
                 }
             } else {
                 if ($productAvailable < $quantity) {
@@ -231,14 +233,16 @@ final class StockService
                 }
 
                 // Stok negatife düşme koruması: atomik kontrol
-                $reserveProduct = $pdo->prepare(
-                    'UPDATE products
-                     SET reserved_stock = LEAST(reserved_stock + ?, stock)
-                     WHERE id = ? AND (stock - reserved_stock) >= ?'
-                );
-                $reserveProduct->execute([$quantity, $productId, $quantity]);
-                if ($reserveProduct->rowCount() === 0) {
-                    throw new RuntimeException("'{$product['name']}' icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
+                if ($reserve) {
+                    $reserveProduct = $pdo->prepare(
+                        'UPDATE products
+                         SET reserved_stock = LEAST(reserved_stock + ?, stock)
+                         WHERE id = ? AND (stock - reserved_stock) >= ?'
+                    );
+                    $reserveProduct->execute([$quantity, $productId, $quantity]);
+                    if ($reserveProduct->rowCount() === 0) {
+                        throw new RuntimeException("'{$product['name']}' icin stok rezervasyonu basarisiz. Baska bir kullanici ayni anda satin aliyor olabilir.");
+                    }
                 }
             }
 
@@ -351,7 +355,12 @@ final class StockService
             }
 
             $state = (string) ($row['stock_state'] ?? 'none');
-            if ($state !== 'reserved') {
+            if (!$finalize && $state !== 'reserved') {
+                $pdo->commit();
+                return;
+            }
+
+            if ($finalize && $state === 'finalized') {
                 $pdo->commit();
                 return;
             }
@@ -372,13 +381,25 @@ final class StockService
 
                 if ($variantId !== null && tableExists('product_variants')) {
                     if ($finalize) {
-                        $stmt = $pdo->prepare(
-                            'UPDATE product_variants
-                             SET reserved_stock = GREATEST(reserved_stock - ?, 0),
-                                 stock = GREATEST(stock - ?, 0)
-                             WHERE id = ?'
-                        );
-                        $stmt->execute([$quantity, $quantity, (int) $variantId]);
+                        if ($state === 'reserved') {
+                            $stmt = $pdo->prepare(
+                                'UPDATE product_variants
+                                 SET reserved_stock = GREATEST(reserved_stock - ?, 0),
+                                     stock = stock - ?
+                                 WHERE id = ? AND stock >= ?'
+                            );
+                            $stmt->execute([$quantity, $quantity, (int) $variantId, $quantity]);
+                        } else {
+                            $stmt = $pdo->prepare(
+                                'UPDATE product_variants
+                                 SET stock = stock - ?
+                                 WHERE id = ? AND stock >= ?'
+                            );
+                            $stmt->execute([$quantity, (int) $variantId, $quantity]);
+                        }
+                        if ($stmt->rowCount() === 0) {
+                            throw new RuntimeException('Varyant stogu onay aninda yetersiz.');
+                        }
                     } else {
                         $stmt = $pdo->prepare(
                             'UPDATE product_variants
@@ -395,13 +416,25 @@ final class StockService
                 }
 
                 if ($finalize) {
-                    $stmt = $pdo->prepare(
-                        'UPDATE products
-                         SET reserved_stock = GREATEST(reserved_stock - ?, 0),
-                             stock = GREATEST(stock - ?, 0)
-                         WHERE id = ?'
-                    );
-                    $stmt->execute([$quantity, $quantity, $productId]);
+                    if ($state === 'reserved') {
+                        $stmt = $pdo->prepare(
+                            'UPDATE products
+                             SET reserved_stock = GREATEST(reserved_stock - ?, 0),
+                                 stock = stock - ?
+                             WHERE id = ? AND stock >= ?'
+                        );
+                        $stmt->execute([$quantity, $quantity, $productId, $quantity]);
+                    } else {
+                        $stmt = $pdo->prepare(
+                            'UPDATE products
+                             SET stock = stock - ?
+                             WHERE id = ? AND stock >= ?'
+                        );
+                        $stmt->execute([$quantity, $productId, $quantity]);
+                    }
+                    if ($stmt->rowCount() === 0) {
+                        throw new RuntimeException('Urun stogu onay aninda yetersiz.');
+                    }
                 } else {
                     $stmt = $pdo->prepare(
                         'UPDATE products

@@ -167,6 +167,78 @@
 			opacity: 0.7;
 		}
 
+		.admin-product-export {
+			display: inline-flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 10px;
+			margin-left: 12px;
+		}
+
+		.admin-product-export-select,
+		.admin-product-export-input {
+			height: 42px;
+			padding: 0 14px;
+			border: 1px solid #d7dee8;
+			border-radius: 12px;
+			background: #fff;
+			color: #0f172a;
+			font-size: 0.88rem;
+			font-weight: 600;
+		}
+
+		.admin-product-export-select {
+			min-width: 148px;
+		}
+
+		.admin-product-export-input {
+			min-width: 260px;
+		}
+
+		.admin-product-export-toggle {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			height: 42px;
+			padding: 0 14px;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			background: #fff;
+			color: #334155;
+			font-size: 0.84rem;
+			font-weight: 700;
+			white-space: nowrap;
+		}
+
+		.admin-product-export-toggle input {
+			width: 16px;
+			height: 16px;
+			margin: 0;
+			accent-color: #ffcc00;
+		}
+
+		.admin-product-export-button {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			height: 42px;
+			padding: 0 18px;
+			border: 0;
+			border-radius: 12px;
+			background: linear-gradient(135deg, #111827, #1f2937);
+			color: #fff;
+			font-size: 0.9rem;
+			font-weight: 800;
+			cursor: pointer;
+			white-space: nowrap;
+		}
+
+		.admin-product-export-button.is-loading {
+			opacity: 0.7;
+			cursor: wait;
+		}
+
 		.admin-stock-cell,
 		.admin-stock-head {
 			white-space: nowrap;
@@ -203,6 +275,24 @@
 
 		#adminInventoryShell {
 			margin: 0 0 20px;
+		}
+
+		@media (max-width: 767px) {
+			.admin-product-export {
+				width: 100%;
+				margin: 10px 0 0;
+			}
+
+			.admin-product-export-select,
+			.admin-product-export-input,
+			.admin-product-export-button,
+			.admin-product-export-toggle {
+				width: 100%;
+			}
+
+			.admin-product-export-input {
+				min-width: 0;
+			}
 		}
 
 		.admin-inventory-card {
@@ -2216,6 +2306,11 @@
 								try { localStorage.setItem('lastOrderId', data.id); } catch (e) { }
 								if (data.payment && data.payment.mock) {
 									window.showToast('Siparis olusturuldu! Odeme bekleniyor...', 'info', 4000);
+								}
+							} else {
+								var orderMessage = (data && (data.message || data.error)) || '';
+								if (/stok|tukendi|degismis/i.test(orderMessage)) {
+									window.showToast(orderMessage || 'Odeme asamasinda urun stogu degismis olabilir.', 'error', 5000);
 								}
 							}
 						}).catch(function () { });
@@ -5247,7 +5342,7 @@
 
 			var stockText = function (stock) {
 				if (stock <= 0) return 'Stok Bitti';
-				return 'Stok: ' + stock + ' adet';
+				return 'Stokta Var';
 			};
 
 			var pieceTextFromProduct = function (product) {
@@ -5423,8 +5518,8 @@
 					}
 				}
 				stockNode.innerHTML = stock <= 0
-					? '<strong>Stok Durumu:</strong> Bu \u00fcr\u00fcn t\u00fckenmi\u015ftir.'
-					: '<strong>Kullan\u0131labilir Stok:</strong> ' + stock + ' adet';
+					? '<strong>Stok Durumu:</strong> Stokta Yok'
+					: '<strong>Stok Durumu:</strong> Stokta Var';
 
 				var walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, null);
 				var textNode;
@@ -5432,11 +5527,7 @@
 					var rawText = String(textNode.nodeValue || '');
 					var text = rawText.replace(/\s+/g, ' ').trim();
 					if (!text || text.indexOf('Eklenebilir:') === -1 || text.indexOf('Sepette:') === -1) continue;
-
-					var cartMatch = text.match(/Sepette:\s*(\d+)/i);
-					var cartQty = Math.max(0, parseInt(cartMatch && cartMatch[1] || 0, 10) || 0);
-					var availableToAdd = Math.max(0, stock - cartQty);
-					textNode.nodeValue = rawText.replace(/Eklenebilir:\s*\d+/i, 'Eklenebilir: ' + availableToAdd);
+					textNode.nodeValue = 'Sepetteki miktar, mevcut uygunluga gore sinirlanir.';
 				}
 			};
 
@@ -6611,6 +6702,236 @@
 
 			observeAdminProductsView(queueEnsureZeroStockToggle);
 			setTimeout(queueEnsureZeroStockToggle, 500);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var adminExportObserver = null;
+			var exportPresets = {
+				meta: 'id,name,slug,url,meta_title,meta_description,img,category_name,brand_name,sku,set_no',
+				seo: 'name,url,meta_title,meta_description,img',
+				full: 'id,name,slug,url,meta_title,meta_description,description,category_name,brand_name,sku,set_no,price,stock,available_stock,is_active,img,created_at,updated_at'
+			};
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var isAdminProductsView = function () {
+				var headerTitle = document.querySelector('.admin-view .admin-header h1');
+				if (headerTitle && normalizeText(headerTitle.textContent) === 'urunleri yonet') {
+					return true;
+				}
+				var table = document.querySelector('.admin-view .admin-table');
+				if (!table) return false;
+				var headerText = normalizeText(table.querySelector('thead') ? table.querySelector('thead').textContent : '');
+				return headerText.indexOf('baslik') !== -1
+					&& headerText.indexOf('marka') !== -1
+					&& headerText.indexOf('fiyat') !== -1;
+			};
+
+			var scheduleAdminExportTask = function (task) {
+				var queued = false;
+				return function () {
+					if (queued) return;
+					queued = true;
+					requestAnimationFrame(function () {
+						queued = false;
+						task();
+					});
+				};
+			};
+
+			var observeAdminProductsView = function (task) {
+				var runTask = scheduleAdminExportTask(task);
+				runTask();
+
+				if (!window.MutationObserver) return;
+				if (adminExportObserver) adminExportObserver.disconnect();
+
+				adminExportObserver = new MutationObserver(function () {
+					if (!isAdminProductsView()) return;
+					runTask();
+				});
+
+				var adminView = document.querySelector('.admin-view');
+				if (adminView) {
+					adminExportObserver.observe(adminView, { childList: true, subtree: true });
+				}
+			};
+
+			var getAuthHeaders = function () {
+				var headers = { 'Accept': 'text/csv,application/json' };
+				try {
+					var token = localStorage.getItem('token');
+					if (token) headers.Authorization = 'Bearer ' + token;
+				} catch (error) { }
+				return headers;
+			};
+
+			var parseJsonSafe = function (response) {
+				if (!response || typeof response.json !== 'function') return Promise.resolve({});
+				return response.json().catch(function () { return {}; });
+			};
+
+			var getFilenameFromDisposition = function (value) {
+				var match = String(value || '').match(/filename=\"?([^\";]+)\"?/i);
+				return match ? match[1] : '';
+			};
+
+			var triggerBlobDownload = function (blob, filename) {
+				var url = URL.createObjectURL(blob);
+				var link = document.createElement('a');
+				link.href = url;
+				link.download = filename || 'products-export.csv';
+				document.body.appendChild(link);
+				link.click();
+				link.remove();
+				setTimeout(function () {
+					URL.revokeObjectURL(url);
+				}, 1000);
+			};
+
+			var applyLocationFilters = function (params) {
+				try {
+					var currentUrl = new URL(window.location.href);
+					['search', 'category', 'brand', 'sort'].forEach(function (key) {
+						var value = currentUrl.searchParams.get(key);
+						if (value) params.set(key, value);
+					});
+				} catch (error) { }
+
+				try {
+					var hash = String(window.location.hash || '');
+					var queryIndex = hash.indexOf('?');
+					if (queryIndex !== -1) {
+						var hashParams = new URLSearchParams(hash.slice(queryIndex + 1));
+						['search', 'category', 'brand', 'sort'].forEach(function (key) {
+							var value = hashParams.get(key);
+							if (value) params.set(key, value);
+						});
+					}
+				} catch (error) { }
+			};
+
+			var exportProducts = function (wrap) {
+				var button = wrap.querySelector('.admin-product-export-button');
+				var preset = wrap.querySelector('.admin-product-export-preset');
+				var delimiter = wrap.querySelector('.admin-product-export-delimiter');
+				var customFields = wrap.querySelector('.admin-product-export-input');
+				var includeInactive = wrap.querySelector('.admin-product-export-include-inactive');
+
+				if (!button || button.classList.contains('is-loading')) return;
+
+				var params = new URLSearchParams();
+				params.set('format', 'csv');
+				params.set('preset', preset && preset.value ? preset.value : 'meta');
+				params.set('delimiter', delimiter && delimiter.value ? delimiter.value : 'semicolon');
+				if (includeInactive && includeInactive.checked) {
+					params.set('include_inactive', '1');
+				}
+
+				var fields = String(customFields && customFields.value || '').trim();
+				if (fields) {
+					params.set('fields', fields);
+				}
+
+				applyLocationFilters(params);
+
+				button.classList.add('is-loading');
+				button.disabled = true;
+				button.textContent = 'Hazirlaniyor...';
+
+				fetch('/api/products?' + params.toString(), {
+					headers: getAuthHeaders()
+				})
+					.then(function (response) {
+						if (!response.ok) {
+							return parseJsonSafe(response).then(function (payload) {
+								throw new Error(payload && payload.error ? payload.error : 'CSV disa aktarma basarisiz oldu.');
+							});
+						}
+
+						var filename = getFilenameFromDisposition(response.headers.get('Content-Disposition')) || 'products-export.csv';
+						return response.blob().then(function (blob) {
+							return { blob: blob, filename: filename };
+						});
+					})
+					.then(function (result) {
+						triggerBlobDownload(result.blob, result.filename);
+						if (typeof window.showToast === 'function') {
+							window.showToast('CSV disa aktarma hazir.', 'success', 2600);
+						}
+					})
+					.catch(function (error) {
+						if (typeof window.showToast === 'function') {
+							window.showToast(error && error.message ? error.message : 'CSV disa aktarma basarisiz oldu.', 'error', 3600);
+							return;
+						}
+						window.alert(error && error.message ? error.message : 'CSV disa aktarma basarisiz oldu.');
+					})
+					.finally(function () {
+						button.classList.remove('is-loading');
+						button.disabled = false;
+						button.textContent = 'CSV Disa Aktar';
+					});
+			};
+
+			var ensureAdminProductExport = function () {
+				if (!isAdminProductsView()) return;
+				var controls = document.querySelector('.admin-view .admin-header > div');
+				if (!controls) return;
+				if (controls.querySelector('.admin-product-export')) return;
+
+				var wrap = document.createElement('div');
+				wrap.className = 'admin-product-export';
+				wrap.innerHTML = ''
+					+ '<select class="admin-product-export-select admin-product-export-preset" aria-label="CSV preset">'
+					+ '<option value="meta">Meta URL</option>'
+					+ '<option value="seo">SEO Kisa</option>'
+					+ '<option value="full">Tam Export</option>'
+					+ '</select>'
+					+ '<select class="admin-product-export-select admin-product-export-delimiter" aria-label="CSV ayirici">'
+					+ '<option value="semicolon">Excel ;</option>'
+					+ '<option value="comma">Standart ,</option>'
+					+ '<option value="tab">Tab</option>'
+					+ '</select>'
+					+ '<input class="admin-product-export-input" type="text" spellcheck="false" placeholder="Ozel alanlar: name,url,meta_title" title="Virgulle kolon yazarsan preset yerine bunu kullanir">'
+					+ '<label class="admin-product-export-toggle"><input class="admin-product-export-include-inactive" type="checkbox"><span>Pasifleri dahil et</span></label>'
+					+ '<button class="admin-product-export-button" type="button">CSV Disa Aktar</button>';
+
+				controls.appendChild(wrap);
+
+				var preset = wrap.querySelector('.admin-product-export-preset');
+				var input = wrap.querySelector('.admin-product-export-input');
+				if (preset && input) {
+					preset.addEventListener('change', function () {
+						if (!input.value) {
+							input.placeholder = 'Ozel alanlar: ' + (exportPresets[preset.value] || exportPresets.meta);
+						}
+					});
+					input.placeholder = 'Ozel alanlar: ' + (exportPresets[preset.value] || exportPresets.meta);
+				}
+
+				var button = wrap.querySelector('.admin-product-export-button');
+				if (button) {
+					button.addEventListener('click', function () {
+						exportProducts(wrap);
+					});
+				}
+			};
+
+			observeAdminProductsView(ensureAdminProductExport);
+			setTimeout(ensureAdminProductExport, 500);
 		});
 	</script>
 	<script>
@@ -10576,6 +10897,193 @@
 			}
 			setTimeout(queueNormalize, 700);
 			setTimeout(queueNormalize, 1600);
+		});
+	</script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			var API_BASE = '/api';
+			var productIndex = [];
+			var productIndexPromise = null;
+			var refreshQueued = false;
+
+			var normalizeText = function (value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			};
+
+			var parsePrice = function (value) {
+				var clean = String(value || '').replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+				var parsed = parseFloat(clean);
+				return Number.isFinite(parsed) ? parsed : null;
+			};
+
+			var fetchProductIndex = function () {
+				if (productIndexPromise) return productIndexPromise;
+
+				productIndexPromise = fetch(API_BASE + '/products?limit=500&page=1')
+					.then(function (response) { return response.json(); })
+					.then(function (payload) {
+						var items = (payload && payload.items) || [];
+						var totalPages = Math.max(1, parseInt(payload && payload.totalPages || 1, 10) || 1);
+						if (totalPages <= 1) return items;
+
+						var requests = [];
+						for (var page = 2; page <= totalPages; page += 1) {
+							requests.push(
+								fetch(API_BASE + '/products?limit=500&page=' + page)
+									.then(function (response) { return response.json(); })
+									.then(function (data) { return (data && data.items) || []; })
+									.catch(function () { return []; })
+							);
+						}
+
+						return Promise.all(requests).then(function (pages) {
+							pages.forEach(function (pageItems) {
+								items = items.concat(pageItems || []);
+							});
+							return items;
+						});
+					})
+					.then(function (items) {
+						productIndex = Array.isArray(items) ? items : [];
+						return productIndex;
+					})
+					.catch(function () {
+						productIndex = [];
+						return productIndex;
+					});
+
+				return productIndexPromise;
+			};
+
+			var findProductForCard = function (card) {
+				if (!card || !productIndex.length) return null;
+
+				var productId = card.dataset.productId || '';
+				if (productId) {
+					var byId = productIndex.find(function (item) {
+						return String(item && item.id || '') === String(productId);
+					});
+					if (byId) return byId;
+				}
+
+				var titleNode = card.querySelector('.card-title, .product-title, h3, h4');
+				if (!titleNode) return null;
+				var title = normalizeText(titleNode.textContent);
+				if (!title) return null;
+
+				var priceNode = card.querySelector('.product-price, .card-footer, .price, .price-current, .current-price');
+				var price = parsePrice(priceNode ? priceNode.textContent : '');
+
+				var candidates = productIndex.filter(function (item) {
+					return normalizeText(item && (item.title || item.name)) === title;
+				});
+				if (!candidates.length) return null;
+				if (price === null) return candidates[0];
+
+				return candidates.find(function (item) {
+					return Math.abs((parseFloat(item && item.price) || 0) - price) < 0.01;
+				}) || candidates[0];
+			};
+
+			var applyProductUrlToCard = function (card, product) {
+				if (!card || !product || !product.slug) return;
+
+				var url = '/urun/' + encodeURIComponent(product.slug);
+				card.dataset.productSlug = product.slug;
+				card.dataset.productUrl = url;
+
+				var targets = Array.prototype.slice.call(card.querySelectorAll(
+					'.view-detail-btn, .detail-btn, .product-title, .card-title, .card-media, .product-image-wrapper, .product-thumb, .product-media, img'
+				));
+
+				targets.forEach(function (node) {
+					if (!node) return;
+					node.setAttribute('data-product-url', url);
+					if (node.tagName === 'A') {
+						node.href = url;
+					} else {
+						node.style.cursor = 'pointer';
+					}
+				});
+			};
+
+			var refreshProductUrls = function () {
+				if (!productIndex.length) return;
+				document.querySelectorAll('.app-product-card, .product-card').forEach(function (card) {
+					var product = findProductForCard(card);
+					if (product) applyProductUrlToCard(card, product);
+				});
+			};
+
+			var isDetailIntent = function (target) {
+				if (!target || !target.closest) return null;
+				if (target.closest('.add-to-cart-btn, [data-add-to-cart], .checkout-btn')) return null;
+
+				var direct = target.closest('[data-product-url]');
+				if (direct) return direct;
+
+				var button = target.closest('button');
+				if (button && /detay|incele|urun/i.test(String(button.textContent || '').toLocaleLowerCase('tr-TR'))) {
+					return button;
+				}
+
+				return null;
+			};
+
+			var navigateToProduct = function (url, event) {
+				if (!url) return;
+				if (event && (event.metaKey || event.ctrlKey || event.button === 1)) {
+					window.open(url, '_blank', 'noopener');
+					return;
+				}
+				window.location.href = url;
+			};
+
+			var queueRefresh = function () {
+				if (refreshQueued) return;
+				refreshQueued = true;
+				requestAnimationFrame(function () {
+					refreshQueued = false;
+					refreshProductUrls();
+				});
+			};
+
+			document.addEventListener('click', function (event) {
+				var node = isDetailIntent(event.target);
+				if (!node) return;
+				var card = node.closest ? node.closest('.app-product-card, .product-card') : null;
+				var url = node.getAttribute('data-product-url') || (card && card.dataset ? card.dataset.productUrl : '') || '';
+				if (!url) return;
+				event.preventDefault();
+				event.stopPropagation();
+				navigateToProduct(url, event);
+			}, true);
+
+			document.addEventListener('auxclick', function (event) {
+				if (event.button !== 1) return;
+				var node = isDetailIntent(event.target);
+				if (!node) return;
+				var card = node.closest ? node.closest('.app-product-card, .product-card') : null;
+				var url = node.getAttribute('data-product-url') || (card && card.dataset ? card.dataset.productUrl : '') || '';
+				if (!url) return;
+				event.preventDefault();
+				navigateToProduct(url, event);
+			}, true);
+
+			fetchProductIndex().then(queueRefresh);
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueRefresh).observe(document.body, { childList: true, subtree: true });
+			}
 		});
 	</script>
 </body>

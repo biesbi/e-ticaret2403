@@ -215,7 +215,15 @@ final class PaytrService {
         }
 
         $paymentStatus = 'paid';
-        $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+
+        $sendConfirmationEmail = false;
+        try {
+            StockService::finalizeReservedStock($orderId);
+            $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+            $sendConfirmationEmail = true;
+        } catch (Throwable) {
+            $orderStatus = StockService::resolveStatus(['pending'], 'pending');
+        }
 
         db()->prepare(
             'UPDATE orders
@@ -223,8 +231,9 @@ final class PaytrService {
              WHERE id = ?'
         )->execute([$paymentStatus, $orderStatus, $orderId]);
 
-        StockService::finalizeReservedStock($orderId);
-        self::sendOrderReceivedEmail($orderId);
+        if ($sendConfirmationEmail) {
+            self::sendOrderReceivedEmail($orderId);
+        }
 
         $updated = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
         $updated->execute([$orderId]);
@@ -275,7 +284,14 @@ final class PaytrService {
 
         if ($status === 'success') {
             $paymentStatus = 'paid';
-            $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+            $sendConfirmationEmail = false;
+            try {
+                StockService::finalizeReservedStock($orderId);
+                $orderStatus = StockService::resolveStatus(['processing', 'preparing', 'confirmed', 'paid'], 'pending');
+                $sendConfirmationEmail = true;
+            } catch (Throwable) {
+                $orderStatus = StockService::resolveStatus(['pending'], 'pending');
+            }
 
             db()->prepare(
                 'UPDATE orders
@@ -283,8 +299,9 @@ final class PaytrService {
                  WHERE id = ?'
             )->execute([$paymentStatus, $orderStatus, $orderId]);
 
-            StockService::finalizeReservedStock($orderId);
-            self::sendOrderReceivedEmail($orderId);
+            if ($sendConfirmationEmail) {
+                self::sendOrderReceivedEmail($orderId);
+            }
         } else {
             OrderService::markCardPaymentFailed($orderId);
         }
