@@ -393,11 +393,11 @@ function orderAdminDisplayMeta(array $order): array
         ];
     }
 
-    if ($paymentMethod === 'card' && $paymentStatus === 'pending' && $stockState === 'reserved') {
+    if ($paymentMethod === 'card' && $paymentStatus === 'pending') {
         return [
-            'key' => 'payment_received',
-            'label' => "\u{00D6}deme Yap\u{0131}ld\u{0131}",
-            'tone' => 'success',
+            'key' => 'payment_pending',
+            'label' => "\u{00D6}deme Bekleniyor",
+            'tone' => $stockState === 'released' ? 'error' : 'neutral',
         ];
     }
 

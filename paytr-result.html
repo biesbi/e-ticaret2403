@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ödeme Sonucu</title>
+  <title>Odeme Sonucu</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -13,18 +13,19 @@
       place-items: center;
       background: #f8fafc;
       color: #0f172a;
+      padding: 16px;
     }
     .box {
-      padding: clamp(20px,5vw,36px) clamp(16px,5vw,32px);
+      padding: clamp(20px, 5vw, 36px) clamp(16px, 5vw, 32px);
       border-radius: 20px;
       background: #fff;
       box-shadow: 0 10px 40px rgba(15, 23, 42, 0.10);
       text-align: center;
-      width: min(90vw, 400px);
+      width: min(92vw, 440px);
     }
     .icon { font-size: 52px; margin-bottom: 16px; }
     h1 { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
-    .sub { color: #64748b; font-size: 15px; line-height: 1.5; margin-bottom: 20px; }
+    .sub { color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
     .countdown {
       display: inline-block;
       background: #f1f5f9;
@@ -32,97 +33,194 @@
       padding: 8px 16px;
       font-size: 13px;
       color: #475569;
+      margin-bottom: 18px;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+    }
+    .btn-primary {
+      background: #ffcc00;
+      color: #111827;
+    }
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+    .btn[disabled] {
+      opacity: 0.7;
+      cursor: wait;
     }
     .success h1 { color: #15803d; }
-    .failed  h1 { color: #dc2626; }
+    .retry h1 { color: #b45309; }
   </style>
 </head>
 <body>
   <div class="box" id="box">
-    <div class="icon" id="icon">⏳</div>
-    <h1 id="title">Sonuç Bekleniyor</h1>
-    <p class="sub" id="message">Lütfen bekleyin...</p>
-    <span class="countdown" id="countdown"></span>
+    <div class="icon" id="icon">...</div>
+    <h1 id="title">Sonuc Bekleniyor</h1>
+    <p class="sub" id="message">Lutfen bekleyin...</p>
+    <div class="countdown" id="countdown"></div>
+    <div class="actions" id="actions"></div>
   </div>
 
   <script>
     (function () {
-      var params  = new URLSearchParams(window.location.search);
-      var status  = params.get('status');
+      var params = new URLSearchParams(window.location.search);
+      var status = params.get('status');
       var orderId = params.get('order_id') || '';
       var isSuccess = (status === 'success');
 
-      var box       = document.getElementById('box');
-      var icon      = document.getElementById('icon');
-      var title     = document.getElementById('title');
-      var message   = document.getElementById('message');
+      var box = document.getElementById('box');
+      var icon = document.getElementById('icon');
+      var title = document.getElementById('title');
+      var message = document.getElementById('message');
       var countdown = document.getElementById('countdown');
+      var actions = document.getElementById('actions');
 
-      box.classList.add(isSuccess ? 'success' : 'failed');
-      icon.textContent  = isSuccess ? '✅' : '❌';
-      title.textContent = isSuccess ? 'Ödeme Başarılı' : 'Ödeme Başarısız';
-      message.textContent = isSuccess
-        ? 'Ödemeniz alındı. Sipariş sayfanıza yönlendiriliyorsunuz...'
-        : 'Ödeme işlemi tamamlanamadı. Ana sayfaya yönlendiriliyorsunuz...';
-
-      function notifyFailedPaymentBackend() {
-        if (isSuccess || !orderId) return;
-
+      function authHeaders() {
+        var headers = { 'Content-Type': 'application/json' };
         try {
-          var headers = { 'Content-Type': 'application/json' };
-          try {
-            var token = localStorage.getItem('token');
-            if (token) headers.Authorization = 'Bearer ' + token;
-          } catch (e) {}
-
-          fetch('/api/orders/cancel-payment', {
-            method: 'POST',
-            keepalive: true,
-            credentials: 'include',
-            headers: headers,
-            body: JSON.stringify({ order_id: orderId })
-          }).catch(function () {});
+          var token = localStorage.getItem('token');
+          if (token) headers.Authorization = 'Bearer ' + token;
         } catch (e) {}
+        return headers;
       }
 
-      // Ana sekmeye BroadcastChannel + localStorage ile haber ver
-      if (orderId) {
+      function setButtonLoading(button, loading, idleText) {
+        if (!button) return;
+        button.disabled = !!loading;
+        button.textContent = loading ? 'Yukleniyor...' : idleText;
+      }
+
+      function addActionButton(label, className, onClick, href) {
+        var element = href ? document.createElement('a') : document.createElement('button');
+        element.className = 'btn ' + className;
+        element.textContent = label;
+
+        if (href) {
+          element.href = href;
+        } else {
+          element.type = 'button';
+          element.addEventListener('click', onClick);
+        }
+
+        actions.appendChild(element);
+        return element;
+      }
+
+      function publishSuccess(orderIdValue) {
+        if (!orderIdValue) return;
+
         try {
-          var ch = new BroadcastChannel('paytr_payment_' + orderId);
-          ch.postMessage({ status: isSuccess ? 'success' : 'failed', orderId: orderId });
-          setTimeout(function () { ch.close(); }, 2000);
+          var channel = new BroadcastChannel('paytr_payment_' + orderIdValue);
+          channel.postMessage({ status: 'success', orderId: orderIdValue });
+          setTimeout(function () { channel.close(); }, 2000);
         } catch (e) {}
 
         try {
           localStorage.setItem('paytr_result', JSON.stringify({
-            orderId: orderId,
-            status: isSuccess ? 'success' : 'failed',
+            orderId: orderIdValue,
+            status: 'success',
             ts: Date.now()
           }));
         } catch (e) {}
       }
 
-      // Geri sayım ve yönlendirme
-      notifyFailedPaymentBackend();
+      function startRetryPayment(button) {
+        if (!orderId) return;
 
-      var delay = isSuccess ? 3 : 4;
-      var remaining = delay;
+        setButtonLoading(button, true, 'Odemeyi Yeniden Baslat');
+        message.textContent = 'Yeni PAYTR oturumu olusturuluyor...';
 
-      function tick() {
-        countdown.textContent = remaining + ' saniye içinde yönlendiriliyorsunuz...';
-        if (remaining <= 0) {
-          countdown.textContent = 'Yönlendiriliyor...';
-          if (isSuccess && orderId) {
-            window.location.href = '/order-success.html?order_id=' + encodeURIComponent(orderId);
-          } else {
-            window.location.href = '/';
-          }
-          return;
-        }
-        remaining--;
-        setTimeout(tick, 1000);
+        fetch('/api/orders/retry-payment', {
+          method: 'POST',
+          credentials: 'include',
+          headers: authHeaders(),
+          body: JSON.stringify({ order_id: orderId })
+        })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            if (!data || data.success === false) {
+              throw new Error((data && data.message) || 'Odeme yeniden baslatilamadi.');
+            }
+
+            if (data.payment && data.payment.payment_url) {
+              window.location.href = data.payment.payment_url;
+              return;
+            }
+
+            throw new Error((data && data.message) || 'Yeni odeme linki olusturulamadi.');
+          })
+          .catch(function (error) {
+            message.textContent = error && error.message
+              ? error.message
+              : 'Odeme yeniden baslatilamadi. Lutfen tekrar deneyin.';
+            setButtonLoading(button, false, 'Odemeyi Yeniden Baslat');
+          });
       }
-      tick();
+
+      if (orderId) {
+        try {
+          localStorage.setItem('lastOrderId', orderId);
+          localStorage.removeItem('paytr_result');
+        } catch (e) {}
+      }
+
+      if (isSuccess) {
+        box.classList.add('success');
+        icon.textContent = 'OK';
+        title.textContent = 'Odeme Basarili';
+        message.textContent = 'Odemeniz alindi. Siparis sayfaniza yonlendiriliyorsunuz...';
+        publishSuccess(orderId);
+
+        var successDelay = 3;
+        var successRemaining = successDelay;
+        (function tick() {
+          countdown.textContent = successRemaining + ' saniye icinde yonlendiriliyorsunuz...';
+          if (successRemaining <= 0) {
+            countdown.textContent = 'Yonlendiriliyor...';
+            window.location.href = '/order-success.html?order_id=' + encodeURIComponent(orderId);
+            return;
+          }
+          successRemaining--;
+          setTimeout(tick, 1000);
+        })();
+        return;
+      }
+
+      box.classList.add('retry');
+      icon.textContent = '...';
+      title.textContent = 'Odeme Tamamlanmadi';
+      message.textContent = 'Odeme bilgisi yalnizca basarili callback geldiginde islenir. Bu siparis icin yeni bir PAYTR oturumu baslatabilirsiniz.';
+      countdown.textContent = orderId
+        ? 'Mevcut token suresi doldugunda temizlenir; isterseniz simdi yeni odeme oturumu baslatabilirsiniz.'
+        : 'Siparis bilgisi bulunamadigi icin yeni oturum baslatilamiyor.';
+
+      if (orderId) {
+        var retryButton = addActionButton('Odemeyi Yeniden Baslat', 'btn-primary', function () {
+          startRetryPayment(retryButton);
+        });
+      }
+
+      addActionButton('Ana Sayfaya Don', 'btn-secondary', null, '/');
     })();
   </script>
 </body>

@@ -183,8 +183,8 @@
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
 
-      <h1>🎉 Siparişiniz Alındı!</h1>
-      <p class="subtitle">Ödemeniz başarıyla tamamlandı. <strong>Teşekkürler!</strong></p>
+      <h1 id="page-title">🎉 Siparişiniz Alındı!</h1>
+      <p class="subtitle" id="page-subtitle">Ödemeniz başarıyla tamamlandı. <strong>Teşekkürler!</strong></p>
 
       <div class="order-table">
         <div class="order-row">
@@ -193,7 +193,7 @@
         </div>
         <div class="order-row">
           <span class="row-label">Ödeme Durumu</span>
-          <span class="row-value paid">✓ Ödendi</span>
+          <span class="row-value paid" id="payment-status">✓ Ödendi</span>
         </div>
         <div class="order-row">
           <span class="row-label">Toplam Tutar</span>
@@ -205,16 +205,17 @@
         </div>
       </div>
 
-      <div class="info-box">
+      <div class="info-box" id="info-box">
         <strong>📧 Onay e-postası gönderildi</strong><br>
         Sipariş detaylarınız kayıtlı e-posta adresinize iletildi.<br>
         <strong>📦 Kargo bildirimi</strong><br>
         Kargoya verildiğinde takip numaranız SMS ve e-posta ile gönderilecektir.
       </div>
 
-      <div class="btn-row">
+      <div class="btn-row" id="action-row">
         <a href="/" class="btn btn-primary">Alışverişe Devam Et</a>
         <a href="/track-order.html" class="btn btn-secondary">Siparişimi Takip Et</a>
+        <button type="button" class="btn btn-secondary" id="retry-payment-btn" style="display:none;">Odemeyi Yeniden Baslat</button>
       </div>
 
     </div>
@@ -267,10 +268,15 @@
       var elId    = document.getElementById('el-order-id');
       var elTotal = document.getElementById('el-total');
       var elDate  = document.getElementById('el-date');
+      var titleEl = document.getElementById('page-title');
+      var subtitleEl = document.getElementById('page-subtitle');
+      var paymentStatusEl = document.getElementById('payment-status');
+      var infoBoxEl = document.getElementById('info-box');
+      var retryButton = document.getElementById('retry-payment-btn');
 
       if (!orderId) {
-        document.querySelector('h1').textContent = 'Sipariş Bulunamadı';
-        document.querySelector('.subtitle').innerHTML = 'Geçersiz sipariş numarası.';
+        titleEl.textContent = 'Sipariş Bulunamadı';
+        subtitleEl.innerHTML = 'Geçersiz sipariş numarası.';
         elId.textContent = '-'; elTotal.textContent = '-'; elDate.textContent = '-';
         return;
       }
@@ -296,8 +302,54 @@
         return false;
       }
 
+      function showPendingState(canRetry) {
+        titleEl.textContent = 'Siparişiniz Oluşturuldu';
+        subtitleEl.innerHTML = 'Ödeme henüz tamamlanmadı. <strong>Yalnızca başarılı ödemeler onaylanır.</strong>';
+        paymentStatusEl.textContent = 'Ödeme Bekleniyor';
+        paymentStatusEl.classList.remove('paid');
+        infoBoxEl.innerHTML =
+          '<strong>Ödeme bekleniyor</strong><br>' +
+          'Bu sipariş için ödeme bilgisi yalnızca başarılı callback geldiğinde kaydedilir.<br>' +
+          '<strong>Yeniden başlatma</strong><br>' +
+          'Gerekirse yeni bir PAYTR oturumu başlatabilirsiniz.';
+
+        if (canRetry) {
+          retryButton.style.display = 'inline-flex';
+        }
+      }
+
       var headers = {};
       try { var t = localStorage.getItem('token'); if (t) headers['Authorization'] = 'Bearer ' + t; } catch(e) {}
+
+      retryButton.addEventListener('click', function () {
+        retryButton.disabled = true;
+        retryButton.textContent = 'Yukleniyor...';
+
+        fetch('/api/orders/retry-payment', {
+          method: 'POST',
+          credentials: 'include',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, headers),
+          body: JSON.stringify({ order_id: orderId })
+        })
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            if (!data || data.success === false) {
+              throw new Error((data && data.message) || 'Odeme yeniden baslatilamadi.');
+            }
+
+            if (data.payment && data.payment.payment_url) {
+              window.location.href = data.payment.payment_url;
+              return;
+            }
+
+            throw new Error((data && data.message) || 'Yeni odeme linki olusturulamadi.');
+          })
+          .catch(function (error) {
+            alert(error && error.message ? error.message : 'Odeme yeniden baslatilamadi.');
+            retryButton.disabled = false;
+            retryButton.textContent = 'Odemeyi Yeniden Baslat';
+          });
+      });
 
       fetch('https://www.boomeritems.com/api/payments/paytr/status/' + orderId, {
         credentials: 'include', headers: headers
@@ -306,6 +358,8 @@
         .then(function(data){
           if (data.success && data.order) {
             var o = data.order;
+            var paymentStatus = data.payment_status;
+            var paytrSession = data.paytr_session || {};
             var total = parseFloat(o.total) || 0;
             if (total > 0) {
               elTotal.textContent = new Intl.NumberFormat('tr-TR', { style:'currency', currency:'TRY' }).format(total);
@@ -316,6 +370,10 @@
             elDate.textContent = raw
               ? new Date(raw).toLocaleString('tr-TR', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' })
               : 'Şimdi';
+
+            if (paymentStatus !== 'paid') {
+              showPendingState(!!paytrSession.can_retry);
+            }
           } else {
             applyLocalTotal() || (elTotal.textContent = '-');
             elDate.textContent = 'Şimdi';

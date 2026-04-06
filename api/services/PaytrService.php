@@ -1,8 +1,26 @@
 <?php
 
 final class PaytrService {
+    private static bool $schemaEnsured = false;
+
     private static function generateMerchantOid(string $orderId): string {
         return $orderId . time() . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+    }
+
+    private static function ensureSchema(): void {
+        if (self::$schemaEnsured) {
+            return;
+        }
+
+        if (tableExists('orders') && !tableHasColumn('orders', 'paytr_token_created_at')) {
+            if (tableHasColumn('orders', 'paytr_merchant_oid')) {
+                db()->exec('ALTER TABLE orders ADD COLUMN paytr_token_created_at DATETIME NULL AFTER paytr_merchant_oid');
+            } else {
+                db()->exec('ALTER TABLE orders ADD COLUMN paytr_token_created_at DATETIME NULL');
+            }
+        }
+
+        self::$schemaEnsured = true;
     }
 
     private static function cleanEnv(string $key, string $default = ''): string {
@@ -29,7 +47,128 @@ final class PaytrService {
             && self::cleanEnv('PAYTR_MERCHANT_SALT') !== '';
     }
 
+    public static function sessionTimeoutMinutes(): int {
+        return max(1, (int) env('PAYTR_TIMEOUT', 30));
+    }
+
+    public static function sessionGraceMinutes(): int {
+        return max(0, (int) env('PAYTR_SESSION_GRACE_MINUTES', 5));
+    }
+
+    public static function sessionTtlMinutes(): int {
+        return self::sessionTimeoutMinutes() + self::sessionGraceMinutes();
+    }
+
+    private static function sessionIssuedAt(array $order): ?int {
+        $raw = (string) ($order['paytr_token_created_at'] ?? ($order['updated_at'] ?? ($order['created_at'] ?? '')));
+        $timestamp = $raw !== '' ? strtotime($raw) : false;
+        return $timestamp !== false ? $timestamp : null;
+    }
+
+    public static function isSessionExpired(array $order): bool {
+        $hasSession = trim((string) ($order['paytr_token'] ?? '')) !== ''
+            || trim((string) ($order['paytr_merchant_oid'] ?? '')) !== '';
+
+        if (!$hasSession) {
+            return false;
+        }
+
+        $issuedAt = self::sessionIssuedAt($order);
+        if ($issuedAt === null) {
+            return false;
+        }
+
+        return $issuedAt + (self::sessionTtlMinutes() * 60) <= time();
+    }
+
+    public static function clearPendingSession(string $orderId): ?array {
+        self::ensureSchema();
+        if ($orderId === '') {
+            return null;
+        }
+
+        $fields = [];
+        if (tableHasColumn('orders', 'paytr_token')) {
+            $fields[] = 'paytr_token = NULL';
+        }
+        if (tableHasColumn('orders', 'paytr_merchant_oid')) {
+            $fields[] = 'paytr_merchant_oid = NULL';
+        }
+        if (tableHasColumn('orders', 'paytr_token_created_at')) {
+            $fields[] = 'paytr_token_created_at = NULL';
+        }
+        $fields[] = 'updated_at = CURRENT_TIMESTAMP';
+
+        db()->prepare(
+            'UPDATE orders SET ' . implode(', ', $fields) . " WHERE id = ? AND COALESCE(payment_status, 'pending') <> 'paid'"
+        )->execute([$orderId]);
+
+        $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+        $stmt->execute([$orderId]);
+        $order = $stmt->fetch();
+
+        return $order ?: null;
+    }
+
+    public static function refreshPendingSession(array $order): array {
+        self::ensureSchema();
+
+        $paymentMethod = strtolower(trim((string) ($order['payment_method'] ?? '')));
+        $paymentStatus = strtolower(trim((string) ($order['payment_status'] ?? '')));
+
+        if ($paymentMethod !== 'card' || $paymentStatus === 'paid') {
+            return $order;
+        }
+
+        if (!self::isSessionExpired($order)) {
+            return $order;
+        }
+
+        $updated = self::clearPendingSession((string) ($order['id'] ?? ''));
+        return $updated ?: $order;
+    }
+
+    public static function sessionMeta(array $order): array {
+        self::ensureSchema();
+
+        $paymentMethod = strtolower(trim((string) ($order['payment_method'] ?? '')));
+        $paymentStatus = strtolower(trim((string) ($order['payment_status'] ?? '')));
+        $hasSession = trim((string) ($order['paytr_token'] ?? '')) !== ''
+            || trim((string) ($order['paytr_merchant_oid'] ?? '')) !== '';
+        $expired = $hasSession && self::isSessionExpired($order);
+        $issuedAt = self::sessionIssuedAt($order);
+
+        if ($paymentMethod !== 'card') {
+            return [
+                'status' => 'not_applicable',
+                'can_retry' => false,
+                'token_active' => false,
+                'expires_at' => null,
+            ];
+        }
+
+        if ($paymentStatus === 'paid') {
+            return [
+                'status' => 'completed',
+                'can_retry' => false,
+                'token_active' => false,
+                'expires_at' => null,
+            ];
+        }
+
+        return [
+            'status' => $hasSession ? ($expired ? 'expired' : 'active') : 'retry_required',
+            'can_retry' => in_array($paymentStatus, ['pending', 'failed'], true),
+            'token_active' => $hasSession && !$expired,
+            'expires_at' => $issuedAt !== null
+                ? date('c', $issuedAt + (self::sessionTtlMinutes() * 60))
+                : null,
+        ];
+    }
+
     public static function createPayment(array $order, array $items, array $shippingAddress): array {
+        self::ensureSchema();
+
         if (!self::isEnabled()) {
             return [
                 'provider' => 'paytr',
@@ -200,6 +339,8 @@ final class PaytrService {
     }
 
     private static function createIframePayment(array $order, array $items, array $shippingAddress): array {
+        self::ensureSchema();
+
         $merchantId = self::cleanEnv('PAYTR_MERCHANT_ID');
         $merchantKey = self::cleanEnv('PAYTR_MERCHANT_KEY');
         $merchantSalt = self::cleanEnv('PAYTR_MERCHANT_SALT');
@@ -261,7 +402,7 @@ final class PaytrService {
             'user_address' => $userAddress,
             'user_phone' => $userPhone,
             'merchant_ok_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=success&order_id=' . urlencode($orderId),
-            'merchant_fail_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=failed&order_id=' . urlencode($orderId),
+            'merchant_fail_url' => rtrim((string) env('APP_URL', ''), '/') . '/paytr-result.html?status=retry&order_id=' . urlencode($orderId),
             'timeout_limit' => $timeoutLimit,
             'currency' => $currency,
             'test_mode' => self::isTestMode() ? 1 : 0,
@@ -286,8 +427,24 @@ final class PaytrService {
             ];
         }
 
-        db()->prepare('UPDATE orders SET paytr_token = ?, paytr_merchant_oid = ? WHERE id = ?')
-            ->execute([(string) $response['token'], $merchantOid, $orderId]);
+        $fields = [
+            'paytr_token = ?',
+            'paytr_merchant_oid = ?',
+            'updated_at = CURRENT_TIMESTAMP',
+        ];
+        $values = [
+            (string) $response['token'],
+            $merchantOid,
+        ];
+
+        if (tableHasColumn('orders', 'paytr_token_created_at')) {
+            $fields[] = 'paytr_token_created_at = CURRENT_TIMESTAMP';
+        }
+
+        $values[] = $orderId;
+
+        db()->prepare('UPDATE orders SET ' . implode(', ', $fields) . ' WHERE id = ?')
+            ->execute($values);
 
         return [
             'provider' => 'paytr',

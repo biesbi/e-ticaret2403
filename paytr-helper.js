@@ -310,8 +310,6 @@
         const { status } = event.data || {};
         if (status === 'success' || status === 'paid') {
           handlePaymentSuccess(orderId);
-        } else if (status === 'failed') {
-          handlePaymentFailed(orderId);
         }
       };
     } catch(e) {
@@ -340,8 +338,6 @@
         if (data.orderId && data.orderId === activeOrderId) {
           if (data.status === 'success') {
             handlePaymentSuccess(data.orderId);
-          } else if (data.status === 'failed') {
-            handlePaymentFailed(data.orderId);
           }
         }
       } catch(err) {}
@@ -436,8 +432,6 @@
 
           if (paymentStatus === 'paid') {
             handlePaymentSuccess(orderId);
-          } else if (paymentStatus === 'failed') {
-            handlePaymentFailed(orderId);
           }
         }
       } catch(error) {

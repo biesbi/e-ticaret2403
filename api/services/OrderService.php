@@ -58,6 +58,12 @@ final class OrderService
             if (tableHasColumn('orders', 'paytr_token')) {
                 $fields[] = 'paytr_token = NULL';
             }
+            if (tableHasColumn('orders', 'paytr_merchant_oid')) {
+                $fields[] = 'paytr_merchant_oid = NULL';
+            }
+            if (tableHasColumn('orders', 'paytr_token_created_at')) {
+                $fields[] = 'paytr_token_created_at = NULL';
+            }
             $values[] = $orderId;
 
             $pdo->prepare('UPDATE orders SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($values);

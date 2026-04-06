@@ -75,11 +75,24 @@ if ($id === 'paytr' && $sub === 'status') {
         }
     }
 
+    $order = PaytrService::refreshPendingSession($order);
+    $session = PaytrService::sessionMeta($order);
+    $publicPaymentStatus = strtolower(trim((string) ($order['payment_status'] ?? ''))) === 'paid'
+        ? 'paid'
+        : null;
+    $publicOrder = legacyOrder($order);
+
+    if ($publicPaymentStatus !== 'paid') {
+        $publicOrder['payment_status'] = null;
+        $publicOrder['paymentStatus'] = null;
+    }
+
     ok([
-        'order' => legacyOrder($order),
-        'payment_status' => $order['payment_status'] ?? null,
-        'paytr_token' => $order['paytr_token'] ?? null,
-        'paytr_merchant_oid' => $order['paytr_merchant_oid'] ?? null,
+        'order' => $publicOrder,
+        'payment_status' => $publicPaymentStatus,
+        'paytr_token' => ($session['token_active'] ?? false) ? ($order['paytr_token'] ?? null) : null,
+        'paytr_merchant_oid' => ($session['token_active'] ?? false) ? ($order['paytr_merchant_oid'] ?? null) : null,
+        'paytr_session' => $session,
     ]);
 }
 

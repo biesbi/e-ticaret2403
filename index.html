@@ -2264,10 +2264,12 @@
 					.then(function (r) { return r.json(); })
 					.then(function (data) {
 						var status = data && data.payment_status;
-						if (status === 'failed' || status === 'pending') {
+						var paytrSession = data && data.paytr_session;
+						var canRetry = !!(paytrSession && paytrSession.can_retry);
+						if (status !== 'paid' && canRetry) {
 							var btn = document.createElement('button');
 							btn.className = 'retry-payment-btn';
-							btn.textContent = status === 'failed' ? 'Odemeyi Tekrar Dene' : 'Odemeye Git';
+							btn.textContent = (paytrSession && paytrSession.token_active) ? 'Odemeye Git' : 'Odemeyi Yeniden Baslat';
 							btn.style.cssText = 'margin-top:16px;padding:14px 32px;background:#ffcc00;color:#1e293b;border:none;border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;';
 							btn.addEventListener('click', function () {
 								btn.disabled = true;
@@ -2280,21 +2282,18 @@
 								})
 									.then(function (r) { return r.json(); })
 									.then(function (result) {
-										if (result.payment && result.payment.iframe_token) {
-											/* Paytr iframe'e yÃƒÂ¶nlendir */
-											window.location.href = result.payment.payment_url;
-										} else if (result.payment && result.payment.mock) {
+										if (result.payment && result.payment.payment_url) {
 											window.location.href = result.payment.payment_url;
 										} else {
 											window.showToast(result.message || 'Odeme yeniden baslatildi.', 'success');
 											btn.disabled = false;
-											btn.textContent = 'Odemeyi Tekrar Dene';
+											btn.textContent = 'Odemeyi Yeniden Baslat';
 										}
 									})
 									.catch(function () {
 										window.showToast('Baglanti hatasi. Lutfen tekrar deneyin.', 'error');
 										btn.disabled = false;
-										btn.textContent = 'Odemeyi Tekrar Dene';
+										btn.textContent = 'Odemeyi Yeniden Baslat';
 									});
 							});
 
