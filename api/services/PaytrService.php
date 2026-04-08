@@ -166,6 +166,147 @@ final class PaytrService {
         ];
     }
 
+    public static function queryMerchantStatus(string $merchantOid): array {
+        $merchantOid = trim($merchantOid);
+        if ($merchantOid === '') {
+            throw new RuntimeException('PayTR merchant_oid gerekli.');
+        }
+        if (!self::isEnabled()) {
+            throw new RuntimeException('PayTR entegrasyonu devre disi.');
+        }
+        if (!self::isConfigured()) {
+            throw new RuntimeException('PayTR ayarlari eksik.');
+        }
+
+        $merchantId = self::cleanEnv('PAYTR_MERCHANT_ID');
+        $merchantKey = self::cleanEnv('PAYTR_MERCHANT_KEY');
+        $merchantSalt = self::cleanEnv('PAYTR_MERCHANT_SALT');
+        $paytrToken = base64_encode(hash_hmac('sha256', $merchantId . $merchantOid . $merchantSalt, $merchantKey, true));
+
+        $response = self::postForm('https://www.paytr.com/odeme/durum-sorgu', [
+            'merchant_id' => $merchantId,
+            'merchant_oid' => $merchantOid,
+            'paytr_token' => $paytrToken,
+        ]);
+
+        return self::normalizeMerchantStatusResponse($merchantOid, $response);
+    }
+
+    public static function reconcileOrder(string $orderId): array {
+        self::ensureSchema();
+
+        $orderId = trim($orderId);
+        if ($orderId === '') {
+            throw new RuntimeException('Siparis ID gerekli.');
+        }
+
+        $stmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+        $stmt->execute([$orderId]);
+        $order = $stmt->fetch();
+        if (!$order) {
+            throw new RuntimeException('Siparis bulunamadi.');
+        }
+
+        if (strtolower(trim((string) ($order['payment_method'] ?? ''))) !== 'card') {
+            throw new RuntimeException('Yalnizca kart odemeleri PayTR ile uzlastirilabilir.');
+        }
+
+        $merchantOid = trim((string) ($order['paytr_merchant_oid'] ?? ''));
+        if ($merchantOid === '') {
+            throw new RuntimeException('Bu sipariste PayTR merchant_oid bulunamadi.');
+        }
+
+        $providerStatus = self::queryMerchantStatus($merchantOid);
+        $currentPaymentStatus = strtolower(trim((string) ($order['payment_status'] ?? 'pending')));
+        $returns = is_array($providerStatus['returns'] ?? null) ? $providerStatus['returns'] : [];
+
+        if (($providerStatus['status'] ?? 'error') !== 'success') {
+            return [
+                'updated' => false,
+                'action' => self::isMissingSuccessfulPayment($providerStatus) ? 'provider_not_paid' : 'provider_error',
+                'message' => self::isMissingSuccessfulPayment($providerStatus)
+                    ? 'PayTR tarafinda bu merchant_oid icin basarili odeme bulunamadi; yerel kayit degistirilmedi.'
+                    : 'PayTR durum sorgusu hata verdi: ' . (trim((string) ($providerStatus['err_msg'] ?? 'bilinmeyen_hata')) ?: 'bilinmeyen_hata'),
+                'order' => legacyOrder($order),
+                'provider_status' => $providerStatus,
+            ];
+        }
+
+        if ($returns !== []) {
+            return [
+                'updated' => false,
+                'action' => 'manual_review_returns',
+                'message' => 'PayTR kaydinda iade hareketi bulundu; yerel kayit otomatik degistirilmedi.',
+                'order' => legacyOrder($order),
+                'provider_status' => $providerStatus,
+            ];
+        }
+
+        $orderTotal = round((float) ($order['total'] ?? 0), 2);
+        $providerAmount = self::parseAmount($providerStatus['payment_amount'] ?? null);
+        if ($providerAmount !== null && abs($providerAmount - $orderTotal) > 0.01) {
+            return [
+                'updated' => false,
+                'action' => 'manual_review_amount',
+                'message' => 'PayTR odeme tutari siparis toplami ile eslesmiyor; yerel kayit otomatik degistirilmedi.',
+                'order' => legacyOrder($order),
+                'provider_status' => $providerStatus,
+            ];
+        }
+
+        if ($currentPaymentStatus === 'paid') {
+            return [
+                'updated' => false,
+                'action' => 'already_paid',
+                'message' => 'Siparis zaten paid durumunda.',
+                'order' => legacyOrder($order),
+                'provider_status' => $providerStatus,
+            ];
+        }
+
+        $stockSyncMessage = null;
+        $stockState = strtolower(trim((string) ($order['stock_state'] ?? 'none')));
+        if (in_array($stockState, ['none', 'reserved', 'released'], true)) {
+            try {
+                StockService::finalizeReservedStock($orderId);
+            } catch (Throwable $e) {
+                $stockSyncMessage = trim((string) $e->getMessage());
+            }
+        }
+
+        $statusBefore = strtolower(trim((string) ($order['status'] ?? 'pending')));
+        $preferredStatuses = in_array($statusBefore, ['processing', 'preparing', 'confirmed', 'shipped', 'delivered', 'paid'], true)
+            ? [$statusBefore, 'paid', 'processing', 'preparing', 'confirmed']
+            : ['processing', 'preparing', 'confirmed', 'paid'];
+        if ($stockSyncMessage !== null && !in_array($statusBefore, ['shipped', 'delivered'], true)) {
+            array_unshift($preferredStatuses, 'pending');
+        }
+        $nextStatus = StockService::resolveStatus($preferredStatuses, 'pending');
+
+        db()->prepare(
+            'UPDATE orders
+             SET payment_status = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?'
+        )->execute(['paid', $nextStatus, $orderId]);
+
+        $updatedStmt = db()->prepare('SELECT * FROM orders WHERE id = ? LIMIT 1');
+        $updatedStmt->execute([$orderId]);
+        $updatedOrder = $updatedStmt->fetch() ?: $order;
+
+        $message = 'PayTR odemesi basarili bulundu; siparis paid olarak guncellendi.';
+        if ($stockSyncMessage !== null) {
+            $message .= ' Stok islemi otomatik tamamlanamadi: ' . $stockSyncMessage;
+        }
+
+        return [
+            'updated' => true,
+            'action' => 'marked_paid',
+            'message' => $message,
+            'order' => legacyOrder($updatedOrder),
+            'provider_status' => $providerStatus,
+        ];
+    }
+
     public static function createPayment(array $order, array $items, array $shippingAddress): array {
         self::ensureSchema();
 
@@ -253,8 +394,7 @@ final class PaytrService {
         $hash = trim((string) ($data['hash'] ?? ''));
 
         if ($merchantOid === '' || $status === '' || $totalAmount === '' || $hash === '') {
-            http_response_code(400);
-            exit('FAILED');
+            self::respondToPaytr('FAILED', 400);
         }
 
         $merchantKey = self::cleanEnv('PAYTR_MERCHANT_KEY');
@@ -262,8 +402,7 @@ final class PaytrService {
         $expected = base64_encode(hash_hmac('sha256', $merchantOid . $merchantSalt . $status . $totalAmount, $merchantKey, true));
 
         if (!hash_equals($expected, $hash)) {
-            http_response_code(400);
-            exit('FAILED');
+            self::respondToPaytr('FAILED', 400);
         }
 
         // İdempotency kontrolü: zaten işlenmiş callback'i tekrar işleme
@@ -271,15 +410,13 @@ final class PaytrService {
         $orderCheck->execute([$merchantOid]);
         $existingOrder = $orderCheck->fetch();
         if (!$existingOrder) {
-            http_response_code(404);
-            exit('FAILED');
+            self::respondToPaytr('FAILED', 404);
         }
         $orderId = (string) ($existingOrder['id'] ?? '');
         // Ödeme zaten işlenmişse tekrar işleme
         if (in_array($existingOrder['payment_status'] ?? '', ['paid', 'failed'], true)
             && ($existingOrder['stock_state'] ?? 'none') !== 'reserved') {
-            http_response_code(200);
-            exit('OK');
+            self::respondToPaytr('OK');
         }
 
         if ($status === 'success') {
@@ -306,8 +443,18 @@ final class PaytrService {
             OrderService::markCardPaymentFailed($orderId);
         }
 
-        http_response_code(200);
-        exit('OK');
+        self::respondToPaytr('OK');
+    }
+
+    private static function respondToPaytr(string $body, int $status = 200): never {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        http_response_code($status);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo $body;
+        exit;
     }
 
     private static function sendOrderReceivedEmail(string $orderId): void {
@@ -507,6 +654,81 @@ final class PaytrService {
 
     private static function isPublicIp(string $ip): bool {
         return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+    }
+
+    private static function normalizeMerchantStatusResponse(string $merchantOid, array $response): array {
+        $status = strtolower(trim((string) ($response['status'] ?? 'error')));
+        $returns = $response['returns'] ?? [];
+        if (!is_array($returns)) {
+            $returns = [];
+        }
+
+        return [
+            'status' => $status !== '' ? $status : 'error',
+            'merchant_oid' => $merchantOid,
+            'payment_amount' => $response['payment_amount'] ?? null,
+            'payment_total' => $response['payment_total'] ?? null,
+            'payment_date' => $response['payment_date'] ?? null,
+            'currency' => $response['currency'] ?? null,
+            'net_amount' => $response['net_tutar'] ?? null,
+            'deduction_amount' => $response['kesinti_tutari'] ?? null,
+            'installment' => $response['taksit'] ?? null,
+            'card_brand' => $response['kart_marka'] ?? null,
+            'masked_pan' => $response['masked_pan'] ?? null,
+            'payment_type' => $response['odeme_tipi'] ?? null,
+            'test_mode' => $response['test_mode'] ?? null,
+            'returns' => array_values($returns),
+            'err_no' => $response['err_no'] ?? null,
+            'err_msg' => $response['err_msg'] ?? null,
+            'raw' => $response,
+        ];
+    }
+
+    private static function parseAmount(mixed $value): ?float {
+        if ($value === null) {
+            return null;
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $normalized = str_replace([' ', "\u{00A0}"], '', $raw);
+        $lastComma = strrpos($normalized, ',');
+        $lastDot = strrpos($normalized, '.');
+        $decimalSeparator = null;
+        if ($lastComma !== false && $lastDot !== false) {
+            $decimalSeparator = $lastComma > $lastDot ? ',' : '.';
+        } elseif ($lastComma !== false) {
+            $decimalSeparator = ',';
+        } elseif ($lastDot !== false) {
+            $decimalSeparator = '.';
+        }
+
+        if ($decimalSeparator === ',') {
+            $normalized = str_replace('.', '', $normalized);
+            $normalized = str_replace(',', '.', $normalized);
+        } elseif ($decimalSeparator === '.') {
+            $normalized = str_replace(',', '', $normalized);
+        }
+
+        $normalized = preg_replace('/[^0-9.\-]/', '', $normalized);
+        if ($normalized === '' || $normalized === '-' || $normalized === '.') {
+            return null;
+        }
+
+        $amount = (float) $normalized;
+        return is_finite($amount) ? round($amount, 2) : null;
+    }
+
+    private static function isMissingSuccessfulPayment(array $providerStatus): bool {
+        $errNo = trim((string) ($providerStatus['err_no'] ?? ''));
+        $errMsg = strtolower(trim((string) ($providerStatus['err_msg'] ?? '')));
+
+        return $errNo === '004'
+            || str_contains($errMsg, 'failed to find successful payment')
+            || str_contains($errMsg, 'basarili odeme');
     }
 
     private static function postForm(string $url, array $payload): array {

@@ -24,8 +24,14 @@ class RateLimit
 
         // Süresi dolmuş kayıtları temizle (her 100 istekte bir)
         if (random_int(1, 100) === 1) {
-            $pdo->prepare('DELETE FROM rate_limits WHERE window_start < ?')
-                ->execute([$now - $windowSec]);
+            try {
+                $pdo->prepare('DELETE FROM rate_limits WHERE window_start < ?')
+                    ->execute([$now - $windowSec]);
+            } catch (PDOException $e) {
+                if (!self::isTransientLockError($e)) {
+                    throw $e;
+                }
+            }
         }
 
         // Mevcut kaydı çek
@@ -38,10 +44,22 @@ class RateLimit
 
         if (!$row) {
             // İlk istek — yeni kayıt oluştur
-            $pdo->prepare(
-                'INSERT INTO rate_limits (ip, endpoint, hit_count, window_start) VALUES (?,?,1,?)'
-            )->execute([$ip, $endpoint, $now]);
-            return;
+            try {
+                $pdo->prepare(
+                    'INSERT INTO rate_limits (ip, endpoint, hit_count, window_start) VALUES (?,?,1,?)'
+                )->execute([$ip, $endpoint, $now]);
+                return;
+            } catch (PDOException $e) {
+                if (!self::isDuplicateKeyError($e)) {
+                    throw $e;
+                }
+
+                $stmt->execute([$ip, $endpoint]);
+                $row = $stmt->fetch();
+                if (!$row) {
+                    return;
+                }
+            }
         }
 
         // Pencere süresi dolmuşsa sıfırla
@@ -105,10 +123,20 @@ class RateLimit
      */
     public static function getClientIp(): string
     {
+        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
+        $cfConnectingIp = trim((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
+        if ($cfConnectingIp !== '' && filter_var($cfConnectingIp, FILTER_VALIDATE_IP)) {
+            return $cfConnectingIp;
+        }
+
+        $xRealIp = trim((string) ($_SERVER['HTTP_X_REAL_IP'] ?? ''));
+        if ($xRealIp !== '' && filter_var($xRealIp, FILTER_VALIDATE_IP)) {
+            return $xRealIp;
+        }
+
         // Güvenilir proxy IP'leri — production'da kendi proxy IP'nizi ekleyin
         $trustedProxies = ['127.0.0.1', '::1'];
-
-        $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
         if (
             in_array($remoteAddr, $trustedProxies, true) &&
@@ -122,6 +150,22 @@ class RateLimit
         }
 
         return $remoteAddr;
+    }
+
+    private static function isDuplicateKeyError(PDOException $e): bool
+    {
+        $errorInfo = $e->errorInfo ?? [];
+        $driverCode = (int) ($errorInfo[1] ?? 0);
+
+        return $e->getCode() === '23000' && $driverCode === 1062;
+    }
+
+    private static function isTransientLockError(PDOException $e): bool
+    {
+        $errorInfo = $e->errorInfo ?? [];
+        $driverCode = (int) ($errorInfo[1] ?? 0);
+
+        return $e->getCode() === '40001' || $driverCode === 1213;
     }
 
     private static function logAbuse(string $ip, string $endpoint): void

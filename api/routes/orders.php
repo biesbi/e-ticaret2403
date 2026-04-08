@@ -732,6 +732,17 @@ if ($id !== null && $sub === 'cargo') {
     ok(legacyOrder($updatedOrder));
 }
 
+if ($id !== null && $sub === 'paytr-reconcile') {
+    if ($method !== 'POST') error('Method not allowed.', 405);
+    adminRequired();
+
+    try {
+        ok(PaytrService::reconcileOrder((string) $id));
+    } catch (RuntimeException $e) {
+        error($e->getMessage(), 400);
+    }
+}
+
 if ($id !== null && $sub === null && $method === 'GET') {
     $payload = authRequired();
 

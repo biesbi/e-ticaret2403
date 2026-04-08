@@ -42,10 +42,11 @@ $segments = array_values(array_filter(explode('/', $uri)));
 $resource = $segments[0] ?? '';
 $id       = $segments[1] ?? null;
 $sub      = $segments[2] ?? null;
+$isPaytrCallback = $resource === 'payments' && $id === 'paytr' && $sub === 'callback';
 
 // ─── 7. Global Rate Limit (API geneli) ────────
 // Tüm endpoint'lere dakikada max 120 istek
-if ($resource !== '') {
+if ($resource !== '' && !$isPaytrCallback) {
     RateLimit::check('global_' . RateLimit::getClientIp(), 120, 60);
 }
 

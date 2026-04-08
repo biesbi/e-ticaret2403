@@ -9860,7 +9860,12 @@
 					'.admin-order-bridge-field input,.admin-order-bridge-field select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #cbd5e1;font-size:.95rem;background:#f8fafc;font-family:' + emojiFont + ';}',
 					'.admin-order-bridge-actions{display:flex;justify-content:flex-end;gap:10px;align-items:center;}',
 					'.admin-order-bridge-btn{height:42px;padding:0 16px;border:none;border-radius:10px;background:#0f172a;color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;}',
+					'.admin-order-bridge-btn.is-secondary{background:#eef2ff;color:#0f172a;border:1px solid #cbd5e1;}',
 					'.admin-order-bridge-btn[disabled]{opacity:.6;cursor:wait;}',
+					'.admin-order-bridge-note{grid-column:1 / -1;margin:2px 0 0;font-size:.82rem;line-height:1.5;color:#64748b;}',
+					'.admin-order-bridge-note.is-success{color:#166534;}',
+					'.admin-order-bridge-note.is-warning{color:#9a3412;}',
+					'.admin-order-bridge-note.is-error{color:#b91c1c;}',
 					'@media (max-width: 767px){.admin-order-bridge-actions{justify-content:stretch;}.admin-order-bridge-btn{width:100%;}}'
 				].join('');
 				document.head.appendChild(style);
@@ -10026,6 +10031,23 @@
 				});
 			};
 
+			var patchOrderPaytr = function (orderId) {
+				return fetch('/api/orders/' + encodeURIComponent(orderId) + '/paytr-reconcile', {
+					method: 'POST',
+					headers: getAuthHeaders(false)
+				}).then(function (response) {
+					return parseJsonSafe(response).then(function (payload) {
+						if (!response.ok) {
+							throw new Error(payload && payload.message || 'PayTR sorgusu tamamlanamadi.');
+						}
+						if (payload && payload.order) {
+							detailCache[orderId] = payload.order;
+						}
+						return payload || {};
+					});
+				});
+			};
+
 			var syncCardBadge = function (card, detail) {
 				if (!card || !detail) return;
 				var badge = card.querySelector('.badge-active');
@@ -10061,6 +10083,45 @@
 				wrap.appendChild(label);
 				wrap.appendChild(control);
 				return wrap;
+			};
+
+			var renderPaytrNote = function (shell, payload, fallbackTone) {
+				if (!shell) return;
+				var note = shell.querySelector('[data-admin-order-bridge="paytr-note"]');
+				if (!note) return;
+
+				var provider = payload && payload.provider_status || null;
+				var parts = [];
+				if (payload && payload.message) {
+					parts.push(String(payload.message));
+				}
+				if (provider && provider.payment_amount) {
+					parts.push('Tutar: ' + provider.payment_amount + ' ' + String(provider.currency || 'TL').trim());
+				}
+				if (provider && provider.payment_date) {
+					parts.push('Tarih: ' + provider.payment_date);
+				}
+				if (!parts.length && provider && provider.err_msg) {
+					parts.push(String(provider.err_msg));
+				}
+				if (!parts.length) {
+					note.hidden = true;
+					note.textContent = '';
+					note.className = 'admin-order-bridge-note';
+					return;
+				}
+
+				note.textContent = parts.join(' | ');
+				note.hidden = false;
+				note.className = 'admin-order-bridge-note';
+
+				var action = String(payload && payload.action || '').toLowerCase();
+				var tone = fallbackTone || 'warning';
+				if (payload && payload.updated) tone = 'success';
+				else if (action.indexOf('error') !== -1) tone = 'error';
+				else if (action.indexOf('already') !== -1 || action.indexOf('not_paid') !== -1) tone = 'warning';
+				else if (action.indexOf('manual_review') !== -1) tone = 'warning';
+				note.classList.add('is-' + tone);
 			};
 
 			var createBridgeControls = function (card, detail) {
@@ -10105,16 +10166,31 @@
 
 				var actionWrap = document.createElement('div');
 				actionWrap.className = 'admin-order-bridge-actions';
+				var paymentMethod = String(detail && (detail.paymentMethod || detail.payment_method || '') || '').toLowerCase();
+				var hasPaytrMerchantOid = !!String(detail && detail.paytr_merchant_oid || '').trim();
+				var paytrButton = null;
+				if (paymentMethod === 'card' && hasPaytrMerchantOid) {
+					paytrButton = document.createElement('button');
+					paytrButton.type = 'button';
+					paytrButton.className = 'admin-order-bridge-btn is-secondary';
+					paytrButton.textContent = "PayTR'yi Kontrol Et";
+					actionWrap.appendChild(paytrButton);
+				}
 				var cargoButton = document.createElement('button');
 				cargoButton.type = 'button';
 				cargoButton.className = 'admin-order-bridge-btn';
 				cargoButton.textContent = 'Kargoyu Kaydet';
 				actionWrap.appendChild(cargoButton);
+				var paytrNote = document.createElement('div');
+				paytrNote.className = 'admin-order-bridge-note';
+				paytrNote.setAttribute('data-admin-order-bridge', 'paytr-note');
+				paytrNote.hidden = true;
 
 				layout.appendChild(createBridgeField('Kargo Firmasi', cargoSelect));
 				layout.appendChild(createBridgeField('Kargo Takip No', trackingInput));
 				layout.appendChild(createBridgeField('Siparis Durumu', statusSelect));
 				layout.appendChild(actionWrap);
+				layout.appendChild(paytrNote);
 				shell.appendChild(layout);
 				host.appendChild(shell);
 
@@ -10169,6 +10245,32 @@
 							cargoButton.disabled = false;
 						});
 				});
+
+				if (paytrButton) {
+					paytrButton.addEventListener('click', function () {
+						paytrButton.disabled = true;
+
+						patchOrderPaytr(orderId)
+							.then(function (result) {
+								var updated = result && result.order ? result.order : null;
+								if (updated) {
+									detail = updated;
+									syncCardBadge(card, updated);
+									syncBridgeControls(card, updated);
+									normalizeCardControls(card);
+								}
+								renderPaytrNote(shell, result, result && result.updated ? 'success' : 'warning');
+								showToast(result && result.message || "PayTR sorgusu tamamlandi.", result && result.updated ? 'success' : 'info');
+							})
+							.catch(function (error) {
+								renderPaytrNote(shell, { message: error && error.message || 'PayTR sorgusu tamamlanamadi.', action: 'provider_error' }, 'error');
+								showToast(error && error.message || 'PayTR sorgusu tamamlanamadi.', 'error');
+							})
+							.finally(function () {
+								paytrButton.disabled = false;
+							});
+					});
+				}
 			};
 
 			var enhanceOrderCard = function (card) {
@@ -10319,7 +10421,7 @@
 				style.textContent = [
 					'.admin-order-items-list .admin-order-item-price{display:block;margin-top:4px;font-size:.78rem;color:#64748b;font-weight:600;}',
 					'.admin-order-items-list .admin-order-item-total{display:block;margin-top:2px;font-size:.86rem;color:#0f172a;font-weight:800;}',
-					'.admin-order-address-panel{margin-top:14px;padding:12px 14px;border:1px dashed #e2e8f0;border-radius:12px;background:#fff;}',
+					'.admin-order-address-panel{margin-top:10px;padding:0;border:0;background:transparent;}',
 					'.admin-order-address-label{display:block;margin:0 0 6px;color:#64748b;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}',
 					'.admin-order-address-text{margin:0;color:#334155;font-size:.9rem;line-height:1.6;white-space:normal;word-break:break-word;}'
 				].join('');
@@ -10352,7 +10454,12 @@
 					shell = document.createElement('div');
 					shell.className = 'admin-order-address-panel';
 					shell.innerHTML = '<span class="admin-order-address-label">Detaylı Adres</span><p class="admin-order-address-text">Yükleniyor...</p>';
-					deliveryColumn.appendChild(shell);
+					var insertBeforeNode = deliveryColumn.querySelector('[data-admin-order-bridge="controls"]');
+					if (insertBeforeNode && insertBeforeNode.parentNode === deliveryColumn) {
+						deliveryColumn.insertBefore(shell, insertBeforeNode);
+					} else {
+						deliveryColumn.appendChild(shell);
+					}
 				}
 				return shell;
 			};
@@ -10396,10 +10503,15 @@
 				if (!textNode) return;
 
 				var shipping = detail && detail.shippingAddress ? detail.shippingAddress : {};
+				var detailedAddress = String(shipping.address_detail || shipping.addressDetail || '').trim();
 				var addressParts = [
-					shipping.neighborhood,
-					shipping.street,
-					shipping.address_detail || shipping.addressDetail
+					shipping.city,
+					shipping.district,
+					detailedAddress !== ''
+						? detailedAddress
+						: [shipping.neighborhood, shipping.street].filter(function (part) {
+							return String(part || '').trim() !== '';
+						}).join(', ')
 				].filter(function (part) {
 					return String(part || '').trim() !== '';
 				});
@@ -11085,6 +11197,144 @@
 				new MutationObserver(queueRefresh).observe(document.body, { childList: true, subtree: true });
 			}
 		});
+	</script>
+
+	<!-- ═══ Admin CSV Dışa Aktarma Butonu ═══ -->
+	<script>
+		(function () {
+			'use strict';
+
+			var CSV_BTN_ID = 'boomer-csv-export-btn';
+
+			function getToken() {
+				try { return localStorage.getItem('token'); } catch (e) { return null; }
+			}
+
+			function isAdminProductsPage() {
+				var h1 = document.querySelector('.admin-view .admin-header h1');
+				if (!h1) return false;
+				var text = h1.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+				return text.indexOf('\u00fcr\u00fcnleri y\u00f6net') !== -1 || text.indexOf('urunleri yonet') !== -1;
+			}
+
+			function showToastMsg(msg, type) {
+				if (window.showToast) { window.showToast(msg, type || 'info', 3500); return; }
+				alert(msg);
+			}
+
+			function downloadCsv(preset) {
+				var token = getToken();
+				if (!token) { showToastMsg('Oturum bulunamad\u0131. L\u00fctfen tekrar giri\u015f yap\u0131n.', 'error'); return; }
+
+				var btn = document.getElementById(CSV_BTN_ID);
+				var mainBtn = btn ? btn.querySelector('.boomer-csv-main-btn') : null;
+				if (mainBtn) { mainBtn.disabled = true; mainBtn.textContent = '\u2026 Haz\u0131rlan\u0131yor'; }
+
+				fetch('/api/products?format=csv&preset=' + encodeURIComponent(preset) + '&limit=9999', {
+					headers: { 'Authorization': 'Bearer ' + token }
+				})
+					.then(function (res) {
+						if (!res.ok) throw new Error('HTTP ' + res.status);
+						return res.blob();
+					})
+					.then(function (blob) {
+						var d = new Date();
+						var ds = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+						var filename = 'urunler-' + preset + '-' + ds + '.csv';
+						var a = document.createElement('a');
+						a.href = URL.createObjectURL(blob);
+						a.download = filename;
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+						setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+						showToastMsg('CSV indirildi!', 'success');
+					})
+					.catch(function (err) { showToastMsg('CSV indirilemedi: ' + err.message, 'error'); })
+					.finally(function () {
+						if (mainBtn) { mainBtn.disabled = false; mainBtn.textContent = '\u2193 CSV \u0130ndir'; }
+					});
+			}
+
+			function injectCsvButton() {
+				if (!isAdminProductsPage()) return;
+				if (document.getElementById(CSV_BTN_ID)) return;
+
+				var toolbar = document.getElementById('adminInventoryToolbarV2');
+				if (!toolbar) return;
+
+				var presets = [
+					{ preset: 'full', label: '\u2022 Tam Liste (t\u00fcm alanlar)' },
+					{ preset: 'meta_catalog', label: '\u2022 Meta Katalog (Facebook / Instagram)' },
+				];
+
+				var wrapper = document.createElement('div');
+				wrapper.id = CSV_BTN_ID;
+				wrapper.style.cssText = 'position:relative;display:inline-flex;align-items:center;margin-left:auto;';
+
+				var mainBtn = document.createElement('button');
+				mainBtn.type = 'button';
+				mainBtn.className = 'boomer-csv-main-btn';
+				mainBtn.textContent = '\u2193 CSV \u0130ndir';
+				mainBtn.style.cssText = [
+					'display:inline-flex;align-items:center;gap:6px;',
+					'padding:9px 16px;border-radius:8px;',
+					'border:1.5px solid #16a34a;background:#16a34a;',
+					'color:#fff;font-size:0.83rem;font-weight:700;',
+					'cursor:pointer;white-space:nowrap;',
+					'transition:background 0.15s,border-color 0.15s;'
+				].join('');
+				mainBtn.addEventListener('mouseenter', function () { mainBtn.style.background = '#15803d'; });
+				mainBtn.addEventListener('mouseleave', function () { mainBtn.style.background = '#16a34a'; });
+
+				var dropdown = document.createElement('div');
+				dropdown.style.cssText = [
+					'display:none;position:absolute;top:calc(100% + 4px);right:0;',
+					'background:#fff;border:1px solid #e2e8f0;border-radius:10px;',
+					'box-shadow:0 8px 24px rgba(15,23,42,0.13);min-width:230px;z-index:10000;',
+					'padding:6px 0;'
+				].join('');
+
+				presets.forEach(function (item) {
+					var opt = document.createElement('button');
+					opt.type = 'button';
+					opt.textContent = item.label;
+					opt.style.cssText = [
+						'display:block;width:100%;padding:10px 16px;',
+						'background:none;border:none;text-align:left;',
+						'font-size:0.83rem;font-weight:600;color:#1e293b;',
+						'cursor:pointer;border-radius:0;'
+					].join('');
+					opt.addEventListener('mouseenter', function () { opt.style.background = '#f1f5f9'; });
+					opt.addEventListener('mouseleave', function () { opt.style.background = 'none'; });
+					opt.addEventListener('click', function () {
+						dropdown.style.display = 'none';
+						downloadCsv(item.preset);
+					});
+					dropdown.appendChild(opt);
+				});
+
+				var open = false;
+				mainBtn.addEventListener('click', function (e) {
+					e.stopPropagation();
+					open = !open;
+					dropdown.style.display = open ? 'block' : 'none';
+				});
+				document.addEventListener('click', function () {
+					open = false;
+					dropdown.style.display = 'none';
+				});
+
+				wrapper.appendChild(mainBtn);
+				wrapper.appendChild(dropdown);
+				toolbar.appendChild(wrapper);
+			}
+
+			if (window.MutationObserver) {
+				new MutationObserver(injectCsvButton).observe(document.body, { childList: true, subtree: true });
+			}
+			document.addEventListener('DOMContentLoaded', injectCsvButton);
+		})();
 	</script>
 </body>
 

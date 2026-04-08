@@ -149,6 +149,7 @@ function productExportPresets(): array
         'meta' => ['id', 'name', 'slug', 'url', 'meta_title', 'meta_description', 'img', 'category_name', 'brand_name', 'sku', 'set_no'],
         'seo' => ['name', 'url', 'meta_title', 'meta_description', 'img'],
         'full' => ['id', 'name', 'slug', 'url', 'meta_title', 'meta_description', 'description', 'category_name', 'brand_name', 'sku', 'set_no', 'price', 'stock', 'available_stock', 'is_active', 'img', 'created_at', 'updated_at'],
+        'meta_catalog' => ['id', 'title', 'description', 'availability', 'condition', 'price', 'link', 'image_link', 'brand', 'product_type'],
     ];
 }
 
@@ -160,6 +161,7 @@ function productExportAllowedFields(): array
         'title',
         'slug',
         'url',
+        'link',
         'meta_title',
         'meta_description',
         'description',
@@ -167,6 +169,7 @@ function productExportAllowedFields(): array
         'category',
         'brand_name',
         'brand',
+        'product_type',
         'category_id',
         'brand_id',
         'sku',
@@ -177,12 +180,15 @@ function productExportAllowedFields(): array
         'available_stock',
         'reserved_stock',
         'is_active',
+        'availability',
+        'condition',
         'stock_status',
         'condition_tag',
         'condition_label',
         'desi',
         'pieces',
         'img',
+        'image_link',
         'images',
         'fixed_shipping_fee',
         'created_at',
@@ -261,21 +267,27 @@ function productExportImages(array $product, string $baseUrl): string
     return implode(' | ', array_values(array_unique($urls)));
 }
 
-function productExportFieldValue(array $product, string $field, string $baseUrl): string
+function productExportFieldValue(array $product, string $field, string $baseUrl, string $preset = ''): string
 {
     $value = $product[$field] ?? null;
 
     return match ($field) {
-        'url' => productExportUrl($product, $baseUrl),
+        'url', 'link' => productExportUrl($product, $baseUrl),
+        'title' => trim((string) ($product['name'] ?? ($product['title'] ?? ''))),
         'meta_title' => productExportMetaTitle($product),
         'meta_description' => productExportMetaDescription($product),
         'description' => productExportPlainText($product['description'] ?? ''),
-        'img' => toAbsoluteUrl((string) ($product['img'] ?? ''), $baseUrl),
+        'img', 'image_link' => toAbsoluteUrl((string) ($product['img'] ?? ''), $baseUrl),
         'images' => productExportImages($product, $baseUrl),
         'is_active' => isset($product['is_active']) ? ((int) $product['is_active'] === 1 ? '1' : '0') : '',
-        'price', 'old_price', 'desi', 'fixed_shipping_fee' => $value !== null
-            ? (string) $value
-            : '',
+        'availability' => (int) ($product['available_stock'] ?? ($product['stock'] ?? 0)) > 0 ? 'in stock' : 'out of stock',
+        'condition' => 'used',
+        'brand' => trim((string) ($product['brand_name'] ?? ($product['brand'] ?? ''))),
+        'product_type' => trim((string) ($product['category_name'] ?? ($product['category'] ?? ''))),
+        'price' => $preset === 'meta_catalog'
+            ? ($value !== null ? number_format((float) $value, 2, '.', '') . ' TRY' : '')
+            : ($value !== null ? (string) $value : ''),
+        'old_price', 'desi', 'fixed_shipping_fee' => $value !== null ? (string) $value : '',
         'stock', 'available_stock', 'reserved_stock', 'pieces' => $value !== null ? (string) ((int) $value) : '',
         default => is_scalar($value) || $value === null
             ? trim((string) ($value ?? ''))
@@ -306,7 +318,7 @@ function productStreamCsvExport(array $rows, array $fields, string $delimiter, s
         $product = legacyProduct($row);
         $record = [];
         foreach ($fields as $field) {
-            $record[] = productExportFieldValue($product, $field, $baseUrl);
+            $record[] = productExportFieldValue($product, $field, $baseUrl, $preset);
         }
         fputcsv($output, $record, $delimiter);
     }
