@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name  VARCHAR(120) NOT NULL,
   email         VARCHAR(180) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('admin','customer') NOT NULL DEFAULT 'customer',
+  role          ENUM('admin','product_editor','customer') NOT NULL DEFAULT 'customer',
   email_verified TINYINT(1) NOT NULL DEFAULT 0,
   email_verification_token VARCHAR(128) NULL,
   email_verification_sent_at DATETIME NULL,

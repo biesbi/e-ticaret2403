@@ -26,7 +26,7 @@ if ($method === 'GET' && $id !== null) {
 }
 
 elseif ($method === 'POST' && $id === null) {
-    Auth::requireAdmin();
+    Auth::requireProductManager();
 
     $productId = trim((string) input('product_id', ''));
     $color = trim((string) input('color', ''));
@@ -66,7 +66,7 @@ elseif ($method === 'POST' && $id === null) {
 }
 
 elseif ($method === 'PATCH' && $id !== null) {
-    Auth::requireAdmin();
+    Auth::requireProductManager();
 
     $variantId = (int) $id;
     $existing = db()->prepare('SELECT * FROM product_variants WHERE id = ? LIMIT 1');
@@ -122,7 +122,7 @@ elseif ($method === 'PATCH' && $id !== null) {
 }
 
 elseif ($method === 'DELETE' && $id !== null) {
-    Auth::requireAdmin();
+    Auth::requireProductManager();
 
     $variantId = (int) $id;
     $existing = db()->prepare('SELECT id, reserved_stock FROM product_variants WHERE id = ? LIMIT 1');

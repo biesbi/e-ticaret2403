@@ -182,6 +182,80 @@ final class OrderService
         return $released;
     }
 
+    public static function reconcileRecentPendingCardPayments(int $limit = 10, int $abandonedHours = 2): array
+    {
+        if (!tableHasColumn('orders', 'payment_method')
+            || !tableHasColumn('orders', 'payment_status')
+            || !tableHasColumn('orders', 'paytr_merchant_oid')) {
+            return [
+                'checked' => 0,
+                'updated' => 0,
+                'marked_failed' => 0,
+            ];
+        }
+
+        if (!PaytrService::isEnabled() || !PaytrService::isConfigured() || PaytrService::useMock()) {
+            return [
+                'checked' => 0,
+                'updated' => 0,
+                'marked_failed' => 0,
+            ];
+        }
+
+        $limit = max(1, min(50, $limit));
+        $abandonedHours = max(1, $abandonedHours);
+
+        $stmt = db()->prepare(
+            "SELECT id, created_at
+             FROM orders
+             WHERE payment_method = 'card'
+               AND payment_status = 'pending'
+               AND COALESCE(paytr_merchant_oid, '') <> ''
+             ORDER BY created_at DESC
+             LIMIT $limit"
+        );
+        $stmt->execute();
+
+        $checked = 0;
+        $updated = 0;
+        $markedFailed = 0;
+        $abandonedBefore = time() - ($abandonedHours * 3600);
+
+        foreach ($stmt->fetchAll() as $order) {
+            $orderId = (string) ($order['id'] ?? '');
+            if ($orderId === '') {
+                continue;
+            }
+
+            try {
+                $checked++;
+                $result = PaytrService::reconcileOrder($orderId);
+
+                if (($result['updated'] ?? false) === true) {
+                    $updated++;
+                    continue;
+                }
+
+                $createdAt = strtotime((string) ($order['created_at'] ?? ''));
+                $isAbandoned = $createdAt !== false && $createdAt <= $abandonedBefore;
+
+                if (($result['action'] ?? '') === 'provider_not_paid' && $isAbandoned) {
+                    if (self::markCardPaymentFailed($orderId) !== null) {
+                        $markedFailed++;
+                    }
+                }
+            } catch (Throwable) {
+                // Tek siparişteki PayTR hatası diğer bekleyen siparişleri engellemesin.
+            }
+        }
+
+        return [
+            'checked' => $checked,
+            'updated' => $updated,
+            'marked_failed' => $markedFailed,
+        ];
+    }
+
     private static function restoreCouponUsage(string $couponCode): void
     {
         $couponCode = strtoupper(trim($couponCode));

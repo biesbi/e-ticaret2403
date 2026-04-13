@@ -222,6 +222,13 @@ if ($id === 'track') {
 
 if ($id === null && $method === 'GET') {
     adminRequired();
+
+    try {
+        OrderService::reconcileRecentPendingCardPayments(10, 2);
+    } catch (Throwable) {
+        // Listeleme akisi PayTR sorgu hatasi yuzunden durmasin.
+    }
+
     $stmt = db()->query(
         'SELECT * FROM orders WHERE ' . OrderService::visibleListSql() . ' ORDER BY created_at DESC'
     );

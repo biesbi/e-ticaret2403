@@ -39,7 +39,8 @@ switch ($id) {
             error('Kullanici adi veya sifre hatali.', 401);
         }
 
-        $isAdmin       = (($user['role'] ?? 'user') === 'admin');
+        $normalizedRole = normalizeUserRole((string) ($user['role'] ?? 'user'));
+        $isAdmin       = $normalizedRole === 'admin';
         $emailVerified = !empty($user['email_verified']) || !empty($user['email_verified_at']);
 
         if ($isActiveColumn && !$isAdmin && isset($user['is_active']) && (int) $user['is_active'] !== 1) {
@@ -57,7 +58,7 @@ switch ($id) {
         $token = jwtEncode([
             'sub'  => $user['id'],
             'user' => $user['username'] ?? $user['email'],
-            'role' => ($isAdmin ? 'admin' : 'customer'),
+            'role' => $normalizedRole,
         ]);
 
         $orders = db()->prepare(
@@ -78,7 +79,7 @@ switch ($id) {
                 'username'       => $user['username'] ?? $user['email'],
                 'display_name'   => $user['display_name'] ?? $user['name'] ?? '',
                 'email'          => $user['email'],
-                'role'           => ($isAdmin ? 'admin' : 'customer'),
+                'role'           => $normalizedRole,
                 'email_verified' => $emailVerified,
                 'orders'         => array_map(fn(array $order) => legacyOrder($order), $orders->fetchAll()),
             ]),
@@ -414,7 +415,7 @@ switch ($id) {
         if (!$user) error('Kullanici bulunamadi.', 404);
 
         $orders = db()->prepare(
-            'SELECT id, status, total, city, district, tracking_no, cargo_carrier, created_at
+            'SELECT id, status, total, subtotal, discount, shipping_address, cargo_number, cargo_company, created_at
              FROM orders
              WHERE user_id = ?
                AND ' . OrderService::visibleListSql() . '

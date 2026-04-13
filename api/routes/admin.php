@@ -1,23 +1,9 @@
 <?php
-// ═══════════════════════════════════════════════
-//  Admin Panel Route'ları
-//  Tümü admin JWT gerektirir.
-//
-//  GET    /admin/dashboard          — Genel özet
-//  GET    /admin/stats/orders       — Sipariş raporu (tarih aralığı)
-//  GET    /admin/stock-alerts       — Stok uyarıları
-//  GET    /admin/users              — Kullanıcı listesi
-//  GET    /admin/users/{id}         — Kullanıcı detayı
-//  PATCH  /admin/users/{id}         — Rol değiştir / hesap askıya al
-//  DELETE /admin/users/{id}         — Hesap sil
-//  POST   /admin/bulk/orders        — Toplu sipariş durumu güncelle
-//  POST   /admin/bulk/products      — Toplu ürün aktif/pasif
-//  GET    /admin/audit-logs         — Audit log görüntüle
-// ═══════════════════════════════════════════════
 
 require_once __DIR__ . '/../services/AdminService.php';
 
-function adminUserSelectSql(): string {
+function adminUserSelectSql(): string
+{
     $parts = ['id'];
     $parts[] = tableHasColumn('users', 'username')
         ? 'username'
@@ -40,19 +26,24 @@ function adminUserSelectSql(): string {
         ? 'last_login'
         : 'NULL AS last_login';
     $parts[] = 'created_at';
+
     return implode(', ', $parts);
 }
 
-function adminUserNameField(): string {
+function adminUserNameField(): string
+{
     return tableHasColumn('users', 'display_name') ? 'display_name' : 'name';
 }
 
-function adminNormalizeRoleFilter(?string $role): ?string {
+function adminNormalizeRoleFilter(?string $role): ?string
+{
     if ($role === null || $role === '') {
         return null;
     }
+
     return match ($role) {
         'customer' => 'user',
+        'product_editor', 'product-editor' => 'product_editor',
         'user', 'admin' => $role,
         default => null,
     };
@@ -87,65 +78,80 @@ function adminNormalizeOrderStatus(string $status): string
     return $status;
 }
 
-function adminHydrateUserRow(array $row): array {
+function adminHydrateUserRow(array $row): array
+{
     $row['display_name'] = $row['display_name'] ?? $row['name'] ?? '';
-    $role = $row['role'] ?? 'user';
-    $row['role'] = $role === 'customer' ? 'user' : $role;
-    $row['role_label'] = $role === 'admin' ? 'admin' : 'customer';
+    $dbRole = (string) ($row['role'] ?? 'user');
+    $row['role'] = $dbRole === 'customer' ? 'user' : $dbRole;
+    $normalizedRole = normalizeUserRole($dbRole);
+    $row['role_label'] = $normalizedRole === 'admin'
+        ? 'admin'
+        : ($normalizedRole === 'product_editor' ? 'product_editor' : 'customer');
     $row['is_active'] = isset($row['is_active']) ? (int) $row['is_active'] : 1;
     $verifiedFlag = isset($row['email_verified']) ? (int) $row['email_verified'] : (!empty($row['email_verified_at']) ? 1 : 0);
     $row['is_verified'] = $verifiedFlag === 1 || !empty($row['email_verified_at']);
     unset($row['email_verified']);
+
     return $row;
 }
 
-// Tüm admin endpoint'leri admin rolü gerektirir
-$admin = Auth::requireAdmin();
+function adminRouteRequireAdmin(array $actor): void
+{
+    if (!roleCanManageUsers((string) ($actor['role'] ?? ''))) {
+        error('Yetkiniz yok.', 403);
+    }
+}
 
-// Segments: /admin/{id}/{sub}
-// $id  = 'dashboard' | 'stats' | 'stock-alerts' | 'users' | 'bulk' | 'audit-logs'
-// $sub = numeric id | 'orders' | 'products' | null
+function adminRouteRequireProductManager(array $actor): void
+{
+    if (!roleCanManageProducts((string) ($actor['role'] ?? ''))) {
+        error('Yetkiniz yok.', 403);
+    }
+}
 
-// ─── GET /admin/dashboard ─────────────────────
+$actor = Auth::require();
+
 if ($id === 'dashboard' && $method === 'GET') {
+    adminRouteRequireAdmin($actor);
     ok(AdminService::getDashboard());
 }
 
-// ─── GET /admin/stock-alerts ──────────────────
 elseif ($id === 'stock-alerts' && $method === 'GET') {
+    adminRouteRequireAdmin($actor);
     ok(AdminService::stockAlerts());
 }
 
-// ─── GET /admin/stats/orders ──────────────────
 elseif ($id === 'stats' && $sub === 'orders' && $method === 'GET') {
-    $from = $_GET['from'] ?? date('Y-m-01');           // Bu ayın başı
-    $to   = $_GET['to']   ?? date('Y-m-d');            // Bugün
+    adminRouteRequireAdmin($actor);
 
-    // Tarih format doğrulama
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) ||
-        !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
-        error('Tarih formatı YYYY-MM-DD olmalı.');
+    $from = $_GET['from'] ?? date('Y-m-01');
+    $to = $_GET['to'] ?? date('Y-m-d');
+
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
+        error('Tarih formati YYYY-MM-DD olmali.');
     }
-    if ($from > $to) error('Başlangıç tarihi bitiş tarihinden büyük olamaz.');
+    if ($from > $to) {
+        error('Baslangic tarihi bitis tarihinden buyuk olamaz.');
+    }
 
-    // Max 365 gün aralık
     $dayDiff = (strtotime($to) - strtotime($from)) / 86400;
-    if ($dayDiff > 365) error('En fazla 365 günlük rapor alınabilir.');
+    if ($dayDiff > 365) {
+        error('En fazla 365 gunluk rapor alinabilir.');
+    }
 
     ok(AdminService::getOrderReport($from, $to));
 }
 
-// ─── KULLANICI YÖNETİMİ ──────────────────────
-
-// GET /admin/users — liste
 elseif ($id === 'users' && $sub === null && $method === 'GET') {
-    $page   = max(1, (int) ($_GET['page']  ?? 1));
-    $limit  = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
+    adminRouteRequireAdmin($actor);
+
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $limit = max(1, min(100, (int) ($_GET['limit'] ?? 20)));
     $offset = ($page - 1) * $limit;
     $search = trim($_GET['search'] ?? '');
-    $role   = $_GET['role'] ?? '';
+    $role = $_GET['role'] ?? '';
 
-    $where  = [];
+    $where = [];
     $params = [];
     $nameField = adminUserNameField();
 
@@ -157,15 +163,17 @@ elseif ($id === 'users' && $sub === null && $method === 'GET') {
         if ($nameField !== '') {
             $searchParts[] = $nameField . ' LIKE ?';
         }
-        $where[]  = '(' . implode(' OR ', $searchParts) . ')';
-        $like     = '%' . $search . '%';
+
+        $where[] = '(' . implode(' OR ', $searchParts) . ')';
+        $like = '%' . $search . '%';
         foreach ($searchParts as $ignored) {
             $params[] = $like;
         }
     }
+
     $normalizedRole = adminNormalizeRoleFilter($role);
     if ($normalizedRole !== null) {
-        $where[]  = 'role = ?';
+        $where[] = 'role = ?';
         $params[] = $normalizedRole;
     }
 
@@ -183,76 +191,83 @@ elseif ($id === 'users' && $sub === null && $method === 'GET') {
     );
     $stmt->execute($params);
 
-    // Her kullanıcı için sipariş sayısı ve toplam harcama
     $rows = $stmt->fetchAll();
-    foreach ($rows as &$u) {
-        $u = adminHydrateUserRow($u);
-        $os = db()->prepare(
+    foreach ($rows as &$userRow) {
+        $userRow = adminHydrateUserRow($userRow);
+        $orderStats = db()->prepare(
             "SELECT COUNT(*) AS cnt, COALESCE(SUM(total), 0) AS spent
-             FROM orders WHERE user_id = ? AND status != 'cancelled'"
+             FROM orders
+             WHERE user_id = ?
+               AND status != 'cancelled'"
         );
-        $os->execute([$u['id']]);
-        $orderInfo    = $os->fetch();
-        $u['orders']  = (int) $orderInfo['cnt'];
-        $u['spent']   = (float) $orderInfo['spent'];
+        $orderStats->execute([$userRow['id']]);
+        $orderInfo = $orderStats->fetch();
+        $userRow['orders'] = (int) ($orderInfo['cnt'] ?? 0);
+        $userRow['spent'] = (float) ($orderInfo['spent'] ?? 0);
     }
 
     ok([
         'items' => $rows,
         'total' => $total,
-        'page'  => $page,
+        'page' => $page,
         'pages' => (int) ceil($total / $limit),
     ]);
 }
 
-// GET /admin/users/{id} — detay
 elseif ($id === 'users' && $sub !== null && $method === 'GET') {
-    $uid = (string) $sub;
+    adminRouteRequireAdmin($actor);
 
-    $stmt = db()->prepare(
-        'SELECT ' . adminUserSelectSql() . ' FROM users WHERE id = ? LIMIT 1'
-    );
+    $uid = (string) $sub;
+    $stmt = db()->prepare('SELECT ' . adminUserSelectSql() . ' FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$uid]);
     $user = $stmt->fetch();
-    if (!$user) error('Kullanıcı bulunamadı.', 404);
+    if (!$user) {
+        error('Kullanici bulunamadi.', 404);
+    }
+
     $user = adminHydrateUserRow($user);
 
-    // Sipariş geçmişi
     $orders = db()->prepare(
-        'SELECT id, status, total, created_at FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 10'
+        'SELECT id, status, total, created_at
+         FROM orders
+         WHERE user_id = ?
+         ORDER BY created_at DESC
+         LIMIT 10'
     );
     $orders->execute([$uid]);
     $user['recent_orders'] = $orders->fetchAll();
 
-    // Sepet özeti
-    $cart = db()->prepare(
-        'SELECT COUNT(*) AS item_count FROM cart_items WHERE user_id = ?'
-    );
+    $cart = db()->prepare('SELECT COUNT(*) AS item_count FROM cart_items WHERE user_id = ?');
     $cart->execute([$uid]);
     $user['cart_items'] = (int) $cart->fetchColumn();
 
     ok($user);
 }
 
-// PATCH /admin/users/{id} — rol değiştir veya askıya al
 elseif ($id === 'users' && $sub !== null && $method === 'PATCH') {
-    $uid  = (string) $sub;
+    adminRouteRequireAdmin($actor);
 
-    // Admin kendini değiştiremez
-    if ($uid === (string) $admin['sub']) error('Kendi hesabınızı bu yolla değiştiremezsiniz.');
+    $uid = (string) $sub;
+    if ($uid === (string) ($actor['sub'] ?? '')) {
+        error('Kendi hesabinizi bu yolla degistiremezsiniz.');
+    }
 
     $stmt = db()->prepare('SELECT id, role FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$uid]);
     $user = $stmt->fetch();
-    if (!$user) error('Kullanıcı bulunamadı.', 404);
+    if (!$user) {
+        error('Kullanici bulunamadi.', 404);
+    }
 
-    $data   = body();
+    $data = body();
     $fields = [];
     $values = [];
 
     if (isset($data['role'])) {
         $nextRole = adminNormalizeRoleFilter((string) $data['role']);
-        if ($nextRole === null) error('Geçersiz rol.');
+        if ($nextRole === null) {
+            error('Gecersiz rol.');
+        }
         $fields[] = 'role = ?';
         $values[] = $nextRole;
     }
@@ -262,60 +277,70 @@ elseif ($id === 'users' && $sub !== null && $method === 'PATCH') {
         $values[] = !empty($data['is_active']) ? 1 : 0;
     }
 
-    if (empty($fields)) error('Güncellenecek alan yok.');
+    if ($fields === []) {
+        error('Guncellenecek alan yok.');
+    }
 
     $values[] = $uid;
     db()->prepare('UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($values);
 
-    AuditLog::write(AuditLog::ADMIN_ACTION, (string) $admin['sub'], 'user', $uid, [
-        'action'  => 'update',
+    AuditLog::write(AuditLog::ADMIN_ACTION, (string) ($actor['sub'] ?? ''), 'user', $uid, [
+        'action' => 'update',
         'changes' => $data,
     ]);
 
-    ok(null, 'Kullanıcı güncellendi.');
+    ok(null, 'Kullanici guncellendi.');
 }
 
-// DELETE /admin/users/{id} — hesap sil
 elseif ($id === 'users' && $sub !== null && $method === 'DELETE') {
+    adminRouteRequireAdmin($actor);
+
     $uid = (string) $sub;
+    if ($uid === (string) ($actor['sub'] ?? '')) {
+        error('Kendi hesabinizi silemezsiniz.');
+    }
 
-    if ($uid === (string) $admin['sub']) error('Kendi hesabınızı silemezsiniz.');
-
-    $chk = db()->prepare('SELECT id FROM users WHERE id = ? LIMIT 1');
-    $chk->execute([$uid]);
-    if (!$chk->fetch()) error('Kullanıcı bulunamadı.', 404);
+    $check = db()->prepare('SELECT id FROM users WHERE id = ? LIMIT 1');
+    $check->execute([$uid]);
+    if (!$check->fetch()) {
+        error('Kullanici bulunamadi.', 404);
+    }
 
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
 
-    AuditLog::write(AuditLog::ADMIN_ACTION, (string) $admin['sub'], 'user', $uid, [
+    AuditLog::write(AuditLog::ADMIN_ACTION, (string) ($actor['sub'] ?? ''), 'user', $uid, [
         'action' => 'delete',
     ]);
 
-    ok(null, 'Kullanıcı silindi.');
+    ok(null, 'Kullanici silindi.');
 }
 
-// ─── TOPLU İŞLEMLER ─────────────────────────
-
-// POST /admin/bulk/orders — toplu sipariş durumu güncelle
 elseif ($id === 'bulk' && $sub === 'orders' && $method === 'POST') {
-    $ids    = input('ids', []);
+    adminRouteRequireAdmin($actor);
+
+    $ids = input('ids', []);
     $status = adminNormalizeOrderStatus((string) input('status', ''));
-
     $validStatuses = StockService::allowedOrderStatuses();
-    if (!is_array($ids) || empty($ids)) error('Sipariş ID listesi gerekli.');
-    if (!in_array($status, $validStatuses))  error('Geçersiz durum.');
 
-    // Maksimum 100 kayıt
-    $ids = array_slice(array_values(array_filter(array_map(fn($value) => trim((string) $value), $ids))), 0, 100);
+    if (!is_array($ids) || empty($ids)) {
+        error('Siparis ID listesi gerekli.');
+    }
+    if (!in_array($status, $validStatuses, true)) {
+        error('Gecersiz durum.');
+    }
 
-    if (empty($ids)) error('Geçerli sipariş ID bulunamadı.');
+    $ids = array_slice(
+        array_values(array_filter(array_map(fn($value) => trim((string) $value), $ids))),
+        0,
+        100
+    );
+    if ($ids === []) {
+        error('Gecerli siparis ID bulunamadi.');
+    }
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $params       = array_merge([$status], $ids);
-
-    db()->prepare(
-        "UPDATE orders SET status = ? WHERE id IN ($placeholders)"
-    )->execute($params);
+    $params = array_merge([$status], $ids);
+    db()->prepare("UPDATE orders SET status = ? WHERE id IN ($placeholders)")->execute($params);
 
     foreach ($ids as $orderId) {
         if (in_array($status, ['paid', 'confirmed', 'processing', 'preparing', 'shipped', 'delivered'], true)) {
@@ -325,70 +350,80 @@ elseif ($id === 'bulk' && $sub === 'orders' && $method === 'POST') {
         }
     }
 
-    AuditLog::write(AuditLog::ADMIN_ACTION, (string) $admin['sub'], 'order', null, [
+    AuditLog::write(AuditLog::ADMIN_ACTION, (string) ($actor['sub'] ?? ''), 'order', null, [
         'action' => 'bulk_status',
-        'ids'    => $ids,
+        'ids' => $ids,
         'status' => $status,
     ]);
 
-    ok(['updated' => count($ids)], count($ids) . ' sipariş güncellendi.');
+    ok(['updated' => count($ids)], count($ids) . ' siparis guncellendi.');
 }
 
-// POST /admin/bulk/products — toplu ürün aktif/pasif
 elseif ($id === 'bulk' && $sub === 'products' && $method === 'POST') {
-    $ids      = input('ids', []);
+    adminRouteRequireProductManager($actor);
+
+    $ids = input('ids', []);
     $isActive = input('is_active', null);
 
-    if (!is_array($ids) || empty($ids)) error('Ürün ID listesi gerekli.');
-    if ($isActive === null) error('is_active alanı gerekli (true/false).');
+    if (!is_array($ids) || empty($ids)) {
+        error('Urun ID listesi gerekli.');
+    }
+    if ($isActive === null) {
+        error('is_active alani gerekli (true/false).');
+    }
 
-    $ids          = array_slice(array_values(array_filter(array_map(fn($value) => trim((string) $value), $ids))), 0, 100);
-    if (empty($ids)) error('Geçerli ürün ID bulunamadı.');
+    $ids = array_slice(
+        array_values(array_filter(array_map(fn($value) => trim((string) $value), $ids))),
+        0,
+        100
+    );
+    if ($ids === []) {
+        error('Gecerli urun ID bulunamadi.');
+    }
+
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
-    $active       = $isActive ? 1 : 0;
+    $active = $isActive ? 1 : 0;
 
-    db()->prepare(
-        "UPDATE products SET is_active = ? WHERE id IN ($placeholders)"
-    )->execute(array_merge([$active], $ids));
+    db()->prepare("UPDATE products SET is_active = ? WHERE id IN ($placeholders)")
+        ->execute(array_merge([$active], $ids));
 
-    AuditLog::write(AuditLog::ADMIN_ACTION, (string) $admin['sub'], 'product', null, [
-        'action'    => 'bulk_active',
-        'ids'       => $ids,
+    AuditLog::write(AuditLog::ADMIN_ACTION, (string) ($actor['sub'] ?? ''), 'product', null, [
+        'action' => 'bulk_active',
+        'ids' => $ids,
         'is_active' => $active,
     ]);
 
-    ok(['updated' => count($ids)], count($ids) . ' ürün güncellendi.');
+    ok(['updated' => count($ids)], count($ids) . ' urun guncellendi.');
 }
 
-// ─── AUDIT LOG ───────────────────────────────
-
-// GET /admin/audit-logs
 elseif ($id === 'audit-logs' && $method === 'GET') {
-    $page   = max(1, (int) ($_GET['page']  ?? 1));
-    $limit  = max(1, min(100, (int) ($_GET['limit'] ?? 50)));
+    adminRouteRequireAdmin($actor);
+
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $limit = max(1, min(100, (int) ($_GET['limit'] ?? 50)));
     $offset = ($page - 1) * $limit;
 
-    $where  = [];
+    $where = [];
     $params = [];
 
     if (!empty($_GET['action'])) {
-        $where[]  = 'action LIKE ?';
+        $where[] = 'action LIKE ?';
         $params[] = '%' . $_GET['action'] . '%';
     }
     if (!empty($_GET['user_id'])) {
-        $where[]  = 'user_id = ?';
+        $where[] = 'user_id = ?';
         $params[] = (string) $_GET['user_id'];
     }
     if (!empty($_GET['entity_type'])) {
-        $where[]  = 'entity_type = ?';
+        $where[] = 'entity_type = ?';
         $params[] = $_GET['entity_type'];
     }
     if (!empty($_GET['from'])) {
-        $where[]  = 'created_at >= ?';
+        $where[] = 'created_at >= ?';
         $params[] = $_GET['from'] . ' 00:00:00';
     }
     if (!empty($_GET['to'])) {
-        $where[]  = 'created_at <= ?';
+        $where[] = 'created_at <= ?';
         $params[] = $_GET['to'] . ' 23:59:59';
     }
 
@@ -400,7 +435,10 @@ elseif ($id === 'audit-logs' && $method === 'GET') {
 
     $stmt = db()->prepare(
         "SELECT al.*, "
-        . (tableHasColumn('users', 'username') ? 'u.username' : (tableHasColumn('users', 'name') ? 'u.name AS username' : 'u.email AS username')) . "
+        . (tableHasColumn('users', 'username')
+            ? 'u.username'
+            : (tableHasColumn('users', 'name') ? 'u.name AS username' : 'u.email AS username'))
+        . "
          FROM audit_logs al
          LEFT JOIN users u ON u.id = al.user_id
          $whereStr
@@ -417,11 +455,11 @@ elseif ($id === 'audit-logs' && $method === 'GET') {
     ok([
         'items' => $logs,
         'total' => $total,
-        'page'  => $page,
+        'page' => $page,
         'pages' => (int) ceil($total / $limit),
     ]);
 }
 
 else {
-    error('Admin endpoint bulunamadı.', 404);
+    error('Admin endpoint bulunamadi.', 404);
 }

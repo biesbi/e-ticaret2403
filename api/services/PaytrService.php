@@ -293,6 +293,8 @@ final class PaytrService {
         $updatedStmt->execute([$orderId]);
         $updatedOrder = $updatedStmt->fetch() ?: $order;
 
+        self::sendOrderReceivedEmail($orderId);
+
         $message = 'PayTR odemesi basarili bulundu; siparis paid olarak guncellendi.';
         if ($stockSyncMessage !== null) {
             $message .= ' Stok islemi otomatik tamamlanamadi: ' . $stockSyncMessage;

@@ -109,13 +109,89 @@ function authRequired(): array
         error('Token gecersiz veya suresi dolmus.', 401);
     }
 
+    $payload = hydrateAuthPayload($payload, substr($header, 7));
+    if (($payload['_user_found'] ?? true) === false) {
+        error('Kullanici bulunamadi.', 401);
+    }
+
     return $payload;
 }
 
 function adminRequired(): array
 {
     $payload = authRequired();
-    if (($payload['role'] ?? '') !== 'admin') {
+    if (!roleCanManageUsers((string) ($payload['role'] ?? ''))) {
+        error('Yetkiniz yok.', 403);
+    }
+
+    return $payload;
+}
+
+function normalizeUserRole(?string $role): string
+{
+    $role = strtolower(trim((string) $role));
+
+    return match ($role) {
+        'admin' => 'admin',
+        'product_editor', 'product-editor', 'producteditor' => 'product_editor',
+        default => 'customer',
+    };
+}
+
+function roleCanAccessAdminPanel(?string $role): bool
+{
+    return in_array(normalizeUserRole($role), ['admin', 'product_editor'], true);
+}
+
+function roleCanManageProducts(?string $role): bool
+{
+    return roleCanAccessAdminPanel($role);
+}
+
+function roleCanManageUsers(?string $role): bool
+{
+    return normalizeUserRole($role) === 'admin';
+}
+
+function hydrateAuthPayload(array $payload, ?string $token = null): array
+{
+    $userId = (string) ($payload['sub'] ?? '');
+    if ($userId === '') {
+        return $payload;
+    }
+
+    try {
+        $nameSelect = tableHasColumn('users', 'username')
+            ? 'username'
+            : (tableHasColumn('users', 'name') ? 'name AS username' : 'email AS username');
+        $stmt = db()->prepare("SELECT id, $nameSelect, role FROM users WHERE id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+
+        if ($user) {
+            $payload['_user_found'] = true;
+            $payload['db_role'] = $user['role'];
+            $payload['role'] = normalizeUserRole((string) ($user['role'] ?? ''));
+            $payload['username'] = $user['username'];
+        } else {
+            $payload['_user_found'] = false;
+            $payload['role'] = normalizeUserRole((string) ($payload['role'] ?? ''));
+        }
+    } catch (Throwable) {
+        $payload['role'] = normalizeUserRole((string) ($payload['role'] ?? ''));
+    }
+
+    if ($token !== null) {
+        $payload['_token'] = $token;
+    }
+
+    return $payload;
+}
+
+function productManagerRequired(): array
+{
+    $payload = authRequired();
+    if (!roleCanManageProducts((string) ($payload['role'] ?? ''))) {
         error('Yetkiniz yok.', 403);
     }
 
@@ -628,10 +704,16 @@ function legacyOrderItem(array $item): array
 
 function legacyUser(array $user): array
 {
+    $role = normalizeUserRole((string) ($user['role'] ?? ''));
+
     return [
         ...$user,
+        'role' => $role,
         'name' => $user['display_name'] ?? ($user['name'] ?? ($user['username'] ?? '')),
-        'isAdmin' => ($user['role'] ?? '') === 'admin',
+        'isAdmin' => roleCanAccessAdminPanel($role),
+        'isProductEditor' => $role === 'product_editor',
+        'canAccessAdminPanel' => roleCanAccessAdminPanel($role),
+        'canManageProducts' => roleCanManageProducts($role),
         'orders' => $user['orders'] ?? [],
     ];
 }

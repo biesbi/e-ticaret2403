@@ -2432,7 +2432,7 @@
 				};
 				var normalizeAdminEntryState = function () {
 					var token = safeParseToken();
-					var isAdminToken = !!(token && token.role === 'admin');
+					var isAdminToken = !!(token && (token.role === 'admin' || token.role === 'product_editor'));
 					var currentHash = (window.location.hash || '').toLowerCase();
 					var hasAdminHash = currentHash === '#admin';
 					var hasAdminFlag = localStorage.getItem('admin_panel_open') === '1';
@@ -5007,7 +5007,7 @@
 			} catch (error) { }
 		})();
 	</script>
-	<script type="module" crossorigin src="/assets/index-Du6Gv6sE-coupon.js"></script>
+	<script type="module" crossorigin src="/assets/index-Du6Gv6sE-coupon.js?v=20260409-product-editor-1"></script>
 	<link rel="stylesheet" crossorigin href="/assets/index--Mnj2wD-.css">
 	<style id="final-mobile-fixes">
 		.app-product-card,
@@ -10273,6 +10273,13 @@
 				}
 			};
 
+				if (false && inlineDetail) {
+					inlineDetail.innerHTML = '<span class="admin-order-address-inline-label">Adres Açıklaması</span><div class="admin-order-address-inline-text">'
+						+ escapeHtml(detailedAddress !== '' ? detailedAddress : textNode.textContent)
+						+ '</div>';
+				}
+			};
+
 			var enhanceOrderCard = function (card) {
 				if (!card) return;
 				normalizeCardControls(card);
@@ -10423,7 +10430,10 @@
 					'.admin-order-items-list .admin-order-item-total{display:block;margin-top:2px;font-size:.86rem;color:#0f172a;font-weight:800;}',
 					'.admin-order-address-panel{margin-top:10px;padding:0;border:0;background:transparent;}',
 					'.admin-order-address-label{display:block;margin:0 0 6px;color:#64748b;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}',
-					'.admin-order-address-text{margin:0;color:#334155;font-size:.9rem;line-height:1.6;white-space:normal;word-break:break-word;}'
+					'.admin-order-address-text{margin:0;color:#334155;font-size:.9rem;line-height:1.6;white-space:normal;word-break:break-word;}',
+					'.admin-order-address-inline-detail{margin-top:12px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;}',
+					'.admin-order-address-inline-label{display:block;margin:0 0 4px;color:#64748b;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}',
+					'.admin-order-address-inline-text{margin:0;color:#0f172a;font-size:.92rem;line-height:1.6;font-weight:600;white-space:normal;word-break:break-word;}'
 				].join('');
 				document.head.appendChild(style);
 			};
@@ -10504,6 +10514,15 @@
 
 				var shipping = detail && detail.shippingAddress ? detail.shippingAddress : {};
 				var detailedAddress = String(shipping.address_detail || shipping.addressDetail || '').trim();
+				var primaryInfo = Array.prototype.slice.call(deliveryColumn.children).find(function (node) {
+					return node && node.tagName === 'DIV' && !node.classList.contains('admin-order-address-panel');
+				});
+				var inlineDetail = deliveryColumn.querySelector('.admin-order-address-inline-detail');
+				if (!inlineDetail && primaryInfo) {
+					inlineDetail = document.createElement('div');
+					inlineDetail.className = 'admin-order-address-inline-detail';
+					primaryInfo.appendChild(inlineDetail);
+				}
 				var addressParts = [
 					shipping.city,
 					shipping.district,
@@ -10533,9 +10552,44 @@
 				fetchOrderDetail(orderId).then(function (detail) {
 					if (!detail) return;
 					if (contentColumn) renderItems(contentColumn, detail);
-					if (deliveryColumn) renderAddress(deliveryColumn, detail);
+					if (deliveryColumn) {
+						renderAddress(deliveryColumn, detail);
+						renderInlineAddressDetail(deliveryColumn, detail);
+					}
 				});
 			};
+
+			function renderInlineAddressDetail(deliveryColumn, detail) {
+				if (!deliveryColumn) return;
+
+				var shipping = detail && detail.shippingAddress ? detail.shippingAddress : {};
+				var detailedAddress = String(shipping.address_detail || shipping.addressDetail || '').trim();
+				var primaryInfo = Array.prototype.slice.call(deliveryColumn.children).find(function (node) {
+					return node && node.tagName === 'DIV' && !node.classList.contains('admin-order-address-panel');
+				});
+				if (!primaryInfo) return;
+
+				var inlineDetail = deliveryColumn.querySelector('.admin-order-address-inline-detail');
+				if (!inlineDetail) {
+					inlineDetail = document.createElement('div');
+					inlineDetail.className = 'admin-order-address-inline-detail';
+					primaryInfo.appendChild(inlineDetail);
+				}
+
+				var fallbackText = [
+					shipping.neighborhood,
+					shipping.street,
+					shipping.district,
+					shipping.city
+				].filter(function (part) {
+					return String(part || '').trim() !== '';
+				}).join(', ');
+
+				var inlineText = detailedAddress !== '' ? detailedAddress : (fallbackText || 'Adres açıklaması girilmemiş.');
+				inlineDetail.innerHTML = '<span class="admin-order-address-inline-label">Adres Açıklaması</span><div class="admin-order-address-inline-text">'
+					+ escapeHtml(inlineText)
+					+ '</div>';
+			}
 
 			var enhanceAdminOrderCards = function () {
 				if (!isAdminOrdersView()) return;
@@ -11334,6 +11388,375 @@
 				new MutationObserver(injectCsvButton).observe(document.body, { childList: true, subtree: true });
 			}
 			document.addEventListener('DOMContentLoaded', injectCsvButton);
+		})();
+	</script>
+
+	<script>
+		(function () {
+			'use strict';
+
+			var refreshTimer = null;
+			var couponStatsCache = null;
+			var couponStatsToken = null;
+
+			function getToken() {
+				try { return localStorage.getItem('token') || ''; } catch (e) { return ''; }
+			}
+
+			function normalizeText(value) {
+				return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+			}
+
+			function isAdminCouponsPage() {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				return !!title && normalizeText(title.textContent).indexOf('kupon') !== -1;
+			}
+
+			function findCouponsTable() {
+				var views = Array.prototype.slice.call(document.querySelectorAll('.admin-view'));
+				return views.reduce(function (found, view) {
+					if (found) return found;
+					var title = view.querySelector('.admin-header h1');
+					if (!title || normalizeText(title.textContent).indexOf('kupon') === -1) return null;
+					return view.querySelector('.admin-table');
+				}, null);
+			}
+
+			function formatCurrency(value) {
+				var amount = Number(value || 0);
+				return amount.toLocaleString('tr-TR', {
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2
+				}) + ' ₺';
+			}
+
+			function getTableSignature(table) {
+				var rows = Array.prototype.slice.call(table.querySelectorAll('tbody tr'));
+				return rows.map(function (row) {
+					var cell = row.children && row.children[0];
+					return cell ? cell.textContent.replace(/\s+/g, '').toUpperCase() : '';
+				}).join('|');
+			}
+
+			function fetchCouponStats(forceRefresh) {
+				var token = getToken();
+				if (!token) return Promise.resolve({});
+				if (!forceRefresh && couponStatsCache && couponStatsToken === token) {
+					return Promise.resolve(couponStatsCache);
+				}
+
+				couponStatsToken = token;
+				return fetch('/api/coupons', {
+					headers: { 'Authorization': 'Bearer ' + token }
+				})
+					.then(function (response) {
+						if (!response.ok) return [];
+						return response.json();
+					})
+					.then(function (rows) {
+						var stats = {};
+						(Array.isArray(rows) ? rows : []).forEach(function (row) {
+							var code = String((row && row.code) || '').trim().toUpperCase();
+							if (!code) return;
+							stats[code] = {
+								sales_count: Number(row.sales_count || 0),
+								sales_total: Number(row.sales_total || 0)
+							};
+						});
+						couponStatsCache = stats;
+						return stats;
+					})
+					.catch(function () {
+						couponStatsCache = {};
+						return couponStatsCache;
+					});
+			}
+
+			function ensureSalesHeader(table) {
+				var headerRow = table.querySelector('thead tr');
+				if (!headerRow) return -1;
+
+				var header = headerRow.querySelector('[data-coupon-sales-header="1"]');
+				if (!header) {
+					header = document.createElement('th');
+					header.textContent = 'Satış Toplamı';
+					header.setAttribute('data-coupon-sales-header', '1');
+
+					var usageHeader = Array.prototype.slice.call(headerRow.children).find(function (cell) {
+						return normalizeText(cell.textContent).indexOf('kullan') !== -1;
+					});
+
+					if (usageHeader && usageHeader.nextSibling) {
+						headerRow.insertBefore(header, usageHeader.nextSibling);
+					} else {
+						headerRow.appendChild(header);
+					}
+				}
+
+				return Array.prototype.indexOf.call(headerRow.children, header);
+			}
+
+			function syncCouponSalesColumn(table, stats) {
+				var targetIndex = ensureSalesHeader(table);
+				if (targetIndex === -1) return;
+
+				Array.prototype.slice.call(table.querySelectorAll('tbody tr')).forEach(function (row) {
+					var codeCell = row.children && row.children[0];
+					if (!codeCell) return;
+
+					var code = codeCell.textContent.replace(/\s+/g, ' ').trim().toUpperCase();
+					var sale = stats[code] || { sales_count: 0, sales_total: 0 };
+					var cell = row.querySelector('[data-coupon-sales-cell="1"]');
+
+					if (!cell) {
+						cell = document.createElement('td');
+						cell.setAttribute('data-coupon-sales-cell', '1');
+					}
+
+					if (sale.sales_count > 0) {
+						cell.innerHTML = ''
+							+ '<div style="font-weight:700;color:#0f172a;">' + formatCurrency(sale.sales_total) + '</div>'
+							+ '<div style="font-size:0.75rem;color:#64748b;margin-top:4px;">' + sale.sales_count + ' sipariş</div>';
+					} else {
+						cell.innerHTML = '<span style="color:#94a3b8;">Satış yok</span>';
+					}
+
+					if (row.children[targetIndex] !== cell) {
+						if (row.children[targetIndex]) {
+							row.insertBefore(cell, row.children[targetIndex]);
+						} else {
+							row.appendChild(cell);
+						}
+					}
+				});
+			}
+
+			function enhanceCouponSales(forceRefresh) {
+				if (!isAdminCouponsPage()) return;
+				var table = findCouponsTable();
+				if (!table) return;
+
+				var signature = getTableSignature(table);
+				if (!forceRefresh && table.getAttribute('data-coupon-sales-signature') === signature && couponStatsCache) {
+					syncCouponSalesColumn(table, couponStatsCache);
+					return;
+				}
+
+				fetchCouponStats(forceRefresh).then(function (stats) {
+					syncCouponSalesColumn(table, stats);
+					table.setAttribute('data-coupon-sales-signature', signature);
+				});
+			}
+
+			function queueCouponSalesEnhancement(forceRefresh) {
+				clearTimeout(refreshTimer);
+				refreshTimer = setTimeout(function () {
+					enhanceCouponSales(forceRefresh === true);
+				}, 120);
+			}
+
+			document.addEventListener('DOMContentLoaded', function () {
+				queueCouponSalesEnhancement(true);
+			});
+
+			if (window.MutationObserver) {
+				new MutationObserver(function () {
+					queueCouponSalesEnhancement(false);
+				}).observe(document.body, { childList: true, subtree: true });
+			}
+		})();
+	</script>
+	<style>
+		body.product-editor-lock .admin-view,
+		body.product-editor-lock .admin-layout,
+		body.product-editor-lock .admin-panel {
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		body.product-editor-lock.product-editor-products-view .admin-view,
+		body.product-editor-lock.product-editor-products-view .admin-layout,
+		body.product-editor-lock.product-editor-products-view .admin-panel {
+			opacity: 1;
+			pointer-events: auto;
+		}
+	</style>
+	<script>
+		(function () {
+			'use strict';
+
+			var observer = null;
+
+			function readTokenPayload() {
+				try {
+					var token = localStorage.getItem('token');
+					if (!token) return null;
+					return JSON.parse(atob(token.split('.')[1]));
+				} catch (error) {
+					return null;
+				}
+			}
+
+			function normalizeText(value) {
+				return String(value || '')
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\u0131/g, 'i')
+					.replace(/\u00fc/g, 'u')
+					.replace(/\u00f6/g, 'o')
+					.replace(/\u00e7/g, 'c')
+					.replace(/\u015f/g, 's')
+					.replace(/\u011f/g, 'g')
+					.replace(/\s+/g, ' ')
+					.trim();
+			}
+
+			function isProductEditorToken() {
+				var payload = readTokenPayload();
+				return !!(payload && payload.role === 'product_editor');
+			}
+
+			function isAdminRootVisible() {
+				return !!document.querySelector('.admin-view, .admin-layout, .admin-panel');
+			}
+
+			function isProductsView() {
+				var title = document.querySelector('.admin-view .admin-header h1');
+				if (title && normalizeText(title.textContent) === 'urunleri yonet') {
+					return true;
+				}
+
+				var table = document.querySelector('.admin-view .admin-table');
+				if (table) {
+					var headerText = normalizeText(table.querySelector('thead') ? table.querySelector('thead').textContent : '');
+					if (headerText.indexOf('baslik') !== -1 && headerText.indexOf('marka') !== -1 && headerText.indexOf('fiyat') !== -1) {
+						return true;
+					}
+				}
+
+				var form = document.querySelector('.admin-view form');
+				if (form) {
+					var formText = normalizeText(form.textContent);
+					if (formText.indexOf('fiyat') !== -1 && formText.indexOf('stok') !== -1 && formText.indexOf('kategori') !== -1) {
+						return true;
+					}
+				}
+
+				return false;
+			}
+
+			function getAdminNavItems() {
+				return Array.prototype.slice.call(document.querySelectorAll(
+					'.admin-sidebar a, .admin-sidebar button, .sidebar .menu-section a, .sidebar .menu-section button, [class*="sidebar"] a, [class*="sidebar"] button'
+				));
+			}
+
+			function isUtilityNav(text) {
+				return text.indexOf('cikis') !== -1
+					|| text.indexOf('logout') !== -1
+					|| text.indexOf('profil') !== -1
+					|| text.indexOf('hesab') !== -1;
+			}
+
+			function isProductNav(item) {
+				var combined = normalizeText(
+					(item && item.textContent) + ' ' +
+					(item && item.getAttribute ? item.getAttribute('aria-label') || '' : '') + ' ' +
+					(item && item.getAttribute ? item.getAttribute('title') || '' : '') + ' ' +
+					(item && item.getAttribute ? item.getAttribute('href') || '' : '')
+				);
+
+				return combined.indexOf('urun') !== -1
+					|| combined.indexOf('envanter') !== -1
+					|| combined.indexOf('koleksiyon') !== -1
+					|| combined.indexOf('product') !== -1;
+			}
+
+			function hideNonProductNavItems() {
+				getAdminNavItems().forEach(function (item) {
+					var text = normalizeText(item.textContent || '');
+					if (!text || isProductNav(item) || isUtilityNav(text)) {
+						return;
+					}
+
+					var wrapper = item.closest('li, [class*="menu-item"], [class*="sidebar-item"], [class*="nav-item"]');
+					if (wrapper) {
+						wrapper.style.display = 'none';
+						wrapper.setAttribute('data-product-editor-hidden', '1');
+						return;
+					}
+
+					item.style.display = 'none';
+					item.setAttribute('data-product-editor-hidden', '1');
+				});
+			}
+
+			function clickProductsNav() {
+				var productItem = getAdminNavItems().find(function (item) {
+					if (!isProductNav(item)) return false;
+					if (item.disabled) return false;
+					var style = window.getComputedStyle(item);
+					return style.display !== 'none' && style.visibility !== 'hidden';
+				});
+
+				if (productItem) {
+					productItem.click();
+				}
+			}
+
+			function relabelEntryButton() {
+				Array.prototype.slice.call(document.querySelectorAll('button')).forEach(function (button) {
+					var text = normalizeText(button.textContent || '');
+					if (text.indexOf('yonetim paneline git') === -1) return;
+					button.textContent = 'Urun Yonetimine Git';
+				});
+			}
+
+			function syncProductEditorShell() {
+				if (!isProductEditorToken()) {
+					document.body.classList.remove('product-editor-lock', 'product-editor-products-view');
+					return;
+				}
+
+				document.body.classList.add('product-editor-lock');
+				relabelEntryButton();
+
+				if (!isAdminRootVisible()) {
+					document.body.classList.remove('product-editor-products-view');
+					return;
+				}
+
+				hideNonProductNavItems();
+
+				if (isProductsView()) {
+					document.body.classList.add('product-editor-products-view');
+					return;
+				}
+
+				document.body.classList.remove('product-editor-products-view');
+				clickProductsNav();
+			}
+
+			function init() {
+				if (!isProductEditorToken()) return;
+
+				syncProductEditorShell();
+
+				if (window.MutationObserver) {
+					if (observer) observer.disconnect();
+					observer = new MutationObserver(function () {
+						syncProductEditorShell();
+					});
+					observer.observe(document.body, { childList: true, subtree: true });
+				}
+
+				setInterval(syncProductEditorShell, 1200);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', init);
+			} else {
+				init();
+			}
 		})();
 	</script>
 </body>

@@ -20,7 +20,10 @@ $rows = db()->query(
 )->fetchAll();
 
 foreach ($rows as &$row) {
-    $row['role_label'] = ($row['role'] ?? 'user') === 'admin' ? 'admin' : 'customer';
+    $normalizedRole = normalizeUserRole((string) ($row['role'] ?? 'user'));
+    $row['role_label'] = $normalizedRole === 'admin'
+        ? 'admin'
+        : ($normalizedRole === 'product_editor' ? 'product_editor' : 'customer');
 }
 
 ok($rows);

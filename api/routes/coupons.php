@@ -16,6 +16,8 @@ function couponValue(string $column, mixed $default = null): mixed {
 function couponResponse(array $row): array {
     $type = $row['discount_type'] ?? ($row['type'] ?? 'percentage');
     $minOrder = isset($row['min_order_amount']) ? (float) $row['min_order_amount'] : (float) ($row['min_order_total'] ?? 0);
+    $salesCount = (int) ($row['sales_count'] ?? 0);
+    $salesTotal = (float) ($row['sales_total'] ?? 0);
 
     return [
         ...$row,
@@ -27,12 +29,76 @@ function couponResponse(array $row): array {
         'used_count' => (int) ($row['used_count'] ?? 0),
         'is_active' => (int) ($row['is_active'] ?? 1),
         'value' => (float) ($row['value'] ?? 0),
+        'sales_count' => $salesCount,
+        'salesCount' => $salesCount,
+        'sales_total' => $salesTotal,
+        'salesTotal' => $salesTotal,
     ];
+}
+
+function couponSalesStats(): array
+{
+    if (
+        !tableExists('orders')
+        || !tableHasColumn('orders', 'coupon_code')
+        || !tableHasColumn('orders', 'total')
+    ) {
+        return [];
+    }
+
+    $saleConditions = [];
+
+    if (tableHasColumn('orders', 'payment_status')) {
+        $saleConditions[] = "LOWER(COALESCE(payment_status, '')) IN ('paid', 'success', 'confirmed')";
+    }
+
+    if (tableHasColumn('orders', 'payment_method')) {
+        $methodCondition = "LOWER(COALESCE(payment_method, '')) IN ('bank_transfer', 'transfer', 'cash_on_delivery')";
+        if (tableHasColumn('orders', 'status')) {
+            $methodCondition .= " AND LOWER(COALESCE(status, '')) NOT IN ('pending', 'failed', 'cancelled')";
+        }
+        $saleConditions[] = '(' . $methodCondition . ')';
+    }
+
+    if ($saleConditions === [] && tableHasColumn('orders', 'status')) {
+        $saleConditions[] = "LOWER(COALESCE(status, '')) IN ('confirmed', 'processing', 'preparing', 'shipped', 'delivered')";
+    }
+
+    if ($saleConditions === []) {
+        return [];
+    }
+
+    $rows = db()->query(
+        'SELECT UPPER(TRIM(coupon_code)) AS code,
+                COUNT(*) AS sales_count,
+                COALESCE(SUM(total), 0) AS sales_total
+         FROM orders
+         WHERE coupon_code IS NOT NULL
+           AND TRIM(coupon_code) <> \'\'
+           AND (' . implode(' OR ', $saleConditions) . ')
+         GROUP BY UPPER(TRIM(coupon_code))'
+    )->fetchAll();
+
+    $stats = [];
+    foreach ($rows as $row) {
+        $code = strtoupper(trim((string) ($row['code'] ?? '')));
+        if ($code === '') {
+            continue;
+        }
+
+        $stats[$code] = [
+            'sales_count' => (int) ($row['sales_count'] ?? 0),
+            'sales_total' => (float) ($row['sales_total'] ?? 0),
+        ];
+    }
+
+    return $stats;
 }
 
 switch (true) {
     case $method === 'GET' && $id === null:
         Auth::requireAdmin();
+        $salesStats = couponSalesStats();
         $select = [
             'id',
             'code',
@@ -48,7 +114,16 @@ switch (true) {
         $rows = db()->query(
             'SELECT ' . implode(', ', $select) . ' FROM coupons ORDER BY created_at DESC'
         )->fetchAll();
-        ok(array_map(fn(array $row) => couponResponse($row), $rows));
+        ok(array_map(
+            static function (array $row) use ($salesStats): array {
+                $code = strtoupper(trim((string) ($row['code'] ?? '')));
+                return couponResponse([
+                    ...$row,
+                    ...($salesStats[$code] ?? []),
+                ]);
+            },
+            $rows
+        ));
         break;
 
     case $method === 'POST' && $id === null:

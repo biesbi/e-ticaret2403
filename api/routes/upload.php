@@ -13,7 +13,7 @@ require_once __DIR__ . '/../services/UploadService.php';
 
 // ─── POST /upload/product-image ──────────────
 if ($id === 'product-image' && $sub === null && $method === 'POST') {
-    $admin = Auth::requireAdmin();
+    $admin = Auth::requireProductManager();
 
     $productId = trim((string) ($_POST['product_id'] ?? ''));
     $isPrimary = filter_var($_POST['is_primary'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -95,7 +95,7 @@ elseif ($id === 'product-image' && $sub !== null && $method === 'GET') {
 
 // ─── PATCH /upload/product-image/{image_id} ──
 elseif ($id === 'product-image' && is_numeric($sub) && $method === 'PATCH') {
-    Auth::requireAdmin();
+    Auth::requireProductManager();
     $imageId = (int) $sub;
 
     // Görsel var mı?
@@ -139,7 +139,7 @@ elseif ($id === 'product-image' && is_numeric($sub) && $method === 'PATCH') {
 
 // ─── DELETE /upload/product-image/{image_id} ─
 elseif ($id === 'product-image' && is_numeric($sub) && $method === 'DELETE') {
-    $admin   = Auth::requireAdmin();
+    $admin   = Auth::requireProductManager();
     $imageId = (int) $sub;
 
     $deleted = UploadService::deleteProductImage($imageId, isset($admin['sub']) ? (string) $admin['sub'] : null);

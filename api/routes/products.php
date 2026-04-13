@@ -6,7 +6,7 @@ function productColumns(string $table, array $columns): array {
     return array_values(array_filter($columns, fn(string $column) => tableHasColumn($table, $column)));
 }
 
-function productRequestIsAdmin(): bool {
+function productRequestCanManageProducts(): bool {
     $authHeader = $_SERVER['HTTP_AUTHORIZATION']
         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? (function_exists('getallheaders') ? (getallheaders()['Authorization'] ?? '') : '')
@@ -16,7 +16,16 @@ function productRequestIsAdmin(): bool {
     }
 
     $payload = jwtDecode(substr($authHeader, 7));
-    return is_array($payload) && (($payload['role'] ?? '') === 'admin');
+    if (!is_array($payload)) {
+        return false;
+    }
+
+    $payload = hydrateAuthPayload($payload);
+    if (($payload['_user_found'] ?? true) === false) {
+        return false;
+    }
+
+    return roleCanManageProducts((string) ($payload['role'] ?? ''));
 }
 
 function productNullableForeignKey(mixed $value): ?string {
@@ -351,7 +360,7 @@ if ($id === 'categories') {
             ok($rows);
 
         case $method === 'POST' && $sub === null:
-            adminRequired();
+            productManagerRequired();
             $name = trim((string) input('name', ''));
             if ($name === '') error('Kategori adi gerekli.');
 
@@ -380,7 +389,7 @@ if ($id === 'categories') {
             ok(['id' => $insertValues[0], 'name' => $name, 'slug' => $slug]);
 
         case $method === 'DELETE' && $sub !== null:
-            adminRequired();
+            productManagerRequired();
             $categoryId = (string) $sub;
             $stmt = db()->prepare('DELETE FROM categories WHERE id = ?');
             $stmt->execute([$categoryId]);
@@ -401,7 +410,7 @@ if ($id === 'brands') {
             ok($rows);
 
         case $method === 'POST' && $sub === null:
-            adminRequired();
+            productManagerRequired();
             $name = trim((string) input('name', ''));
             if ($name === '') error('Marka adi gerekli.');
 
@@ -412,7 +421,7 @@ if ($id === 'brands') {
             ok(['id' => $brandId, 'name' => $name, 'slug' => $slug]);
 
         case $method === 'DELETE' && $sub !== null:
-            adminRequired();
+            productManagerRequired();
             $brandId = (string) $sub;
             $stmt = db()->prepare('DELETE FROM brands WHERE id = ?');
             $stmt->execute([$brandId]);
@@ -429,9 +438,9 @@ if ($id === 'brands') {
 if ($id === null) {
     switch ($method) {
         case 'GET':
-            $isAdmin = productRequestIsAdmin();
+            $canManageProducts = productRequestCanManageProducts();
             $where = [];
-            if (tableHasColumn('products', 'is_active') && !$isAdmin && empty($_GET['include_inactive'])) {
+            if (tableHasColumn('products', 'is_active') && !$canManageProducts && empty($_GET['include_inactive'])) {
                 $where[] = 'p.is_active = 1';
             }
             if ($where === []) {
@@ -485,7 +494,7 @@ if ($id === null) {
                 : '';
 
             if (strtolower(trim((string) ($_GET['format'] ?? ''))) === 'csv') {
-                adminRequired();
+                productManagerRequired();
 
                 $stmt = db()->prepare(
                     "SELECT p.*, c.name AS category_name, b.name AS brand_name{$primaryImgSub}
@@ -540,7 +549,7 @@ if ($id === null) {
             ]);
 
         case 'POST':
-            adminRequired();
+            productManagerRequired();
             $name = trim((string) input('name', ''));
             if ($name === '') error('Urun adi gerekli.');
 
@@ -661,7 +670,7 @@ if ($id !== null && $sub === null) {
 
         case 'PATCH':
         case 'PUT':
-            adminRequired();
+            productManagerRequired();
             $find = db()->prepare('SELECT * FROM products WHERE id = ? LIMIT 1');
             $find->execute([$productId]);
             $current = $find->fetch();
@@ -718,7 +727,7 @@ if ($id !== null && $sub === null) {
             ok(legacyProduct($find->fetch() ?: $current));
 
         case 'DELETE':
-            adminRequired();
+            productManagerRequired();
             $stmt = db()->prepare('DELETE FROM products WHERE id = ?');
             $stmt->execute([$productId]);
             if ($stmt->rowCount() === 0) error('Urun bulunamadi.', 404);
@@ -732,7 +741,7 @@ if ($id !== null && $sub === null) {
 // ─── POST /products/{id}/migrate-legacy-image ─
 // Eski base64 veya URL olarak saklanan img'i product_images tablosuna taşır
 if ($method === 'POST' && $sub === 'migrate-legacy-image') {
-    Auth::requireAdmin();
+    $adminPayload = Auth::requireProductManager();
 
     $prod = db()->prepare('SELECT id, img, images FROM products WHERE id = ? LIMIT 1');
     $prod->execute([$productId]);
