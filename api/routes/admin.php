@@ -90,6 +90,7 @@ function adminHydrateUserRow(array $row): array
     $row['is_active'] = isset($row['is_active']) ? (int) $row['is_active'] : 1;
     $verifiedFlag = isset($row['email_verified']) ? (int) $row['email_verified'] : (!empty($row['email_verified_at']) ? 1 : 0);
     $row['is_verified'] = $verifiedFlag === 1 || !empty($row['email_verified_at']);
+    $row['is_primary_admin'] = isPrimaryAdminEmail((string) ($row['email'] ?? ''));
     unset($row['email_verified']);
 
     return $row;
@@ -252,11 +253,15 @@ elseif ($id === 'users' && $sub !== null && $method === 'PATCH') {
         error('Kendi hesabinizi bu yolla degistiremezsiniz.');
     }
 
-    $stmt = db()->prepare('SELECT id, role FROM users WHERE id = ? LIMIT 1');
+    $stmt = db()->prepare('SELECT id, role, email FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([$uid]);
     $user = $stmt->fetch();
     if (!$user) {
         error('Kullanici bulunamadi.', 404);
+    }
+
+    if (isPrimaryAdminEmail((string) ($user['email'] ?? ''))) {
+        error('Ana admin hesabi buradan degistirilemez.', 403);
     }
 
     $data = body();
@@ -267,6 +272,9 @@ elseif ($id === 'users' && $sub !== null && $method === 'PATCH') {
         $nextRole = adminNormalizeRoleFilter((string) $data['role']);
         if ($nextRole === null) {
             error('Gecersiz rol.');
+        }
+        if ($nextRole === 'admin') {
+            error('Tam admin rolu sadece ' . primaryAdminEmail() . ' hesabinda olabilir.', 422);
         }
         $fields[] = 'role = ?';
         $values[] = $nextRole;
@@ -300,10 +308,14 @@ elseif ($id === 'users' && $sub !== null && $method === 'DELETE') {
         error('Kendi hesabinizi silemezsiniz.');
     }
 
-    $check = db()->prepare('SELECT id FROM users WHERE id = ? LIMIT 1');
+    $check = db()->prepare('SELECT id, email FROM users WHERE id = ? LIMIT 1');
     $check->execute([$uid]);
-    if (!$check->fetch()) {
+    $targetUser = $check->fetch();
+    if (!$targetUser) {
         error('Kullanici bulunamadi.', 404);
+    }
+    if (isPrimaryAdminEmail((string) ($targetUser['email'] ?? ''))) {
+        error('Ana admin hesabi silinemez.', 403);
     }
 
     db()->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);

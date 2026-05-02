@@ -138,6 +138,17 @@ function normalizeUserRole(?string $role): string
     };
 }
 
+function primaryAdminEmail(): string
+{
+    return 'admin@boomeritems.com';
+}
+
+function isPrimaryAdminEmail(?string $email): bool
+{
+    $normalized = strtolower(trim((string) $email));
+    return $normalized !== '' && $normalized === primaryAdminEmail();
+}
+
 function roleCanAccessAdminPanel(?string $role): bool
 {
     return in_array(normalizeUserRole($role), ['admin', 'product_editor'], true);
@@ -587,6 +598,23 @@ function legacyOrder(array $order): array
 
     $status = (string) ($order['status'] ?? ($order['payment_status'] ?? 'pending'));
     $adminStatus = orderAdminDisplayMeta($order);
+    $shippingFullname = $order['fullname'] ?? ($shipping['fullname'] ?? ($shipping['name'] ?? null));
+    $shippingEmail = $order['email'] ?? ($shipping['email'] ?? null);
+    $shippingPhone = $order['phone'] ?? ($shipping['phone'] ?? null);
+    $shippingCity = $order['city'] ?? ($shipping['city'] ?? null);
+    $shippingDistrict = $order['district'] ?? ($shipping['district'] ?? null);
+    $shippingNeighborhood = $order['neighborhood'] ?? ($shipping['neighborhood'] ?? null);
+    $shippingStreet = $order['street'] ?? ($shipping['street'] ?? null);
+    $shippingAddressDetail = $order['address_detail']
+        ?? ($order['addressDetail'] ?? ($shipping['address_detail'] ?? ($shipping['addressDetail'] ?? null)));
+    $shippingFullAddressParts = array_values(array_filter([
+        $shippingAddressDetail,
+        $shippingNeighborhood,
+        $shippingStreet,
+        $shippingDistrict,
+        $shippingCity,
+    ], static fn(mixed $part): bool => trim((string) $part) !== ''));
+    $shippingFullAddress = $shippingFullAddressParts ? implode(', ', $shippingFullAddressParts) : null;
 
     return [
         ...$order,
@@ -598,15 +626,29 @@ function legacyOrder(array $order): array
         'cargoNumber' => $order['tracking_no'] ?? ($order['cargo_number'] ?? ($order['cargoNumber'] ?? null)),
         'cargoCompany' => $order['cargo_carrier'] ?? ($order['cargo_company'] ?? ($order['cargoCompany'] ?? null)),
         'order_note' => $order['order_note'] ?? ($order['orderNote'] ?? null),
+        'fullname' => $shippingFullname,
+        'email' => $shippingEmail,
+        'phone' => $shippingPhone,
+        'city' => $shippingCity,
+        'district' => $shippingDistrict,
+        'neighborhood' => $shippingNeighborhood,
+        'street' => $shippingStreet,
+        'address_detail' => $shippingAddressDetail,
+        'addressDetail' => $shippingAddressDetail,
+        'full_address' => $shippingFullAddress,
+        'fullAddress' => $shippingFullAddress,
         'shippingAddress' => [
-            'fullname' => $order['fullname'] ?? ($shipping['fullname'] ?? null),
-            'email' => $order['email'] ?? ($shipping['email'] ?? null),
-            'phone' => $order['phone'] ?? ($shipping['phone'] ?? null),
-            'city' => $order['city'] ?? ($shipping['city'] ?? null),
-            'district' => $order['district'] ?? ($shipping['district'] ?? null),
-            'neighborhood' => $order['neighborhood'] ?? ($shipping['neighborhood'] ?? null),
-            'street' => $order['street'] ?? ($shipping['street'] ?? null),
-            'address_detail' => $order['address_detail'] ?? ($shipping['address_detail'] ?? null),
+            'fullname' => $shippingFullname,
+            'email' => $shippingEmail,
+            'phone' => $shippingPhone,
+            'city' => $shippingCity,
+            'district' => $shippingDistrict,
+            'neighborhood' => $shippingNeighborhood,
+            'street' => $shippingStreet,
+            'address_detail' => $shippingAddressDetail,
+            'addressDetail' => $shippingAddressDetail,
+            'full_address' => $shippingFullAddress,
+            'fullAddress' => $shippingFullAddress,
         ],
         'total' => isset($order['total']) ? (float) $order['total'] : 0.0,
         'subtotal' => isset($order['subtotal']) ? (float) $order['subtotal'] : 0.0,
@@ -711,6 +753,7 @@ function legacyUser(array $user): array
         'role' => $role,
         'name' => $user['display_name'] ?? ($user['name'] ?? ($user['username'] ?? '')),
         'isAdmin' => roleCanAccessAdminPanel($role),
+        'isPrimaryAdmin' => isPrimaryAdminEmail((string) ($user['email'] ?? '')),
         'isProductEditor' => $role === 'product_editor',
         'canAccessAdminPanel' => roleCanAccessAdminPanel($role),
         'canManageProducts' => roleCanManageProducts($role),
