@@ -37,6 +37,44 @@ function productNullableForeignKey(mixed $value): ?string {
     return $value === '' ? null : $value;
 }
 
+function productSparePartsWhereClause(): string {
+    return "(
+        (
+            COALESCE(c.name, '') LIKE ? AND
+            (COALESCE(c.name, '') LIKE ? OR COALESCE(c.name, '') LIKE ? OR COALESCE(c.name, '') LIKE ?)
+        )
+        OR (
+            COALESCE(c.slug, '') LIKE ? AND
+            (COALESCE(c.slug, '') LIKE ? OR COALESCE(c.slug, '') LIKE ?)
+        )
+    )";
+}
+
+function productSparePartsWhereParams(): array {
+    return [
+        '%Yedek%',
+        '%Parça%',
+        '%Parca%',
+        '%parça%',
+        '%yedek%',
+        '%parca%',
+        '%parça%',
+    ];
+}
+
+function productTruthyQueryFlag(string ...$names): bool {
+    foreach ($names as $name) {
+        if (!array_key_exists($name, $_GET)) {
+            continue;
+        }
+
+        $value = strtolower(trim((string) $_GET[$name]));
+        return $value === '' || in_array($value, ['1', 'true', 'yes', 'evet', 'only'], true);
+    }
+
+    return false;
+}
+
 function productPayloadValue(string $column, string $slug, mixed $current = null): mixed {
     $requestBody = body();
     $imagesInput = input('images', input('imageList', $current ?? []));
@@ -443,10 +481,22 @@ if ($id === null) {
             if (tableHasColumn('products', 'is_active') && !$canManageProducts && empty($_GET['include_inactive'])) {
                 $where[] = 'p.is_active = 1';
             }
+            $params = [];
+            $sparePartsClause = productSparePartsWhereClause();
+            $sparePartsParams = productSparePartsWhereParams();
+            $onlySpareParts = productTruthyQueryFlag('spare_parts', 'spareParts', 'yedek_parca', 'yedekParca');
+
+            if ($onlySpareParts) {
+                $where[] = $sparePartsClause;
+                $params = array_merge($params, $sparePartsParams);
+            } elseif (!$canManageProducts) {
+                $where[] = 'NOT ' . $sparePartsClause;
+                $params = array_merge($params, $sparePartsParams);
+            }
+
             if ($where === []) {
                 $where[] = '1=1';
             }
-            $params = [];
 
             if (!empty($_GET['category'])) {
                 $where[] = '(c.slug = ? OR c.id = ? OR c.name = ?)';
