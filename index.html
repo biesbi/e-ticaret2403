@@ -12898,16 +12898,175 @@
 			max-width: 1400px;
 			margin: 0 auto;
 			color: #111;
+			scroll-margin-top: 180px;
 		}
 
 		.spare-products-header {
-			display: flex;
-			align-items: flex-end;
-			justify-content: space-between;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+			align-items: end;
 			gap: 24px;
 			margin-bottom: 28px;
-			padding-bottom: 18px;
-			border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+			padding: 24px;
+			border: 1px solid rgba(15, 23, 42, 0.08);
+			border-radius: 8px;
+			background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+			box-shadow: 0 16px 44px rgba(15, 23, 42, 0.06);
+		}
+
+		.spare-products-heading {
+			min-width: 0;
+		}
+
+		.spare-products-tools {
+			display: grid;
+			gap: 14px;
+			min-width: 0;
+		}
+
+		.spare-products-search-wrap {
+			position: relative;
+			display: flex;
+			align-items: center;
+		}
+
+		.spare-products-search-icon {
+			position: absolute;
+			left: 14px;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 18px;
+			height: 18px;
+			color: #667085;
+			pointer-events: none;
+		}
+
+		.spare-products-search {
+			width: 100%;
+			min-height: 48px;
+			padding: 12px 42px 12px 42px;
+			border: 1px solid #d8dee8;
+			border-radius: 8px;
+			background: #fff;
+			color: #111827;
+			font: 800 0.92rem/1.2 Inter, sans-serif;
+			outline: none;
+			box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+		}
+
+		.spare-products-search:focus {
+			border-color: #111827;
+			box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.08);
+		}
+
+		.spare-products-clear {
+			position: absolute;
+			right: 8px;
+			top: 50%;
+			transform: translateY(-50%);
+			display: none;
+			width: 32px;
+			height: 32px;
+			border: 0;
+			border-radius: 8px;
+			background: #eef2f7;
+			color: #111827;
+			font-size: 1.25rem;
+			font-weight: 900;
+			line-height: 1;
+			cursor: pointer;
+		}
+
+		.spare-products-clear.is-visible {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.spare-products-stats {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 8px;
+		}
+
+		.spare-products-stat {
+			min-width: 0;
+			padding: 10px 12px;
+			border: 1px solid #e4e7ec;
+			border-radius: 8px;
+			background: #fff;
+		}
+
+		.spare-products-stat span {
+			display: block;
+			color: #667085;
+			font-size: 0.68rem;
+			font-weight: 900;
+			line-height: 1.1;
+			text-transform: uppercase;
+		}
+
+		.spare-products-stat strong {
+			display: block;
+			margin-top: 4px;
+			color: #111827;
+			font-size: 1rem;
+			font-weight: 950;
+			line-height: 1;
+		}
+
+		.spare-products-section.is-targeted .spare-products-header {
+			border-color: rgba(250, 204, 21, 0.72);
+			box-shadow: 0 18px 48px rgba(250, 204, 21, 0.14), 0 16px 44px rgba(15, 23, 42, 0.06);
+		}
+
+		.spare-products-section .product-info {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+		}
+
+		.spare-products-stock-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			margin-bottom: 10px;
+		}
+
+		.spare-products-stock-row .product-stock-chip {
+			flex: 1 1 auto;
+			min-width: 0;
+			margin: 0;
+		}
+
+		.spare-products-qty {
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 24px;
+			padding: 4px 9px;
+			border-radius: 999px;
+			background: #eef2ff;
+			color: #3730a3;
+			font-size: 0.72rem;
+			font-weight: 950;
+			line-height: 1;
+			white-space: nowrap;
+		}
+
+		.spare-products-qty.is-zero {
+			background: #fef2f2;
+			color: #b42318;
+		}
+
+		.spare-products-section .product-title {
+			min-height: 2.8em;
+		}
+
+		.spare-products-section .product-price-wrapper {
+			margin-top: auto;
 		}
 
 		.spare-products-title {
@@ -12927,7 +13086,6 @@
 		}
 
 		.spare-products-count {
-			flex: 0 0 auto;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
@@ -12953,6 +13111,7 @@
 		}
 
 		.spare-products-empty {
+			grid-column: 1 / -1;
 			padding: 28px;
 			border: 1px dashed #cbd5e1;
 			border-radius: 12px;
@@ -13019,12 +13178,16 @@
 
 		@media (max-width: 768px) {
 			.spare-products-section {
-				padding: 42px 12px 82px;
+				padding: 34px 12px 82px;
+				scroll-margin-top: 132px;
 			}
 
 			.spare-products-header {
-				display: block;
+				display: grid;
+				grid-template-columns: 1fr;
 				margin-bottom: 18px;
+				padding: 16px;
+				gap: 16px;
 			}
 
 			.spare-products-title {
@@ -13039,13 +13202,43 @@
 			}
 
 			.spare-products-count {
-				margin-top: 14px;
 				font-size: 0.72rem;
+			}
+
+			.spare-products-search {
+				min-height: 46px;
+				font-size: 0.86rem;
+			}
+
+			.spare-products-stats {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+			}
+
+			.spare-products-stat {
+				padding: 8px;
+			}
+
+			.spare-products-stat span {
+				font-size: 0.6rem;
+			}
+
+			.spare-products-stat strong {
+				font-size: 0.9rem;
 			}
 
 			.spare-products-grid {
 				grid-template-columns: repeat(2, minmax(0, 1fr));
 				gap: 12px;
+			}
+
+			.spare-products-stock-row {
+				align-items: stretch;
+				flex-direction: column;
+				gap: 6px;
+			}
+
+			.spare-products-qty {
+				width: 100%;
 			}
 
 			.mobile-bottom-nav .bi-spare-nav-link,
@@ -13104,6 +13297,7 @@
 			var loadingPromise = null;
 			var renderQueued = false;
 			var lastRenderedSignature = '';
+			var searchQuery = '';
 
 			function escapeHtml(value) {
 				return String(value == null ? '' : value)
@@ -13123,6 +13317,44 @@
 			function stockOf(product) {
 				var stock = parseInt(product && (product.available_stock != null ? product.available_stock : product.stock), 10);
 				return Number.isFinite(stock) ? Math.max(0, stock) : 0;
+			}
+
+			function normalizeSearch(value) {
+				return String(value == null ? '' : value)
+					.toLocaleLowerCase('tr-TR')
+					.replace(/\s+/g, ' ')
+					.trim();
+			}
+
+			function searchableText(product) {
+				if (!product) return '';
+				return normalizeSearch([
+					product.title,
+					product.name,
+					product.sku,
+					product.set_no,
+					product.slug,
+					product.category_name,
+					product.brand_name
+				].filter(Boolean).join(' '));
+			}
+
+			function filterProducts(items) {
+				var query = normalizeSearch(searchQuery);
+				if (!query) return items;
+				return items.filter(function (product) {
+					return searchableText(product).indexOf(query) !== -1;
+				});
+			}
+
+			function summaryFor(items) {
+				return items.reduce(function (summary, product) {
+					var stock = stockOf(product);
+					summary.total += 1;
+					summary.units += stock;
+					if (stock > 0) summary.inStock += 1;
+					return summary;
+				}, { total: 0, units: 0, inStock: 0 });
 			}
 
 			function productHref(product) {
@@ -13188,7 +13420,10 @@
 					+ '<img class="product-image" src="' + escapeHtml(productImage(product)) + '" alt="' + escapeHtml(product.title || product.name || 'Yedek parca') + '" loading="lazy">'
 					+ '</div>'
 					+ '<div class="product-info">'
+					+ '<div class="spare-products-stock-row">'
 					+ '<div class="product-stock-chip ' + (isOut ? 'is-outofstock' : 'is-instock') + '">' + (isOut ? 'Stok Bitti' : 'Stokta Var') + '</div>'
+					+ '<div class="spare-products-qty' + (isOut ? ' is-zero' : '') + '">' + stock + ' adet</div>'
+					+ '</div>'
 					+ '<h3 class="product-title">' + escapeHtml(product.title || product.name || 'Yedek parca') + '</h3>'
 					+ '<div class="product-price-wrapper">'
 					+ (oldPrice > price ? '<span class="product-old-price">' + escapeHtml(money(oldPrice)) + '</span>' : '')
@@ -13208,7 +13443,15 @@
 				section = document.createElement('section');
 				section.id = sectionId;
 				section.className = 'spare-products-section';
-				section.innerHTML = '<div class="spare-products-header"><div><h2 class="spare-products-title">Yedek Parca Urunleri</h2><p class="spare-products-desc">LEGO ekstra yedek parcalari ana urun listesinden ayri olarak burada gorebilirsiniz.</p></div><span class="spare-products-count">Yukleniyor</span></div><div class="spare-products-grid"></div>';
+				section.innerHTML = ''
+					+ '<div class="spare-products-header">'
+					+ '<div class="spare-products-heading"><h2 class="spare-products-title">Yedek Parca Urunleri</h2><p class="spare-products-desc">LEGO ekstra yedek parcalarini ana urun listesinden ayri olarak burada hizlica arayip stok miktariyla gorebilirsiniz.</p></div>'
+					+ '<div class="spare-products-tools">'
+					+ '<label class="spare-products-search-wrap"><svg class="spare-products-search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.8 4.2a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2Zm0 2a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2Zm5.2 9.4 4 4-1.4 1.4-4-4 1.4-1.4Z" fill="currentColor"/></svg><input class="spare-products-search" type="search" placeholder="Yedek parca ara" autocomplete="off"><button class="spare-products-clear" type="button" aria-label="Aramayi temizle">&times;</button></label>'
+					+ '<div class="spare-products-stats"><div class="spare-products-stat"><span>Urun</span><strong data-spare-stat="total">-</strong></div><div class="spare-products-stat"><span>Stoklu</span><strong data-spare-stat="instock">-</strong></div><div class="spare-products-stat"><span>Miktar</span><strong data-spare-stat="units">-</strong></div></div>'
+					+ '<span class="spare-products-count">Yukleniyor</span>'
+					+ '</div>'
+					+ '</div><div class="spare-products-grid"></div>';
 
 				if (productsSection && productsSection.parentNode) {
 					productsSection.insertAdjacentElement('afterend', section);
@@ -13225,8 +13468,25 @@
 					var section = ensureSection();
 					var count = section.querySelector('.spare-products-count');
 					var grid = section.querySelector('.spare-products-grid');
-					var signature = items.length ? items.map(function (item) { return String(item && item.id || ''); }).join('|') : 'empty';
-					if (count) count.textContent = String(items.length) + ' Urun';
+					var filteredItems = filterProducts(items);
+					var allSummary = summaryFor(items);
+					var filteredSummary = summaryFor(filteredItems);
+					var search = section.querySelector('.spare-products-search');
+					var clear = section.querySelector('.spare-products-clear');
+					var statTotal = section.querySelector('[data-spare-stat="total"]');
+					var statInStock = section.querySelector('[data-spare-stat="instock"]');
+					var statUnits = section.querySelector('[data-spare-stat="units"]');
+					var signature = normalizeSearch(searchQuery) + '::' + (filteredItems.length ? filteredItems.map(function (item) { return String(item && item.id || '') + ':' + stockOf(item); }).join('|') : 'empty');
+					if (search && search.value !== searchQuery) search.value = searchQuery;
+					if (clear) clear.classList.toggle('is-visible', !!normalizeSearch(searchQuery));
+					if (statTotal) statTotal.textContent = String(allSummary.total);
+					if (statInStock) statInStock.textContent = String(allSummary.inStock);
+					if (statUnits) statUnits.textContent = String(allSummary.units);
+					if (count) {
+						count.textContent = normalizeSearch(searchQuery)
+							? String(filteredSummary.total) + ' Sonuc'
+							: String(allSummary.total) + ' Urun';
+					}
 					if (!grid) return;
 					if (signature === lastRenderedSignature) return;
 					lastRenderedSignature = signature;
@@ -13234,7 +13494,25 @@
 						grid.innerHTML = '<div class="spare-products-empty">Yedek parca urunu henuz eklenmedi.</div>';
 						return;
 					}
-					grid.innerHTML = items.map(productCard).join('');
+					if (!filteredItems.length) {
+						grid.innerHTML = '<div class="spare-products-empty">Aramana uygun yedek parca bulunamadi.</div>';
+						return;
+					}
+					grid.innerHTML = filteredItems.map(productCard).join('');
+				});
+			}
+
+			function scrollToSpareProducts() {
+				var section = ensureSection();
+				section.classList.add('is-targeted');
+				window.setTimeout(function () {
+					section.classList.remove('is-targeted');
+				}, 1800);
+				section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				fetchSpareProducts().then(function () {
+					renderSection();
+					var input = section.querySelector('.spare-products-search');
+					if (input) window.setTimeout(function () { input.focus({ preventScroll: true }); }, 450);
 				});
 			}
 
@@ -13275,11 +13553,47 @@
 				}
 			}
 
+			function bindInteractions() {
+				if (document.body.dataset.spareProductsBound === '1') return;
+				document.body.dataset.spareProductsBound = '1';
+				document.addEventListener('input', function (event) {
+					if (!event.target || !event.target.classList || !event.target.classList.contains('spare-products-search')) return;
+					searchQuery = event.target.value || '';
+					renderSection();
+				});
+				document.addEventListener('click', function (event) {
+					var clear = event.target && event.target.closest ? event.target.closest('.spare-products-clear') : null;
+					if (clear) {
+						searchQuery = '';
+						var section = ensureSection();
+						var input = section.querySelector('.spare-products-search');
+						if (input) {
+							input.value = '';
+							input.focus();
+						}
+						renderSection();
+						event.preventDefault();
+						return;
+					}
+
+					var spareLink = event.target && event.target.closest ? event.target.closest('a[href="#' + sectionId + '"], button[data-filter], .app-storefront-filters a, .app-storefront-filters button') : null;
+					if (!spareLink) return;
+					var label = normalizeSearch(spareLink.textContent || spareLink.getAttribute('aria-label') || spareLink.dataset.filter || '');
+					var href = spareLink.getAttribute ? spareLink.getAttribute('href') : '';
+					if (href === '#' + sectionId || label.indexOf('yedek') !== -1) {
+						event.preventDefault();
+						event.stopPropagation();
+						scrollToSpareProducts();
+					}
+				}, true);
+			}
+
 			function queueRender() {
 				if (renderQueued) return;
 				renderQueued = true;
 				requestAnimationFrame(function () {
 					renderQueued = false;
+					bindInteractions();
 					addNavigationLinks();
 					renderSection();
 				});

@@ -315,42 +315,50 @@
 
       <!-- ── YEDEK PARÇALAR ── -->
       <section id="sect-parts" class="section" style="display:none">
-        <div class="section-actions">
-          <div class="search-box">
+
+        <div class="parts-stats-bar" id="partsStatsBar"></div>
+
+        <div class="parts-toolbar">
+          <div class="parts-search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" id="partsSearch" placeholder="Parça ara..." oninput="renderParts()">
+            <input type="text" id="partsSearch" placeholder="Parça no veya isim ara…" oninput="renderParts()">
+            <kbd class="parts-search-hint">⌘K</kbd>
           </div>
-          <select id="partsFilter" onchange="renderParts()">
-            <option value="all">Tüm Kategoriler</option>
-            <option value="lego_technic">LEGO Technic</option>
-            <option value="lego_city">LEGO City</option>
-            <option value="lego_star_wars">LEGO Star Wars</option>
-            <option value="diecast_wheels">Diecast - Tekerlekler</option>
-            <option value="diecast_body">Diecast - Gövde</option>
-            <option value="funko_accessories">Funko - Aksesuarlar</option>
-          </select>
-          <button class="btn-primary" onclick="openAddPartModal()">+ Parça Ekle</button>
+          <div class="parts-filters">
+            <select id="partsFilter" onchange="renderParts()">
+              <option value="all">Tüm Kategoriler</option>
+              <option value="lego_technic">LEGO Technic</option>
+              <option value="lego_city">LEGO City</option>
+              <option value="lego_star_wars">LEGO Star Wars</option>
+              <option value="diecast_wheels">Diecast - Tekerlekler</option>
+              <option value="diecast_body">Diecast - Gövde</option>
+              <option value="funko_accessories">Funko - Aksesuarlar</option>
+            </select>
+            <select id="partsCondFilter" onchange="renderParts()">
+              <option value="all">Tüm Durumlar</option>
+              <option value="new">Sıfır</option>
+              <option value="used_good">Kullanılmış - İyi</option>
+              <option value="used_fair">Kullanılmış - Orta</option>
+              <option value="missing">Eksik / Arıyorum</option>
+            </select>
+            <select id="partsSort" onchange="renderParts()">
+              <option value="name">İsme Göre</option>
+              <option value="stock_high">Stok (Çok→Az)</option>
+              <option value="stock_low">Stok (Az→Çok)</option>
+              <option value="partno">Parça No</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="openAddPartModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Parça Ekle
+          </button>
         </div>
 
-        <div class="parts-table-wrap">
-          <table class="parts-table">
-            <thead>
-              <tr>
-                <th>Parça No</th>
-                <th>Ad</th>
-                <th>Kategori</th>
-                <th>Renk</th>
-                <th>Stok</th>
-                <th>Durum</th>
-                <th>İşlem</th>
-              </tr>
-            </thead>
-            <tbody id="partsTableBody"></tbody>
-          </table>
-        </div>
+        <div class="parts-grid" id="partsGrid"></div>
+
       </section>
 
       <!-- ── STOK KONTROL ── -->
