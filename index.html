@@ -4923,6 +4923,132 @@
 			var originalFetch = window.fetch;
 			if (typeof originalFetch !== 'function') return;
 
+			var refreshPromise = null;
+			var refreshWindowSeconds = 60 * 60;
+
+			function decodeToken(token) {
+				try {
+					var part = String(token || '').split('.')[1] || '';
+					if (!part) return null;
+					var normalized = part.replace(/-/g, '+').replace(/_/g, '/');
+					while (normalized.length % 4) normalized += '=';
+					return JSON.parse(atob(normalized));
+				} catch (error) {
+					return null;
+				}
+			}
+
+			function tokenNeedsRefresh(token) {
+				var payload = decodeToken(token);
+				if (!payload || !payload.exp) return false;
+				return payload.exp - Math.floor(Date.now() / 1000) < refreshWindowSeconds;
+			}
+
+			function isAdminApiWrite(url, method) {
+				var requestMethod = String(method || 'GET').toUpperCase();
+				if (!/^(POST|PUT|PATCH|DELETE)$/.test(requestMethod)) return false;
+				return /\/api\/(products|variants|upload|coupons|shipping|orders|admin|users)(?:\/|\?|$)/i.test(String(url || ''));
+			}
+
+			function authHeaderFrom(headers) {
+				if (!headers) return '';
+				if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+					return headers.get('authorization') || '';
+				}
+				return headers.Authorization || headers.authorization || '';
+			}
+
+			function withAuthorization(init, token) {
+				var next = Object.assign({}, init || {});
+				var headers = new Headers(next.headers || {});
+				headers.set('Authorization', 'Bearer ' + token);
+				next.headers = headers;
+				return next;
+			}
+
+			function refreshTokenIfNeeded(token) {
+				if (!token || !tokenNeedsRefresh(token)) {
+					return Promise.resolve(token);
+				}
+				if (refreshPromise) return refreshPromise;
+
+				refreshPromise = originalFetch('/api/auth/refresh', {
+					method: 'POST',
+					headers: { 'Authorization': 'Bearer ' + token }
+				}).then(function (response) {
+					if (!response.ok) return token;
+					return response.json().then(function (payload) {
+						var nextToken = payload && payload.token;
+						if (nextToken) {
+							try { localStorage.setItem('token', nextToken); } catch (error) { }
+							return nextToken;
+						}
+						return token;
+					}).catch(function () {
+						return token;
+					});
+				}).catch(function () {
+					return token;
+				}).finally(function () {
+					refreshPromise = null;
+				});
+
+				return refreshPromise;
+			}
+
+			function readRequestUrl(input) {
+				return typeof input === 'string' ? input : (input && input.url || '');
+			}
+
+			function readRequestMethod(input, init) {
+				return String((init && init.method) || (input && input.method) || 'GET').toUpperCase();
+			}
+
+			window.fetch = function (input, init) {
+				var context = this;
+				var url = readRequestUrl(input);
+				var method = readRequestMethod(input, init);
+				if (!isAdminApiWrite(url, method)) {
+					return originalFetch.call(context, input, init);
+				}
+
+				var token = null;
+				try { token = localStorage.getItem('token'); } catch (error) { }
+				if (!token) {
+					return originalFetch.call(context, input, init);
+				}
+
+				return refreshTokenIfNeeded(token).then(function (nextToken) {
+					var requestInit = init;
+					if (!authHeaderFrom(requestInit && requestInit.headers)) {
+						requestInit = withAuthorization(init, nextToken);
+					}
+					return originalFetch.call(context, input, requestInit);
+				}).then(function (response) {
+					if (response && response.status === 401) {
+						response.clone().json().then(function (payload) {
+							var message = String(payload && payload.message || '');
+							if (/token|oturum|suresi|süresi/i.test(message)) {
+								try {
+									localStorage.removeItem('token');
+									localStorage.removeItem('admin_panel_open');
+								} catch (error) { }
+								if (window.showToast) {
+									window.showToast('Oturum suresi doldu. Urunu kaydetmek icin tekrar giris yap.', 'error', 7000);
+								}
+							}
+						}).catch(function () { });
+					}
+					return response;
+				});
+			};
+		})();
+	</script>
+	<script>
+		(function () {
+			var originalFetch = window.fetch;
+			if (typeof originalFetch !== 'function') return;
+
 			var isProductsEndpoint = function (url) {
 				return /\/api\/products(?:\/[^/?#]+)?(?:\?|$)/i.test(url || '');
 			};
@@ -12889,6 +13015,49 @@
 				document.addEventListener('DOMContentLoaded', init);
 			} else {
 				init();
+			}
+		})();
+	</script>
+	<script>
+		(function () {
+			var queued = false;
+
+			function normalizeLabel(value) {
+				return String(value || '')
+					.replace(/\s+/g, ' ')
+					.trim();
+			}
+
+			function labelAdminTables() {
+				queued = false;
+				Array.prototype.slice.call(document.querySelectorAll('.admin-view .admin-table')).forEach(function (table) {
+					var headers = Array.prototype.slice.call(table.querySelectorAll('thead th')).map(function (cell) {
+						return normalizeLabel(cell.textContent);
+					});
+					if (!headers.length) return;
+					Array.prototype.slice.call(table.querySelectorAll('tbody tr')).forEach(function (row) {
+						Array.prototype.slice.call(row.children).forEach(function (cell, index) {
+							if (!cell || cell.getAttribute('data-label')) return;
+							cell.setAttribute('data-label', headers[index] || '');
+						});
+					});
+				});
+			}
+
+			function queueLabelAdminTables() {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(labelAdminTables);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', queueLabelAdminTables);
+			} else {
+				queueLabelAdminTables();
+			}
+
+			if (window.MutationObserver) {
+				new MutationObserver(queueLabelAdminTables).observe(document.body, { childList: true, subtree: true });
 			}
 		})();
 	</script>

@@ -394,6 +394,25 @@ switch ($id) {
         ok(['success' => true]);
         break;
 
+    case 'refresh':
+        if ($method !== 'POST') error('Method not allowed.', 405);
+        $payload = Auth::require();
+        $token = jwtEncode([
+            'sub'  => $payload['sub'],
+            'user' => $payload['username'] ?? ($payload['user'] ?? ''),
+            'role' => normalizeUserRole((string) ($payload['role'] ?? 'customer')),
+        ]);
+
+        ok([
+            'token' => $token,
+            'user'  => [
+                'id'       => $payload['sub'],
+                'username' => $payload['username'] ?? ($payload['user'] ?? ''),
+                'role'     => normalizeUserRole((string) ($payload['role'] ?? 'customer')),
+            ],
+        ]);
+        break;
+
     case 'me':
         if ($method !== 'GET') error('Method not allowed.', 405);
         $payload = Auth::require();

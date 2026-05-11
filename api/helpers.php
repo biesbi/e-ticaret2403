@@ -61,8 +61,12 @@ function input(string $key, mixed $default = null): mixed
 function jwtEncode(array $payload): string
 {
     $header = base64url(json_encode(['alg' => 'HS256', 'typ' => 'JWT']));
+    $role = normalizeUserRole((string) ($payload['role'] ?? ''));
+    $baseTtl = (int) env('JWT_EXPIRE', 604800);
+    $adminTtl = (int) env('JWT_ADMIN_EXPIRE', max($baseTtl, 2592000));
+    $ttl = roleCanAccessAdminPanel($role) ? $adminTtl : $baseTtl;
     $payload['iat'] = time();
-    $payload['exp'] = time() + JWT_EXPIRE;
+    $payload['exp'] = time() + max(3600, $ttl);
     $body = base64url(json_encode($payload));
     $sig = base64url(hash_hmac('sha256', "$header.$body", JWT_SECRET, true));
     return "$header.$body.$sig";

@@ -174,3 +174,356 @@
   padding-bottom: 16px !important;
   border-bottom: 1px solid rgba(241, 245, 249, 1) !important;
 }
+
+/* Mobile admin layout polish */
+@media (max-width: 768px) {
+  body.admin-view {
+    overflow-x: hidden !important;
+    background: #f8fafc !important;
+  }
+
+  .admin-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    background: #f8fafc !important;
+  }
+
+  .admin-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 90 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 10px 10px 12px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  .admin-logo {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 0 0 8px !important;
+    padding: 0 4px 8px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+  }
+
+  .admin-logo img {
+    width: auto !important;
+    height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+  }
+
+  .admin-logo span {
+    font-size: 1rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .admin-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 0 2px 2px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .admin-nav-item {
+    flex: 0 0 auto !important;
+    min-width: 112px !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    scroll-snap-align: start !important;
+    transform: none !important;
+  }
+
+  .admin-main {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 16px 12px 28px !important;
+    overflow: visible !important;
+  }
+
+  .admin-main::before {
+    display: none !important;
+  }
+
+  .admin-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .admin-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    margin: 0 0 16px !important;
+    padding: 0 0 14px !important;
+  }
+
+  .admin-header h1 {
+    margin: 0 !important;
+    font-size: 1.55rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .admin-header > div,
+  .admin-header .admin-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .admin-header button,
+  .admin-header a,
+  .admin-header select,
+  .admin-header input {
+    min-height: 42px !important;
+  }
+
+  .admin-header > div > button,
+  .admin-header > div > a {
+    flex: 1 1 140px !important;
+    justify-content: center !important;
+  }
+
+  .admin-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 16px !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
+  }
+
+  .stat-grid,
+  .admin-stats-grid,
+  .admin-inventory-summary {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .stat-card,
+  .admin-stat-card,
+  .admin-inventory-card {
+    min-width: 0 !important;
+    padding: 14px !important;
+    border-radius: 8px !important;
+  }
+
+  .stat-label,
+  .admin-inventory-label {
+    margin-bottom: 8px !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  .stat-value,
+  .admin-inventory-card strong {
+    font-size: 1.35rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .admin-inventory-toolbar,
+  .admin-inventory-advanced,
+  .admin-inventory-mini,
+  .admin-product-export {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  .admin-inventory-filter,
+  .admin-inventory-select,
+  .admin-inventory-mini-card,
+  .admin-product-export-select,
+  .admin-product-export-input,
+  .admin-product-export-button,
+  .admin-product-export-toggle,
+  .admin-zero-stock-filter {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .admin-table-container {
+    width: 100% !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .admin-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-collapse: separate !important;
+    background: transparent !important;
+  }
+
+  .admin-table thead {
+    display: none !important;
+  }
+
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .admin-table tr {
+    margin: 0 0 12px !important;
+    padding: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .admin-table td {
+    display: grid !important;
+    grid-template-columns: minmax(88px, 34%) minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+    padding: 9px 0 !important;
+    border: 0 !important;
+    color: #334155 !important;
+    word-break: break-word !important;
+  }
+
+  .admin-table td + td {
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label) !important;
+    color: #64748b !important;
+    font-size: 0.68rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.3 !important;
+    text-transform: uppercase !important;
+  }
+
+  .admin-product-cell {
+    align-items: flex-start !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .admin-product-cell img,
+  .admin-product-img {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+  }
+
+  .admin-actions,
+  .admin-btn-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .btn-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+  }
+
+  .admin-form-grid,
+  .form-row,
+  .admin-order-grid,
+  .admin-order-bridge-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-group,
+  .admin-form-group {
+    min-width: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .admin-form-group input,
+  .admin-form-group select,
+  .admin-form-group textarea {
+    min-height: 46px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+  }
+
+  .admin-file-upload-label {
+    padding: 18px 14px !important;
+    border-radius: 8px !important;
+  }
+
+  .admin-order-card,
+  .admin-order-bridge,
+  .admin-order-address-inline-detail {
+    border-radius: 8px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .stat-grid,
+  .admin-stats-grid,
+  .admin-inventory-summary,
+  .admin-inventory-toolbar,
+  .admin-inventory-advanced,
+  .admin-inventory-mini,
+  .admin-product-export {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-table td {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+}
