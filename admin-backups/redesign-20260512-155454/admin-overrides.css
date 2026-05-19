@@ -1,0 +1,981 @@
+/* Admin sayfalarında uzun formlarda scroll kaybını ve görsel galeri taşmasını önleyen küçük düzeltmeler. */
+
+/* Flex container içinde overflow-y:auto'nun çalışması için min-height:0 gerekir. */
+.admin-container {
+  height: 100vh;
+}
+
+.admin-main {
+  min-height: 0;
+  overflow-y: auto;
+  background: #f8fafc !important; /* Elegant background for admin main */
+}
+
+/* Ürün (ekle/düzenle) sayfalarında çoklu görsel listesi çok uzayınca,
+   formun devamı (örn. Renk Varyantları / Kaydet) görünmez hale gelmesin. */
+.admin-view .form-group.full-width > label + div[style*="flex-wrap: wrap"] {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Upload kutusu fazla yer kaplamasın. */
+.admin-file-upload-label {
+  padding: 24px;
+}
+
+/* ═══════════════════════════════════════ */
+/* DASHBOARD PREMIUM AESTHETIC UPGRADES    */
+/* ═══════════════════════════════════════ */
+
+/* Page Header (Yönetim Paneli h1) */
+.admin-header h1 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 2rem !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.04em !important;
+  margin-bottom: 24px !important;
+  text-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* Grid Layout Improvements */
+.stat-grid, .admin-stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 24px !important;
+}
+
+/* Toplam Satış Card (Make it pop out to span 2 cols on wide screens) */
+@media(min-width: 1024px) {
+  .stat-grid .stat-card {
+    grid-column: span 2 !important;
+  }
+}
+
+.stat-grid .stat-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+  border: 1px solid rgba(255, 204, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+
+.stat-grid .stat-card .stat-label {
+  color: #94a3b8 !important;
+}
+
+.stat-grid .stat-card .stat-value {
+  background: linear-gradient(135deg, #ffcc00 0%, #fbbf24 100%) !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 3.5rem !important;
+}
+
+/* Standart Stat Card Premium Tasarımı */
+.stat-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 20px !important;
+  padding: 32px 28px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at top right, rgba(255,204,0,0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08), 0 4px 6px rgba(15, 23, 42, 0.04) !important;
+  border-color: rgba(255, 204, 0, 0.4) !important;
+}
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+/* Label & Value Typographies */
+.stat-label {
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  margin-bottom: 16px !important;
+  z-index: 2;
+}
+
+.stat-value {
+  font-size: 2.5rem !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+  font-family: 'Inter', sans-serif !important;
+  line-height: 1 !important;
+  letter-spacing: -0.02em !important;
+  z-index: 2;
+  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass Panel Utility (already exists in React but we enforce aesthetics) */
+.glass-panel {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* 📦 Hatali Emoji & Bekleyen Card Düzeltmesi */
+.admin-stats-grid > div:nth-child(4) .stat-label {
+  font-size: 0 !important; 
+}
+.admin-stats-grid > div:nth-child(4) .stat-label::before {
+  content: "📦 BEKLEYEN" !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: #d97706 !important;
+}
+.admin-stats-grid > div:nth-child(4) {
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+.admin-stats-grid > div:nth-child(4) .stat-value {
+  background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Son Siparişler listesi Card */
+.admin-card {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  padding: 32px !important;
+  margin-top: 24px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+.admin-card h3 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.4rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin-bottom: 24px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid rgba(241, 245, 249, 1) !important;
+}
+
+/* Mobile admin layout polish */
+@media (max-width: 768px) {
+  body.admin-view {
+    overflow-x: hidden !important;
+    background: #f8fafc !important;
+  }
+
+  .admin-container {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    overflow-x: hidden !important;
+    background: #f8fafc !important;
+  }
+
+  .admin-sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 90 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 10px 10px 12px !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  .admin-logo {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin: 0 0 8px !important;
+    padding: 0 4px 8px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+  }
+
+  .admin-logo img {
+    width: auto !important;
+    height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+  }
+
+  .admin-logo span {
+    font-size: 1rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .admin-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 0 2px 2px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .admin-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .admin-nav-item {
+    flex: 0 0 auto !important;
+    min-width: 112px !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    scroll-snap-align: start !important;
+    transform: none !important;
+  }
+
+  .admin-main {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 16px 12px 28px !important;
+    overflow: visible !important;
+  }
+
+  .admin-main::before {
+    display: none !important;
+  }
+
+  .admin-view {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .admin-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    margin: 0 0 16px !important;
+    padding: 0 0 14px !important;
+  }
+
+  .admin-header h1 {
+    margin: 0 !important;
+    font-size: 1.55rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .admin-header > div,
+  .admin-header .admin-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .admin-header button,
+  .admin-header a,
+  .admin-header select,
+  .admin-header input {
+    min-height: 42px !important;
+  }
+
+  .admin-header > div > button,
+  .admin-header > div > a {
+    flex: 1 1 140px !important;
+    justify-content: center !important;
+  }
+
+  .admin-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 16px !important;
+    padding: 16px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
+  }
+
+  .stat-grid,
+  .admin-stats-grid,
+  .admin-inventory-summary {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .stat-card,
+  .admin-stat-card,
+  .admin-inventory-card {
+    min-width: 0 !important;
+    padding: 14px !important;
+    border-radius: 8px !important;
+  }
+
+  .stat-label,
+  .admin-inventory-label {
+    margin-bottom: 8px !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  .stat-value,
+  .admin-inventory-card strong {
+    font-size: 1.35rem !important;
+    line-height: 1.08 !important;
+  }
+
+  .admin-inventory-toolbar,
+  .admin-inventory-advanced,
+  .admin-inventory-mini,
+  .admin-product-export {
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 0 0 12px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  .admin-inventory-filter,
+  .admin-inventory-select,
+  .admin-inventory-mini-card,
+  .admin-product-export-select,
+  .admin-product-export-input,
+  .admin-product-export-button,
+  .admin-product-export-toggle,
+  .admin-zero-stock-filter {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .admin-table-container {
+    width: 100% !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .admin-table {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border-collapse: separate !important;
+    background: transparent !important;
+  }
+
+  .admin-table thead {
+    display: none !important;
+  }
+
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .admin-table tr {
+    margin: 0 0 12px !important;
+    padding: 12px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05) !important;
+  }
+
+  .admin-table td {
+    display: grid !important;
+    grid-template-columns: minmax(88px, 34%) minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: start !important;
+    padding: 9px 0 !important;
+    border: 0 !important;
+    color: #334155 !important;
+    word-break: break-word !important;
+  }
+
+  .admin-table td + td {
+    border-top: 1px solid #f1f5f9 !important;
+  }
+
+  .admin-table td::before {
+    content: attr(data-label) !important;
+    color: #64748b !important;
+    font-size: 0.68rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.06em !important;
+    line-height: 1.3 !important;
+    text-transform: uppercase !important;
+  }
+
+  .admin-product-cell {
+    align-items: flex-start !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  .admin-product-cell img,
+  .admin-product-img {
+    width: 44px !important;
+    height: 44px !important;
+    flex: 0 0 44px !important;
+  }
+
+  .admin-actions,
+  .admin-btn-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .btn-icon {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 8px !important;
+  }
+
+  .admin-form-grid,
+  .form-row,
+  .admin-order-grid,
+  .admin-order-bridge-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .form-group,
+  .admin-form-group {
+    min-width: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .admin-form-group input,
+  .admin-form-group select,
+  .admin-form-group textarea {
+    min-height: 46px !important;
+    border-radius: 8px !important;
+    font-size: 16px !important;
+  }
+
+  .admin-file-upload-label {
+    padding: 18px 14px !important;
+    border-radius: 8px !important;
+  }
+
+  .admin-order-card,
+  .admin-order-bridge,
+  .admin-order-address-inline-detail {
+    border-radius: 8px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .stat-grid,
+  .admin-stats-grid,
+  .admin-inventory-summary,
+  .admin-inventory-toolbar,
+  .admin-inventory-advanced,
+  .admin-inventory-mini,
+  .admin-product-export {
+    grid-template-columns: 1fr !important;
+  }
+
+  .admin-table td {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+}
+
+/* Admin reporting dashboard refresh */
+.admin-container {
+  --admin-bg: #f4f6f8;
+  --admin-ink: #111827;
+  --admin-muted: #667085;
+  --admin-line: #d9e0e8;
+  --admin-yellow: #ffcc00;
+  --admin-red: #dd101f;
+  background: var(--admin-bg) !important;
+  color: var(--admin-ink) !important;
+}
+
+.admin-sidebar {
+  width: 288px !important;
+  border-right: 1px solid #e4e7ec !important;
+  background: #ffffff !important;
+  box-shadow: 12px 0 34px rgba(17, 24, 39, 0.04) !important;
+}
+
+.admin-logo {
+  padding: 22px 24px 18px !important;
+}
+
+.admin-logo img {
+  max-width: 152px !important;
+}
+
+.admin-main {
+  padding: 34px clamp(20px, 3vw, 44px) 48px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 204, 0, 0.06), rgba(255, 255, 255, 0) 280px),
+    var(--admin-bg) !important;
+}
+
+.admin-view {
+  max-width: 1240px !important;
+  margin: 0 auto !important;
+}
+
+.admin-header {
+  margin-bottom: 18px !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid #dfe5ec !important;
+}
+
+.admin-header h1 {
+  margin: 0 !important;
+  color: #101828 !important;
+  font-size: clamp(1.75rem, 3vw, 2.35rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0 !important;
+  text-shadow: none !important;
+}
+
+.stat-grid,
+.admin-stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  margin: 0 0 16px !important;
+}
+
+.stat-grid .stat-card,
+.admin-stats-grid .stat-card {
+  min-height: 132px !important;
+  padding: 22px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--admin-line) !important;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.05) !important;
+  transform: none !important;
+}
+
+.stat-grid .stat-card {
+  grid-column: 1 / -1 !important;
+  min-height: 148px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #111827 0%, #233041 100%) !important;
+}
+
+.stat-card::after {
+  display: none !important;
+}
+
+.stat-label {
+  margin-bottom: 12px !important;
+  color: #667085 !important;
+  font-size: 0.76rem !important;
+  letter-spacing: 0.08em !important;
+}
+
+.stat-grid .stat-label {
+  color: #cbd5e1 !important;
+}
+
+.stat-value {
+  color: #101828 !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-size: clamp(2rem, 4vw, 3.35rem) !important;
+  letter-spacing: 0 !important;
+}
+
+.stat-grid .stat-value {
+  color: var(--admin-yellow) !important;
+}
+
+.admin-stats-grid > div:nth-child(4) .stat-label::before {
+  content: "BEKLEYEN" !important;
+}
+
+.admin-stats-grid > div:nth-child(4) {
+  background: #fff7d6 !important;
+  border-color: #ffd866 !important;
+}
+
+.admin-stats-grid > div:nth-child(4) .stat-value {
+  color: #b54708 !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.admin-card {
+  border-radius: 8px !important;
+  border: 1px solid var(--admin-line) !important;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.05) !important;
+}
+
+.bi-admin-reporting {
+  margin: 0 0 18px;
+}
+
+.bi-admin-report-head,
+.bi-admin-panel,
+.bi-admin-kpi {
+  border: 1px solid var(--admin-line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(17, 24, 39, 0.05);
+}
+
+.bi-admin-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 18px 20px;
+}
+
+.bi-admin-report-head span,
+.bi-admin-kpi span,
+.bi-admin-panel-title span {
+  color: var(--admin-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bi-admin-report-head h2 {
+  margin: 4px 0 0;
+  color: var(--admin-ink);
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.bi-admin-report-head time {
+  color: #475467;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bi-admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.bi-admin-kpi {
+  min-height: 124px;
+  padding: 18px;
+}
+
+.bi-admin-kpi strong {
+  display: block;
+  margin: 12px 0 8px;
+  color: var(--admin-ink);
+  font-size: clamp(1.45rem, 2.4vw, 2.15rem);
+  line-height: 1;
+}
+
+.bi-admin-kpi small {
+  display: block;
+  color: #667085;
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.bi-admin-kpi.is-revenue {
+  border-color: rgba(255, 204, 0, 0.55);
+  background: linear-gradient(180deg, #fffdf3, #ffffff);
+}
+
+.bi-admin-kpi.is-orders {
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.bi-admin-kpi.is-warning {
+  border-color: rgba(221, 16, 31, 0.25);
+  background: linear-gradient(180deg, #fff5f5, #ffffff);
+}
+
+.bi-admin-report-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 14px;
+}
+
+.bi-admin-panel {
+  min-width: 0;
+  padding: 18px;
+}
+
+.bi-admin-panel-wide {
+  grid-row: span 2;
+}
+
+.bi-admin-panel-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bi-admin-panel-title h3 {
+  margin: 0;
+  color: var(--admin-ink);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.bi-admin-bars {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  height: 238px;
+  padding: 12px;
+  border: 1px solid #eef2f6;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.bi-admin-bars span {
+  display: flex;
+  align-items: end;
+  height: 100%;
+  min-width: 0;
+}
+
+.bi-admin-bars i {
+  display: block;
+  width: 100%;
+  min-height: 10px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, var(--admin-yellow), #f59e0b);
+}
+
+.bi-admin-status-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 13px;
+}
+
+.bi-admin-status-row div {
+  display: grid;
+  gap: 2px;
+}
+
+.bi-admin-status-row strong {
+  color: #182230;
+  font-size: 0.92rem;
+}
+
+.bi-admin-status-row span,
+.bi-admin-status-row em {
+  color: #667085;
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.bi-admin-status-row b {
+  grid-column: 1 / -1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eef2f6;
+}
+
+.bi-admin-status-row i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #111827;
+}
+
+.bi-admin-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bi-admin-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.bi-admin-list li:last-child {
+  border-bottom: 0;
+}
+
+.bi-admin-list div {
+  min-width: 0;
+}
+
+.bi-admin-list strong,
+.bi-admin-list span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bi-admin-list strong {
+  color: #182230;
+  font-size: 0.9rem;
+}
+
+.bi-admin-list span {
+  color: #667085;
+  font-size: 0.78rem;
+}
+
+.bi-admin-list b {
+  flex: 0 0 auto;
+  color: #111827;
+  font-size: 0.86rem;
+}
+
+.bi-admin-empty,
+.bi-admin-reporting-error {
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #667085;
+  background: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+@media (max-width: 1180px) {
+  .stat-grid,
+  .admin-stats-grid,
+  .bi-admin-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .bi-admin-report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bi-admin-panel-wide {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-sidebar {
+    width: 100% !important;
+  }
+
+  .admin-main {
+    padding: 16px 12px 28px !important;
+  }
+
+  .admin-logo {
+    padding: 0 4px 8px !important;
+  }
+
+  .bi-admin-report-head {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .bi-admin-report-head time {
+    white-space: normal;
+  }
+
+  .bi-admin-kpi-grid,
+  .stat-grid,
+  .admin-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .bi-admin-kpi,
+  .bi-admin-panel {
+    padding: 14px;
+  }
+
+  .bi-admin-kpi {
+    min-height: 112px;
+  }
+
+  .bi-admin-kpi strong {
+    font-size: 1.32rem;
+  }
+
+  .bi-admin-bars {
+    height: 180px;
+    gap: 5px;
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bi-admin-kpi-grid,
+  .stat-grid,
+  .admin-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bi-admin-panel-title,
+  .bi-admin-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
